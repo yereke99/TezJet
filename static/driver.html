@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="kz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Driver | Водитель • Жүргізуші</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <style>
+    :root {
+      /* Light theme (default) */
+      --primary: #000000;
+      --primary-light: #333333;
+      --secondary: #00d4aa;
+      --secondary-light: #1DE9B6;
+      --background: #f5f5f5;
+      --surface: #ffffff;
+      --surface-elevated: #ffffff;
+      --text-primary: #000000;
+      --text-secondary: #757575;
+      --text-disabled: #bdbdbd;
+      --border: #e0e0e0;
+      --border-light: #f0f0f0;
+      --input-bg: #fafafa;
+      --input-border: #e0e0e0;
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --spacing-xs: 4px;
+      --spacing-sm: 8px;
+      --spacing-md: 16px;
+      --spacing-lg: 24px;
+      --spacing-xl: 32px;
+    }
+
+    /* Dark theme support */
+    [data-theme="dark"] {
+      --primary: #ffffff;
+      --primary-light: #cccccc;
+      --secondary: #00d4aa;
+      --secondary-light: #1DE9B6;
+      --background: #1a1a1a;
+      --surface: #2a2a2a;
+      --surface-elevated: #353535;
+      --text-primary: #ffffff;
+      --text-secondary: #b3b3b3;
+      --text-disabled: #666666;
+      --border: #404040;
+      --border-light: #333333;
+      --input-bg: #353535;
+      --input-border: #404040;
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Roboto, sans-serif;
+      background: var(--background);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding: 0;
+      margin: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Header */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--surface);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-light);
+      padding: env(safe-area-inset-top, 16px) var(--spacing-md) var(--spacing-md);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+
+    .brand {
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .brand-icon {
+      width: 24px;
+      height: 24px;
+      background: var(--secondary);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      padding: var(--spacing-xs) var(--spacing-sm);
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: var(--input-bg);
+      color: var(--text-secondary);
+      transition: all 0.3s ease;
+    }
+
+    .status-indicator.online {
+      background: rgba(46, 125, 50, 0.1);
+      color: #4caf50;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .lang-toggle {
+      display: flex;
+      background: var(--input-bg);
+      border-radius: 16px;
+      padding: 2px;
+      gap: 2px;
+      transition: background-color 0.3s ease;
+    }
+
+    .lang-btn {
+      padding: 6px 10px;
+      border: none;
+      background: transparent;
+      border-radius: 14px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text-secondary);
+    }
+
+    .lang-btn.active {
+      background: var(--surface-elevated);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Container */
+    .container {
+      padding: 0 var(--spacing-md) env(safe-area-inset-bottom, 80px);
+      max-width: 100%;
+      margin: 0 auto;
+    }
+
+    /* Trip Form */
+    .trip-form {
+      background: var(--surface);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-sm);
+      margin: var(--spacing-md) 0;
+      overflow: hidden;
+      border: 1px solid var(--border-light);
+      transition: all 0.3s ease;
+    }
+
+    /* Location Rows */
+    .location-section {
+      position: relative;
+    }
+
+    .location-row {
+      display: flex;
+      align-items: center;
+      padding: var(--spacing-lg) var(--spacing-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      border-bottom: 1px solid var(--border-light);
+      background: var(--surface);
+    }
+
+    .location-row:last-child {
+      border-bottom: none;
+    }
+
+    .location-row:active {
+      background: var(--input-bg);
+    }
+
+    .location-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: var(--spacing-md);
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .location-indicator.from {
+      background: var(--secondary);
+    }
+
+    .location-indicator.to {
+      background: var(--text-primary);
+    }
+
+    .location-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .location-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .location-value {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1.3;
+    }
+
+    .location-value.placeholder {
+      color: var(--text-disabled);
+      font-weight: 400;
+    }
+
+    .location-action {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: var(--input-bg);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+
+    .location-action:hover {
+      background: var(--border);
+      transform: scale(1.05);
+    }
+
+    /* Connection Line */
+    .location-connection {
+      position: absolute;
+      left: 22px;
+      top: 50px;
+      bottom: 28px;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .location-connection::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 6px;
+      height: 6px;
+      background: var(--border);
+      border-radius: 50%;
+    }
+
+    .location-connection::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 6px;
+      height: 6px;
+      background: var(--border);
+      border-radius: 50%;
+    }
+
+    /* Input Sections */
+    .input-section {
+      padding: var(--spacing-lg) var(--spacing-md);
+      border-bottom: 1px solid var(--border-light);
+      background: var(--surface);
+      transition: all 0.3s ease;
+    }
+
+    .input-section:last-child {
+      border-bottom: none;
+    }
+
+    .input-group {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--spacing-md);
+    }
+
+    .input-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--input-bg);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 18px;
+      margin-top: 4px;
+      transition: background-color 0.3s ease;
+    }
+
+    .input-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .input-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .input-field {
+      width: 100%;
+      border: none;
+      background: transparent;
+      font-size: 16px;
+      font-weight: 500;
+      outline: none;
+      color: var(--text-primary);
+      font-family: inherit;
+      padding: 0;
+      transition: color 0.3s ease;
+    }
+
+    .input-field::placeholder {
+      color: var(--text-disabled);
+    }
+
+    .textarea-field {
+      width: 100%;
+      border: none;
+      background: transparent;
+      font-size: 16px;
+      font-weight: 400;
+      outline: none;
+      color: var(--text-primary);
+      font-family: inherit;
+      resize: none;
+      min-height: 60px;
+      line-height: 1.4;
+      transition: color 0.3s ease;
+    }
+
+    .textarea-field::placeholder {
+      color: var(--text-disabled);
+    }
+
+    .input-addon {
+      display: flex;
+      align-items: center;
+      margin-left: var(--spacing-sm);
+    }
+
+    .currency {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+      padding: var(--spacing-md);
+      background: var(--input-bg);
+      border-top: 1px solid var(--border-light);
+      transition: all 0.3s ease;
+    }
+
+    .quick-btn {
+      width: 100%;
+      border: none;
+      background: var(--text-primary);
+      color: var(--surface);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-md);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--spacing-sm);
+    }
+
+    .quick-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .quick-btn:active {
+      transform: translateY(0);
+    }
+
+    /* Full Screen Modal */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: var(--surface);
+      display: none;
+      z-index: 1000;
+      flex-direction: column;
+      transition: background-color 0.3s ease;
+    }
+
+    .modal.show {
+      display: flex;
+      animation: slideInUp 0.3s ease-out;
+    }
+
+    @keyframes slideInUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .modal-header {
+      padding: env(safe-area-inset-top, 16px) var(--spacing-md) var(--spacing-md);
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      background: var(--surface);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      transition: all 0.3s ease;
+    }
+
+    .modal-back {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: var(--input-bg);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      transition: all 0.2s ease;
+      color: var(--text-primary);
+    }
+
+    .modal-back:hover {
+      background: var(--border);
+    }
+
+    .search-wrapper {
+      flex: 1;
+      position: relative;
+    }
+
+    .search-field {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-md);
+      font-size: 16px;
+      outline: none;
+      transition: all 0.2s ease;
+      background: var(--input-bg);
+      color: var(--text-primary);
+    }
+
+    .search-field:focus {
+      border-color: var(--secondary);
+      box-shadow: 0 0 0 3px rgba(0, 212, 170, 0.1);
+    }
+
+    .search-field::placeholder {
+      color: var(--text-disabled);
+    }
+
+    .search-clear {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: var(--border);
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text-secondary);
+      transition: all 0.2s ease;
+    }
+
+    .search-clear.show {
+      display: flex;
+    }
+
+    .search-clear:hover {
+      background: var(--text-disabled);
+    }
+
+    .map-container {
+      flex: 1;
+      position: relative;
+      min-height: 0;
+    }
+
+    .map-wrapper {
+      height: 100%;
+      position: relative;
+      background: var(--input-bg);
+    }
+
+    #locationMap {
+      width: 100%;
+      height: 100%;
+    }
+
+    .map-pin {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -100%);
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    .pin-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--secondary);
+      border-radius: 50%;
+      border: 4px solid white;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+      animation: pinBounce 0.6s ease-out;
+    }
+
+    @keyframes pinBounce {
+      0% { transform: translate(-50%, -150%) scale(0); }
+      50% { transform: translate(-50%, -100%) scale(1.3); }
+      100% { transform: translate(-50%, -100%) scale(1); }
+    }
+
+    .search-results {
+      max-height: 40vh;
+      overflow-y: auto;
+      background: var(--surface);
+      -webkit-overflow-scrolling: touch;
+      border-top: 1px solid var(--border-light);
+      transition: all 0.3s ease;
+    }
+
+    .search-empty {
+      padding: var(--spacing-xl);
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .result-item {
+      padding: var(--spacing-md);
+      border-bottom: 1px solid var(--border-light);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: var(--spacing-md);
+      background: var(--surface);
+    }
+
+    .result-item:hover,
+    .result-item:active {
+      background: var(--input-bg);
+    }
+
+    .result-item:last-child {
+      border-bottom: none;
+    }
+
+    .result-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--secondary);
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+
+    .result-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .result-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+      line-height: 1.3;
+    }
+
+    .result-subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .modal-actions {
+      padding: var(--spacing-md);
+      border-top: 1px solid var(--border-light);
+      display: flex;
+      gap: var(--spacing-md);
+      background: var(--surface);
+      padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0px));
+      transition: all 0.3s ease;
+    }
+
+    .modal-btn {
+      flex: 1;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: var(--spacing-md);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--spacing-sm);
+      min-height: 48px;
+    }
+
+    .modal-btn-secondary {
+      background: var(--input-bg);
+      color: var(--text-primary);
+    }
+
+    .modal-btn-secondary:hover {
+      background: var(--border);
+    }
+
+    .modal-btn-primary {
+      background: var(--secondary);
+      color: white;
+    }
+
+    .modal-btn-primary:hover {
+      background: var(--secondary-light);
+    }
+
+    /* Success Animation */
+    .success-animation {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      margin: var(--spacing-xl) 0;
+    }
+
+    .success-animation.show {
+      display: flex;
+      animation: successFade 0.5s ease-out;
+    }
+
+    .success-check {
+      width: 60px;
+      height: 60px;
+      background: var(--secondary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 24px;
+      animation: successScale 0.6s ease-out;
+    }
+
+    @keyframes successFade {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes successScale {
+      0% { transform: scale(0); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    /* Status FAB */
+    .status-fab {
+      position: fixed;
+      bottom: env(safe-area-inset-bottom, 24px);
+      right: var(--spacing-md);
+      width: 48px;
+      height: 48px;
+      background: var(--secondary);
+      border: none;
+      border-radius: 50%;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      z-index: 150;
+      color: white;
+      font-size: 16px;
+      text-decoration: none;
+    }
+
+    .status-fab:hover {
+      transform: scale(1.1);
+    }
+
+    .fab-badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      width: 16px;
+      height: 16px;
+      background: #ff5722;
+      border: 2px solid white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8px;
+      font-weight: bold;
+      color: white;
+    }
+
+    .fab-badge.success {
+      background: #4caf50;
+    }
+
+    .fab-badge.warning {
+      background: #ff9800;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 480px) {
+      .container {
+        padding: 0 var(--spacing-sm) env(safe-area-inset-bottom, 80px);
+      }
+      
+      .trip-form {
+        margin: var(--spacing-sm) 0;
+        border-radius: var(--radius-lg);
+      }
+    }
+
+    /* Hide Leaflet Attribution */
+    .leaflet-control-attribution,
+    .leaflet-control-zoom {
+      display: none !important;
+    }
+
+    /* Smooth Scrolling */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* Prevent Overscroll */
+    body {
+      overscroll-behavior-y: contain;
+    }
+
+    /* Keyboard adjustments */
+    .modal.keyboard-open .search-results {
+      max-height: 30vh;
+    }
+
+    /* Loading state */
+    .loading {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    /* Auto dark theme detection */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --primary: #ffffff;
+        --primary-light: #cccccc;
+        --secondary: #00d4aa;
+        --secondary-light: #1DE9B6;
+        --background: #1a1a1a;
+        --surface: #2a2a2a;
+        --surface-elevated: #353535;
+        --text-primary: #ffffff;
+        --text-secondary: #b3b3b3;
+        --text-disabled: #666666;
+        --border: #404040;
+        --border-light: #333333;
+        --input-bg: #353535;
+        --input-border: #404040;
+        --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+        --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+      }
+    }
+  </style>
+  
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <div class="brand">
+      <div class="brand-icon">D</div>
+      Driver
+    </div>
+    <div class="header-controls">
+      <div class="status-indicator" id="statusIndicator">
+        <div class="status-dot"></div>
+        <span id="statusText">Желіде емес</span>
+      </div>
+      <div class="lang-toggle">
+        <button class="lang-btn" onclick="setLanguage('ru')" id="lang-ru">RU</button>
+        <button class="lang-btn active" onclick="setLanguage('kz')" id="lang-kz">KZ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <div class="container">
+    <div class="trip-form">
+      <!-- Location Section -->
+      <div class="location-section">
+        <div class="location-row" onclick="openLocationPicker('from')">
+          <div class="location-indicator from"></div>
+          <div class="location-content">
+            <div class="location-label" data-ru="ОТКУДА" data-kz="ҚАЙДАН">ҚАЙДАН</div>
+            <div class="location-value placeholder" id="fromLocation" data-ru="Текущее местоположение" data-kz="Ағымдағы орналасу">Ағымдағы орналасу</div>
+          </div>
+          <button class="location-action" onclick="event.stopPropagation(); openLocationPicker('from')">📍</button>
+        </div>
+        
+        <div class="location-connection"></div>
+        
+        <div class="location-row" onclick="openLocationPicker('to')">
+          <div class="location-indicator to"></div>
+          <div class="location-content">
+            <div class="location-label" data-ru="КУДА" data-kz="ҚАЙДА">ҚАЙДА</div>
+            <div class="location-value placeholder" id="toLocation" data-ru="Выберите пункт назначения" data-kz="Мақсатты таңдаңыз">Мақсатты таңдаңыз</div>
+          </div>
+          <button class="location-action" onclick="event.stopPropagation(); openLocationPicker('to')">📍</button>
+        </div>
+      </div>
+
+      <!-- Price Section -->
+      <div class="input-section">
+        <div class="input-group">
+          <div class="input-icon">💰</div>
+          <div class="input-content">
+            <div class="input-label" data-ru="СТОИМОСТЬ" data-kz="ҚҰНЫ">ҚҰНЫ</div>
+            <input id="priceInput" class="input-field" type="number" min="2000" placeholder="2000" />
+          </div>
+          <div class="input-addon">
+            <div class="currency">₸</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Time Section -->
+      <div class="input-section">
+        <div class="input-group">
+          <div class="input-icon">⏰</div>
+          <div class="input-content">
+            <div class="input-label" data-ru="ВРЕМЯ ОТПРАВЛЕНИЯ" data-kz="ЖӨНЕЛУ УАҚЫТЫ">ЖӨНЕЛУ УАҚЫТЫ</div>
+            <input id="timeInput" class="input-field" type="datetime-local" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Comment Section -->
+      <div class="input-section">
+        <div class="input-group">
+          <div class="input-icon">💬</div>
+          <div class="input-content">
+            <div class="input-label" data-ru="КОММЕНТАРИЙ" data-kz="ТҮСІНІКТЕМЕ">ТҮСІНІКТЕМЕ</div>
+            <textarea id="commentInput" class="textarea-field" data-ru="Дополнительная информация" data-kz="Қосымша ақпарат" placeholder="Қосымша ақпарат"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <button class="quick-btn" onclick="setCurrentTime()">
+          <span>⚡</span>
+          <span data-ru="Отправиться сейчас" data-kz="Қазір жөнелу">Қазір жөнелу</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Success Animation -->
+    <div class="success-animation" id="successAnimation">
+      <div class="success-check">✓</div>
+    </div>
+  </div>
+
+  <!-- Full Screen Location Picker Modal -->
+  <div class="modal" id="locationModal">
+    <div class="modal-header">
+      <button class="modal-back" onclick="closeLocationPicker()">←</button>
+      <div class="search-wrapper">
+        <input 
+          id="searchInput" 
+          class="search-field" 
+          type="text" 
+          data-ru="Поиск адреса" 
+          data-kz="Мекенжай іздеу" 
+          placeholder="Мекенжай іздеу"
+          oninput="handleSearch(this.value)"
+        />
+        <button class="search-clear" id="searchClear" onclick="clearSearch()">×</button>
+      </div>
+    </div>
+    
+    <div class="map-container">
+      <div class="map-wrapper">
+        <div id="locationMap"></div>
+        <div class="map-pin">
+          <div class="pin-icon">📍</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="search-results" id="searchResults">
+      <div class="search-empty">
+        <span data-ru="Перетащите карту для выбора местоположения или воспользуйтесь поиском" data-kz="Орналасуды таңдау үшін картаны жылжытыңыз немесе іздеуді пайдаланыңыз">
+          Орналасуды таңдау үшін картаны жылжытыңыз немесе іздеуді пайдаланыңыз
+        </span>
+      </div>
+    </div>
+    
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-secondary" onclick="useCurrentLocation()">
+        <span>📍</span>
+        <span data-ru="Моё местоположение" data-kz="Менің орным">Менің орным</span>
+      </button>
+      <button class="modal-btn modal-btn-primary" onclick="confirmLocation()">
+        <span>✓</span>
+        <span data-ru="Подтвердить" data-kz="Растау">Растау</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Status FAB -->
+  <a href="./delivery-list" class="status-fab" onclick="navigateToApp(event)">
+    🚚
+    <div class="fab-badge" id="fabBadge">!</div>
+  </a>
+
+  <script>
+    // Global State
+    let currentLanguage = 'kz'; // Default to Kazakh
+    let map = null;
+    let userPosition = null;
+    let fromCoordinates = null;
+    let toCoordinates = null;
+    let fromAddressText = '';
+    let toAddressText = '';
+    let currentPickingMode = null;
+    let searchTimer = null;
+    let userLocationMarker = null;
+    let gpsWatcher = null;
+    let telegramApp = null;
+
+    // Translations
+    const translations = {
+      ru: {
+        offline: 'Не в сети',
+        online: 'В сети',
+        currentLocation: 'Текущее местоположение',
+        selectDestination: 'Выберите пункт назначения',
+        departNow: 'Отправиться сейчас',
+        success: 'Поездка создана!',
+        error: 'Ошибка',
+        fillRequired: 'Заполните все обязательные поля',
+        locationError: 'Ошибка определения местоположения',
+        searching: 'Поиск...',
+        noResults: 'Ничего не найдено',
+        tripCreated: 'Поездка создана',
+        openingApp: 'Открываю приложение...',
+        createTrip: 'Создать поездку',
+        minPrice: 'Минимальная цена 2000 ₸'
+      },
+      kz: {
+        offline: 'Желіде емес',
+        online: 'Желіде',
+        currentLocation: 'Ағымдағы орналасу',
+        selectDestination: 'Мақсатты таңдаңыз',
+        departNow: 'Қазір жөнелу',
+        success: 'Саяхат жасалды!',
+        error: 'Қате',
+        fillRequired: 'Барлық міндетті өрістерді толтырыңыз',
+        locationError: 'Орынды анықтауда қате',
+        searching: 'Іздеу...',
+        noResults: 'Ештеңе табылмады',
+        tripCreated: 'Саяхат жасалды',
+        openingApp: 'Қосымшаны ашу...',
+        createTrip: 'Саяхат жасау',
+        minPrice: 'Ең төмен бағасы 2000 ₸'
+      }
+    };
+
+    // Initialize App
+    function initializeApp() {
+      // Initialize Telegram WebApp
+      if (window.Telegram && Telegram.WebApp) {
+        telegramApp = Telegram.WebApp;
+        telegramApp.ready();
+        telegramApp.expand();
+        telegramApp.disableVerticalSwipes();
+        
+        // Setup main button
+        telegramApp.MainButton.setText(translations[currentLanguage].createTrip);
+        telegramApp.MainButton.color = '#00d4aa';
+        telegramApp.MainButton.textColor = '#ffffff';
+        telegramApp.MainButton.show();
+        
+        // Handle main button click
+        telegramApp.onEvent('mainButtonClicked', createTrip);
+        
+        const user = telegramApp.initDataUnsafe?.user;
+        if (user) {
+          window.telegramUserId = user.id;
+          updateOnlineStatus(true);
+        }
+        
+        // Apply theme colors
+        applyTelegramTheme();
+      }
+      
+      startLocationTracking();
+      setCurrentTime();
+      setLanguage('kz'); // Default to Kazakh
+      updateFabStatus();
+      checkDriverStatus();
+      
+      // Update main button based on form validation
+      validateForm();
+    }
+
+    // Apply Telegram theme and detect dark mode
+    function applyTelegramTheme() {
+      if (!telegramApp) {
+        // Fallback to CSS media query detection
+        return;
+      }
+      
+      const themeParams = telegramApp.themeParams;
+      
+      // Apply Telegram theme colors if available
+      if (themeParams.bg_color) {
+        document.documentElement.style.setProperty('--background', themeParams.bg_color);
+      }
+      if (themeParams.text_color) {
+        document.documentElement.style.setProperty('--text-primary', themeParams.text_color);
+      }
+      if (themeParams.secondary_bg_color) {
+        document.documentElement.style.setProperty('--surface', themeParams.secondary_bg_color);
+      }
+      if (themeParams.section_bg_color) {
+        document.documentElement.style.setProperty('--input-bg', themeParams.section_bg_color);
+      }
+      if (themeParams.section_header_text_color) {
+        document.documentElement.style.setProperty('--text-secondary', themeParams.section_header_text_color);
+      }
+      
+      // Detect if we're in dark mode based on colors
+      if (themeParams.bg_color && isColorDark(themeParams.bg_color)) {
+        document.body.setAttribute('data-theme', 'dark');
+      }
+    }
+
+    // Helper function to detect if color is dark
+    function isColorDark(color) {
+      // Convert hex color to RGB
+      const hex = color.replace('#', '');
+      const r = parseInt(hex.substr(0, 2), 16);
+      const g = parseInt(hex.substr(2, 2), 16);
+      const b = parseInt(hex.substr(4, 2), 16);
+      
+      // Calculate luminance
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      return luminance < 0.5;
+    }
+
+    // Language Management
+    function setLanguage(lang) {
+      currentLanguage = lang;
+      
+      document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`lang-${lang}`).classList.add('active');
+      
+      document.querySelectorAll('[data-ru]').forEach(element => {
+        const text = element.getAttribute(`data-${lang}`);
+        if (text) {
+          if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+            element.placeholder = text;
+          } else {
+            element.textContent = text;
+          }
+        }
+      });
+
+      // Update Telegram main button
+      if (telegramApp) {
+        telegramApp.MainButton.setText(translations[currentLanguage].createTrip);
+      }
+
+      updateOnlineStatus(document.getElementById('statusIndicator').classList.contains('online'));
+    }
+
+    // Status Management
+    function updateOnlineStatus(isOnline) {
+      const indicator = document.getElementById('statusIndicator');
+      const text = document.getElementById('statusText');
+      
+      if (isOnline) {
+        indicator.classList.add('online');
+        text.textContent = translations[currentLanguage].online;
+      } else {
+        indicator.classList.remove('online');
+        text.textContent = translations[currentLanguage].offline;
+      }
+    }
+
+    // Form Validation
+    function validateForm() {
+      const price = document.getElementById('priceInput').value;
+      const time = document.getElementById('timeInput').value;
+      const isValid = fromCoordinates && toCoordinates && price && time && parseInt(price) >= 2000;
+      
+      if (telegramApp) {
+        if (isValid) {
+          telegramApp.MainButton.enable();
+          telegramApp.MainButton.show();
+        } else {
+          telegramApp.MainButton.disable();
+          telegramApp.MainButton.show();
+        }
+      }
+      
+      return isValid;
+    }
+
+    // Add event listeners to form inputs
+    function setupFormValidation() {
+      ['priceInput', 'timeInput'].forEach(id => {
+        document.getElementById(id).addEventListener('input', validateForm);
+      });
+    }
+
+    // Location Tracking
+    function startLocationTracking() {
+      if (!navigator.geolocation) return;
+
+      gpsWatcher = navigator.geolocation.watchPosition(
+        (position) => {
+          userPosition = [position.coords.latitude, position.coords.longitude];
+          
+          if (!fromCoordinates && !fromAddressText) {
+            setFromCurrentLocation();
+          }
+          
+          updateUserLocationMarker();
+        },
+        (error) => console.warn('GPS error:', error),
+        {
+          enableHighAccuracy: true,
+          maximumAge: 1000,
+          timeout: 10000
+        }
+      );
+    }
+
+    function setFromCurrentLocation() {
+      if (!userPosition) return;
+      
+      reverseGeocode(userPosition).then(address => {
+        fromAddressText = address;
+        fromCoordinates = userPosition;
+        
+        const element = document.getElementById('fromLocation');
+        element.textContent = address;
+        element.classList.remove('placeholder');
+        
+        validateForm();
+      });
+    }
+
+    // Location Picker
+    function openLocationPicker(mode) {
+      currentPickingMode = mode;
+      document.getElementById('locationModal').classList.add('show');
+      
+      // Hide Telegram main button when modal is open
+      if (telegramApp) {
+        telegramApp.MainButton.hide();
+      }
+      
+      setTimeout(() => {
+        initializeMap();
+      }, 300);
+    }
+
+    function closeLocationPicker() {
+      document.getElementById('locationModal').classList.remove('show');
+      currentPickingMode = null;
+      
+      // Show Telegram main button when modal is closed
+      if (telegramApp) {
+        validateForm();
+      }
+      
+      // Clear search
+      clearSearch();
+      
+      if (map) {
+        map.remove();
+        map = null;
+      }
+    }
+
+    function initializeMap() {
+      if (map) map.remove();
+
+      const center = userPosition || [43.238949, 76.889709]; // Default to Almaty
+      
+      map = L.map('locationMap', {
+        center: center,
+        zoom: 15,
+        zoomControl: false,
+        attributionControl: false
+      });
+
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19
+      }).addTo(map);
+
+      map.on('moveend', () => {
+        const pin = document.querySelector('.pin-icon');
+        pin.style.animation = 'pinBounce 0.6s ease-out';
+        setTimeout(() => pin.style.animation = '', 600);
+        
+        // Auto-geocode center position
+        const center = map.getCenter();
+        const coordinates = [center.lat, center.lng];
+        reverseGeocode(coordinates).then(address => {
+          // Optional: Show preview of selected location
+        });
+      });
+
+      updateUserLocationMarker();
+    }
+
+    function updateUserLocationMarker() {
+      if (!map || !userPosition) return;
+
+      if (userLocationMarker) {
+        userLocationMarker.setLatLng(userPosition);
+      } else {
+        const userIcon = L.divIcon({
+          html: '<div style="width: 14px; height: 14px; background: #2196f3; border: 3px solid white; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>',
+          className: '',
+          iconSize: [14, 14],
+          iconAnchor: [7, 7]
+        });
+
+        userLocationMarker = L.marker(userPosition, { icon: userIcon }).addTo(map);
+      }
+    }
+
+    function useCurrentLocation() {
+      if (userPosition && map) {
+        map.setView(userPosition, 16);
+        
+        // Haptic feedback
+        if (telegramApp && telegramApp.HapticFeedback) {
+          telegramApp.HapticFeedback.impactOccurred('light');
+        }
+      }
+    }
+
+    function confirmLocation() {
+      if (!map) return;
+
+      const center = map.getCenter();
+      const coordinates = [center.lat, center.lng];
+      
+      // Haptic feedback
+      if (telegramApp && telegramApp.HapticFeedback) {
+        telegramApp.HapticFeedback.impactOccurred('medium');
+      }
+      
+      reverseGeocode(coordinates).then(address => {
+        if (currentPickingMode === 'from') {
+          fromAddressText = address;
+          fromCoordinates = coordinates;
+          
+          const element = document.getElementById('fromLocation');
+          element.textContent = address;
+          element.classList.remove('placeholder');
+        } else {
+          toAddressText = address;
+          toCoordinates = coordinates;
+          
+          const element = document.getElementById('toLocation');
+          element.textContent = address;
+          element.classList.remove('placeholder');
+        }
+        
+        closeLocationPicker();
+        validateForm();
+      });
+    }
+
+    // Search Functionality
+    function handleSearch(query) {
+      clearTimeout(searchTimer);
+      
+      const clearBtn = document.getElementById('searchClear');
+      if (query.length > 0) {
+        clearBtn.classList.add('show');
+      } else {
+        clearBtn.classList.remove('show');
+      }
+      
+      if (!query || query.length < 3) {
+        showDefaultResults();
+        return;
+      }
+
+      searchTimer = setTimeout(() => {
+        performLocationSearch(query);
+      }, 500);
+    }
+
+    function clearSearch() {
+      const searchInput = document.getElementById('searchInput');
+      const clearBtn = document.getElementById('searchClear');
+      
+      searchInput.value = '';
+      clearBtn.classList.remove('show');
+      searchInput.blur(); // Close keyboard
+      
+      showDefaultResults();
+    }
+
+    function showDefaultResults() {
+      const resultsHtml = `
+        <div class="search-empty">
+          <span data-ru="Перетащите карту для выбора местоположения или воспользуйтесь поиском" data-kz="Орналасуды таңдау үшін картаны жылжытыңыз немесе іздеуді пайдаланыңыз">
+            ${currentLanguage === 'ru' ? 'Перетащите карту для выбора местоположения или воспользуйтесь поиском' : 'Орналасуды таңдау үшін картаны жылжытыңыз немесе іздеуді пайдаланыңыз'}
+          </span>
+        </div>
+      `;
+      document.getElementById('searchResults').innerHTML = resultsHtml;
+    }
+
+    async function performLocationSearch(query) {
+      try {
+        document.getElementById('searchResults').innerHTML = `
+          <div class="search-empty">
+            <span>${translations[currentLanguage].searching}</span>
+          </div>
+        `;
+        
+        const searchQuery = encodeURIComponent(query + ', Алматы, Казахстан');
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${searchQuery}&limit=10&countrycodes=kz&addressdetails=1`
+        );
+        
+        const results = await response.json();
+        displaySearchResults(results);
+      } catch (error) {
+        console.error('Search error:', error);
+        document.getElementById('searchResults').innerHTML = `
+          <div class="search-empty">
+            <span>${translations[currentLanguage].error}</span>
+          </div>
+        `;
+      }
+    }
+
+    function displaySearchResults(results) {
+      const container = document.getElementById('searchResults');
+      
+      if (!results || results.length === 0) {
+        container.innerHTML = `
+          <div class="search-empty">
+            <span>${translations[currentLanguage].noResults}</span>
+          </div>
+        `;
+        return;
+      }
+
+      const html = results.map(result => {
+        const name = result.display_name.split(',')[0];
+        const address = result.display_name.split(',').slice(1, 4).join(',').trim();
+        
+        return `
+          <div class="result-item" onclick="selectSearchResult(${result.lat}, ${result.lon}, '${name.replace(/'/g, "\\'")}')">
+            <div class="result-indicator"></div>
+            <div class="result-content">
+              <div class="result-title">${name}</div>
+              <div class="result-subtitle">${address}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = html;
+    }
+
+    function selectSearchResult(lat, lon, name) {
+      const coordinates = [lat, lon];
+      
+      // Haptic feedback
+      if (telegramApp && telegramApp.HapticFeedback) {
+        telegramApp.HapticFeedback.impactOccurred('light');
+      }
+      
+      if (map) {
+        map.setView(coordinates, 16);
+      }
+      
+      // Clear search and close keyboard
+      clearSearch();
+      
+      if (currentPickingMode === 'from') {
+        fromAddressText = name;
+        fromCoordinates = coordinates;
+        
+        const element = document.getElementById('fromLocation');
+        element.textContent = name;
+        element.classList.remove('placeholder');
+      } else {
+        toAddressText = name;
+        toCoordinates = coordinates;
+        
+        const element = document.getElementById('toLocation');
+        element.textContent = name;
+        element.classList.remove('placeholder');
+      }
+      
+      closeLocationPicker();
+      validateForm();
+    }
+
+    // Utility Functions
+    async function reverseGeocode(coordinates) {
+      try {
+        const [lat, lon] = coordinates;
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`
+        );
+        
+        const data = await response.json();
+        
+        if (data && data.display_name) {
+          return data.display_name.split(',').slice(0, 4).join(', ');
+        }
+        
+        return `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+      } catch (error) {
+        console.error('Geocoding error:', error);
+        return `${coordinates[0].toFixed(6)}, ${coordinates[1].toFixed(6)}`;
+      }
+    }
+
+    function setCurrentTime() {
+      const now = new Date();
+      now.setMinutes(Math.ceil(now.getMinutes() / 5) * 5, 0, 0);
+      
+      const pad = (n) => String(n).padStart(2, '0');
+      const dateString = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      
+      document.getElementById('timeInput').value = dateString;
+      validateForm();
+    }
+
+    // Trip Creation with Telegram Integration
+    async function createTrip() {
+      const price = document.getElementById('priceInput').value;
+      const time = document.getElementById('timeInput').value;
+      const comment = document.getElementById('commentInput').value;
+      
+      if (!validateForm()) {
+        showAlert(translations[currentLanguage].fillRequired);
+        return;
+      }
+
+      if (parseInt(price) < 2000) {
+        showAlert(translations[currentLanguage].minPrice);
+        return;
+      }
+
+      // Show loading state
+      if (telegramApp) {
+        telegramApp.MainButton.showProgress();
+        telegramApp.MainButton.setText(translations[currentLanguage].openingApp);
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append('from_address', fromAddressText);
+        formData.append('from_lat', fromCoordinates[0]);
+        formData.append('from_lon', fromCoordinates[1]);
+        formData.append('to_address', toAddressText);
+        formData.append('to_lat', toCoordinates[0]);
+        formData.append('to_lon', toCoordinates[1]);
+        formData.append('price', price);
+        formData.append('start_time', time);
+        formData.append('comment', comment);
+        formData.append('telegram_id', window.telegramUserId || '0');
+
+        const response = await fetch('/api/driver/start', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          showSuccessAnimation();
+          updateFabStatus(true, true);
+          
+          // Haptic feedback
+          if (telegramApp && telegramApp.HapticFeedback) {
+            telegramApp.HapticFeedback.notificationOccurred('success');
+          }
+          
+          // Navigate to delivery list after success
+          setTimeout(() => {
+            navigateToDeliveryList();
+          }, 1500);
+          
+        } else {
+          throw new Error(result.message || 'Unknown error');
+        }
+      } catch (error) {
+        console.error('Error creating trip:', error);
+        showAlert(translations[currentLanguage].error + ': ' + error.message);
+        
+        // Haptic feedback for error
+        if (telegramApp && telegramApp.HapticFeedback) {
+          telegramApp.HapticFeedback.notificationOccurred('error');
+        }
+      } finally {
+        // Hide loading state
+        if (telegramApp) {
+          telegramApp.MainButton.hideProgress();
+          telegramApp.MainButton.setText(translations[currentLanguage].createTrip);
+        }
+      }
+    }
+
+    function navigateToApp(event) {
+      event.preventDefault();
+      navigateToDeliveryList();
+    }
+
+    function navigateToDeliveryList() {
+      // For mini app internal navigation, use standard JavaScript navigation
+      // This keeps us within the Telegram mini app context
+      if (telegramApp) {
+        // Navigate within the mini app using the Go handler route
+        window.location.href = './delivery-list';
+      } else {
+        // Fallback for web browsers
+        window.location.href = './delivery-list';
+      }
+    }
+
+    function showSuccessAnimation() {
+      const animation = document.getElementById('successAnimation');
+      animation.classList.add('show');
+      
+      setTimeout(() => {
+        animation.classList.remove('show');
+      }, 2000);
+    }
+
+    function updateFabStatus(isOnline = false, hasActiveTrip = false) {
+      const badge = document.getElementById('fabBadge');
+      
+      if (hasActiveTrip) {
+        badge.className = 'fab-badge success';
+        badge.textContent = '✓';
+      } else if (isOnline) {
+        badge.className = 'fab-badge warning';
+        badge.textContent = '•';
+      } else {
+        badge.className = 'fab-badge';
+        badge.textContent = '!';
+      }
+    }
+
+    async function checkDriverStatus() {
+      try {
+        if (!window.telegramUserId) return;
+        
+        const response = await fetch(`/api/driver/status?telegram_id=${window.telegramUserId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+          updateFabStatus(data.is_online, data.has_active_trip);
+          updateOnlineStatus(data.is_online);
+        }
+      } catch (error) {
+        console.warn('Could not check driver status:', error);
+      }
+    }
+
+    function showAlert(message) {
+      if (telegramApp) {
+        telegramApp.showAlert(message);
+      } else {
+        alert(message);
+      }
+    }
+
+    // Initialize on DOM ready
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeApp();
+      setupFormValidation();
+    });
+
+    // Periodic status check
+    setInterval(checkDriverStatus, 30000);
+
+    // Cleanup on unload
+    window.addEventListener('beforeunload', () => {
+      if (gpsWatcher) {
+        navigator.geolocation.clearWatch(gpsWatcher);
+      }
+      if (map) {
+        map.remove();
+      }
+    });
+
+    // Handle keyboard visibility for better UX
+    if (telegramApp) {
+      telegramApp.onEvent('viewportChanged', () => {
+        const modal = document.getElementById('locationModal');
+        if (modal.classList.contains('show')) {
+          if (telegramApp.viewportHeight < telegramApp.viewportStableHeight * 0.8) {
+            modal.classList.add('keyboard-open');
+          } else {
+            modal.classList.remove('keyboard-open');
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>

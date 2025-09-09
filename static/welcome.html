@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="kz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>TezJet - Тез жеткізу қызметі</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      /* Uber-inspired color palette */
+      --bg-primary: #000000;
+      --bg-secondary: #1a1a1a;
+      --bg-tertiary: #2d2d2d;
+      --text-primary: #ffffff;
+      --text-secondary: #b3b3b3;
+      --text-muted: #666666;
+      --accent-primary: #00ff88;
+      --accent-secondary: #00d4ff;
+      --accent-gradient: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
+      --shadow-glow: 0 0 30px rgba(0, 255, 136, 0.3);
+      --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.3);
+      --shadow-strong: 0 8px 32px rgba(0, 0, 0, 0.5);
+      --radius-sm: 12px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --border-glow: 1px solid rgba(0, 255, 136, 0.3);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', 'Inter', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      position: fixed;
+      width: 100%;
+      top: 0;
+      left: 0;
+    }
+
+    /* Animated background */
+    .background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 30% 20%, rgba(0, 255, 136, 0.1) 0%, transparent 50%),
+                  radial-gradient(circle at 80% 80%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+                  radial-gradient(circle at 40% 70%, rgba(0, 255, 136, 0.05) 0%, transparent 50%);
+      animation: backgroundPulse 8s ease-in-out infinite;
+      z-index: -2;
+    }
+
+    @keyframes backgroundPulse {
+      0%, 100% { 
+        transform: scale(1) rotate(0deg);
+        opacity: 1; 
+      }
+      50% { 
+        transform: scale(1.1) rotate(2deg);
+        opacity: 0.8; 
+      }
+    }
+
+    /* Grid overlay */
+    .grid-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+      background-size: 20px 20px;
+      animation: gridMove 20s linear infinite;
+      z-index: -1;
+    }
+
+    @keyframes gridMove {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(20px, 20px); }
+    }
+
+    /* Loading overlay */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+      z-index: 9999;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+
+    .loading-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 3px solid rgba(0, 255, 136, 0.2);
+      border-top: 3px solid var(--accent-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .loading-text {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      animation: pulse 2s ease-in-out infinite;
+      text-align: center;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    /* Language switch */
+    .lang-switch {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 25px;
+      padding: 4px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 100;
+    }
+
+    .lang-btn {
+      background: transparent;
+      color: var(--text-secondary);
+      border: none;
+      border-radius: 20px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      min-width: 50px;
+    }
+
+    .lang-btn.active {
+      background: var(--accent-gradient);
+      color: white;
+      box-shadow: var(--shadow-glow);
+      transform: scale(1.05);
+    }
+
+    .lang-btn:hover:not(.active) {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Main container */
+    .main-container {
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Header section */
+    .header-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 20px;
+      position: relative;
+    }
+
+    /* Logo animation */
+    .logo-container {
+      position: relative;
+      margin-bottom: 40px;
+    }
+
+    .logo {
+      width: 120px;
+      height: 120px;
+      background: var(--accent-gradient);
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      font-weight: 900;
+      color: white;
+      margin: 0 auto;
+      position: relative;
+      box-shadow: var(--shadow-glow);
+      animation: logoFloat 3s ease-in-out infinite;
+    }
+
+    .logo::before {
+      content: '';
+      position: absolute;
+      top: -4px;
+      left: -4px;
+      right: -4px;
+      bottom: -4px;
+      background: var(--accent-gradient);
+      border-radius: 34px;
+      z-index: -1;
+      opacity: 0.5;
+      animation: logoGlow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes logoFloat {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-10px) rotate(1deg); }
+    }
+
+    @keyframes logoGlow {
+      0% { opacity: 0.3; transform: scale(1); }
+      100% { opacity: 0.6; transform: scale(1.1); }
+    }
+
+    /* Brand text */
+    .brand-text {
+      margin-bottom: 16px;
+    }
+
+    .brand-name {
+      font-size: 48px;
+      font-weight: 900;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -2px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      animation: textShine 3s ease-in-out infinite;
+    }
+
+    @keyframes textShine {
+      0%, 100% { 
+        background-position: 0% 50%; 
+        transform: scale(1);
+      }
+      50% { 
+        background-position: 100% 50%; 
+        transform: scale(1.02);
+      }
+    }
+
+    .brand-slogan {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      letter-spacing: 0.5px;
+      opacity: 0;
+      animation: slideInUp 1s ease-out 0.5s forwards;
+    }
+
+    .brand-description {
+      font-size: 16px;
+      color: var(--text-muted);
+      margin-top: 12px;
+      max-width: 280px;
+      line-height: 1.5;
+      opacity: 0;
+      animation: slideInUp 1s ease-out 1s forwards;
+    }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Action buttons */
+    .action-section {
+      padding: 20px;
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
+      background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.8) 50%);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .action-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .action-btn {
+      background: var(--bg-secondary);
+      border: var(--border-glow);
+      border-radius: var(--radius-md);
+      padding: 20px 24px;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .action-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: var(--accent-gradient);
+      opacity: 0;
+      transition: all 0.4s ease;
+      z-index: -1;
+    }
+
+    .action-btn:hover::before {
+      left: 0;
+      opacity: 0.1;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: var(--shadow-glow);
+      border-color: var(--accent-primary);
+    }
+
+    .action-btn:active {
+      transform: translateY(-2px) scale(1.01);
+    }
+
+    .action-btn-content {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .action-btn-icon {
+      width: 50px;
+      height: 50px;
+      background: var(--accent-gradient);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .action-btn-text {
+      flex: 1;
+    }
+
+    .action-btn-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .action-btn-subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .action-btn-arrow {
+      font-size: 20px;
+      color: var(--accent-primary);
+      transition: transform 0.3s ease;
+    }
+
+    .action-btn:hover .action-btn-arrow {
+      transform: translateX(4px);
+    }
+
+    /* Primary button special styling */
+    .action-btn.primary {
+      background: var(--accent-gradient);
+      border: 1px solid transparent;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .action-btn.primary .action-btn-icon {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .action-btn.primary .action-btn-title {
+      color: white;
+    }
+
+    .action-btn.primary .action-btn-subtitle {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .action-btn.primary .action-btn-arrow {
+      color: white;
+    }
+
+    /* Animations on load */
+    .action-btn {
+      opacity: 0;
+      transform: translateY(30px);
+      animation: slideInUpStagger 0.6s ease-out forwards;
+    }
+
+    .action-btn:nth-child(1) {
+      animation-delay: 1.5s;
+    }
+
+    .action-btn:nth-child(2) {
+      animation-delay: 1.7s;
+    }
+
+    @keyframes slideInUpStagger {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Driver redirect message */
+    .driver-redirect {
+      background: var(--accent-gradient);
+      color: white;
+      padding: 20px;
+      border-radius: var(--radius-md);
+      text-align: center;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-glow);
+      animation: slideInUp 0.5s ease-out;
+    }
+
+    .driver-redirect h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .driver-redirect p {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    /* Responsive design */
+    @media (max-width: 480px) {
+      .brand-name {
+        font-size: 36px;
+      }
+
+      .brand-slogan {
+        font-size: 18px;
+      }
+
+      .logo {
+        width: 100px;
+        height: 100px;
+        font-size: 40px;
+      }
+
+      .action-btn {
+        padding: 18px 20px;
+      }
+
+      .action-btn-title {
+        font-size: 16px;
+      }
+
+      .action-btn-subtitle {
+        font-size: 13px;
+      }
+    }
+
+    @media (max-height: 700px) {
+      .header-section {
+        padding: 20px;
+      }
+
+      .logo {
+        width: 90px;
+        height: 90px;
+        font-size: 36px;
+      }
+
+      .brand-name {
+        font-size: 32px;
+      }
+
+      .brand-slogan {
+        font-size: 16px;
+      }
+    }
+
+    /* iOS safe area */
+    @supports (padding: max(0px)) {
+      .action-section {
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+      }
+
+      .lang-switch {
+        top: max(20px, env(safe-area-inset-top));
+      }
+    }
+
+    /* Prevent text selection */
+    .brand-name,
+    .brand-slogan,
+    .action-btn {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    /* Enhanced focus states for accessibility */
+    .action-btn:focus,
+    .lang-btn:focus {
+      outline: 2px solid var(--accent-primary);
+      outline-offset: 2px;
+    }
+
+    /* Special animations for welcome sequence */
+    .welcome-sequence {
+      animation: welcomeSequence 2s ease-out;
+    }
+
+    @keyframes welcomeSequence {
+      0% {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      50% {
+        opacity: 0.7;
+        transform: scale(1.02);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" data-kz="Жүктелуде..." data-ru="Загрузка...">Жүктелуде...</div>
+  </div>
+
+  <!-- Animated Background -->
+  <div class="background"></div>
+  <div class="grid-overlay"></div>
+
+  <!-- Language Switch -->
+  <div class="lang-switch">
+    <button class="lang-btn active" onclick="setLang('kz')" id="lang-kz">ҚАЗ</button>
+    <button class="lang-btn" onclick="setLang('ru')" id="lang-ru">РУС</button>
+  </div>
+
+  <!-- Main Container -->
+  <div class="main-container welcome-sequence">
+    <!-- Header Section -->
+    <div class="header-section">
+      <div class="logo-container">
+        <div class="logo">🚀</div>
+      </div>
+      
+      <div class="brand-text">
+        <h1 class="brand-name">TezJet</h1>
+        <p class="brand-slogan" data-kz="Тез жеткізу қызметі" data-ru="Быстрая доставка">Тез жеткізу қызметі</p>
+        <p class="brand-description" data-kz="Алматы қаласында сенімді және тез жеткізу" data-ru="Надежная и быстрая доставка по Алматы">Алматы қаласында сенімді және тез жеткізу</p>
+      </div>
+    </div>
+
+    <!-- Action Section -->
+    <div class="action-section">
+      <div class="action-buttons">
+        <!-- Driver Redirect Message (hidden by default) -->
+        <div class="driver-redirect" id="driverRedirectMessage" style="display: none;">
+          <h3 data-kz="Қош келдіңіз!" data-ru="Добро пожаловать!">Қош келдіңіз!</h3>
+          <p data-kz="Жүргізуші ретінде тапсырыстар тізіміне бағыттаймыз..." data-ru="Перенаправляем в список заказов как водителя...">Жүргізуші ретінде тапсырыстар тізіміне бағыттаймыз...</p>
+        </div>
+
+        <!-- Delivery Button -->
+        <a href="/delivery" class="action-btn primary" id="deliveryBtn">
+          <div class="action-btn-content">
+            <div class="action-btn-icon">📦</div>
+            <div class="action-btn-text">
+              <div class="action-btn-title" data-kz="Жеткізу тапсырысы" data-ru="Заказать доставку">Жеткізу тапсырысы</div>
+              <div class="action-btn-subtitle" data-kz="Жүкті тез әрі қауіпсіз жеткіземіз" data-ru="Быстро и безопасно доставим ваш груз">Жүкті тез әрі қауіпсіз жеткіземіз</div>
+            </div>
+          </div>
+          <div class="action-btn-arrow">→</div>
+        </a>
+
+        <!-- Driver Button -->
+        <a href="/register" class="action-btn" id="driverBtn">
+          <div class="action-btn-content">
+            <div class="action-btn-icon">🚗</div>
+            <div class="action-btn-text">
+              <div class="action-btn-title" data-kz="Жүргізуші болу" data-ru="Стать водителем">Жүргізуші болу</div>
+              <div class="action-btn-subtitle" data-kz="Бізге қосылып табыс табыңыз" data-ru="Присоединяйтесь и зарабатывайте с нами">Бізге қосылып табыс табыңыз</div>
+            </div>
+          </div>
+          <div class="action-btn-arrow">→</div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global variables
+    let currentLang = 'kz'; // Default to Kazakh
+    let isChecking = false;
+    let isRedirecting = false;
+
+    // Translations
+    const translations = {
+      kz: {
+        loading: 'Жүктелуде...',
+        checkingUser: 'Пайдаланушыны тексеру...',
+        redirecting: 'Бағыттау...',
+        redirectingDriver: 'Жүргізуші ретінде тапсырыстарға бағыттау...',
+        error: 'Қате пайда болды',
+        brandSlogan: 'Тез жеткізу қызметі',
+        brandDescription: 'Алматы қаласында сенімді және тез жеткізу',
+        deliveryTitle: 'Жеткізу тапсырысы',
+        deliverySubtitle: 'Жүкті тез әрі қауіпсіз жеткіземіз',
+        driverTitle: 'Жүргізуші болу',
+        driverSubtitle: 'Бізге қосылып табыс табыңыз',
+        welcomeBack: 'Қош келдіңіз!',
+        redirectingToOrders: 'Тапсырыстарға бағыттау...'
+      },
+      ru: {
+        loading: 'Загрузка...',
+        checkingUser: 'Проверка пользователя...',
+        redirecting: 'Перенаправление...',
+        redirectingDriver: 'Перенаправление к заказам как водителя...',
+        error: 'Произошла ошибка',
+        brandSlogan: 'Быстрая доставка',
+        brandDescription: 'Надежная и быстрая доставка по Алматы',
+        deliveryTitle: 'Заказать доставку',
+        deliverySubtitle: 'Быстро и безопасно доставим ваш груз',
+        driverTitle: 'Стать водителем',
+        driverSubtitle: 'Присоединяйтесь и зарабатывайте с нами',
+        welcomeBack: 'Добро пожаловать!',
+        redirectingToOrders: 'Перенаправление к заказам...'
+      }
+    };
+
+    // Initialize app
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('🚀 TezJet Welcome Page loaded');
+      initializeTelegram();
+      setupEventListeners();
+      
+      // Start user check after UI is ready
+      setTimeout(() => {
+        checkUserTypeAndRedirect();
+      }, 1000);
+    });
+
+    // Initialize Telegram WebApp
+    function initializeTelegram() {
+      if (window.Telegram && Telegram.WebApp) {
+        console.log('📱 Initializing Telegram WebApp');
+        
+        Telegram.WebApp.ready();
+        Telegram.WebApp.expand();
+        Telegram.WebApp.disableVerticalSwipes();
+
+        // Handle theme
+        const theme = Telegram.WebApp.colorScheme;
+        if (theme === 'light') {
+          // Apply light theme adjustments if needed
+          document.documentElement.style.setProperty('--bg-primary', '#ffffff');
+          document.documentElement.style.setProperty('--text-primary', '#000000');
+        }
+
+        console.log('✅ Telegram WebApp initialized');
+      } else {
+        console.log('⚠️ Telegram WebApp not available - running in browser mode');
+      }
+    }
+
+    // Setup event listeners
+    function setupEventListeners() {
+      // Prevent double-clicks during checking
+      document.getElementById('deliveryBtn').addEventListener('click', function(e) {
+        if (isChecking || isRedirecting) {
+          e.preventDefault();
+          console.log('🛑 Click prevented - checking/redirecting in progress');
+          return false;
+        }
+      });
+
+      document.getElementById('driverBtn').addEventListener('click', function(e) {
+        if (isChecking || isRedirecting) {
+          e.preventDefault();
+          console.log('🛑 Click prevented - checking/redirecting in progress');
+          return false;
+        }
+      });
+    }
+
+    // FIXED: Enhanced user checking with proper redirect logic
+    async function checkUserTypeAndRedirect() {
+      const telegramId = getTelegramId();
+      
+      if (!telegramId) {
+        console.log('⚠️ No Telegram ID available, showing welcome page');
+        hideLoading();
+        return;
+      }
+
+      try {
+        isChecking = true;
+        isRedirecting = false;
+        updateLoadingText('checkingUser');
+        
+        console.log('🔍 Checking user type for Telegram ID:', telegramId);
+
+        const response = await fetch('/api/check/who', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            telegram_id: parseInt(telegramId)
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('📊 API Response:', result);
+
+        // FIXED: Proper driver detection and redirect
+        if (result.success && result.data) {
+          const userData = result.data;
+          
+          // Check if user exists and is a driver
+          if (userData.exists === true && userData.user_type === 'driver') {
+            console.log('🚗 DRIVER DETECTED! Redirecting to delivery list...');
+            console.log('👤 Driver data:', userData.driver_data);
+            
+            // Show driver redirect message
+            showDriverRedirectMessage();
+            
+            // Set redirecting state
+            isRedirecting = true;
+            updateLoadingText('redirectingDriver');
+            
+            // Use Telegram haptic feedback if available
+            if (window.Telegram && Telegram.WebApp && Telegram.WebApp.HapticFeedback) {
+              Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+            }
+            
+            // Force redirect after 2 seconds
+            setTimeout(() => {
+              console.log('🔄 FORCED REDIRECT to /delivery-list');
+              window.location.replace('/delivery-list'); // Use replace to avoid back button issues
+            }, 2000);
+            
+            return; // Exit function early
+          }
+          
+          // Check if user exists as client
+          if (userData.exists === true && userData.user_type === 'client') {
+            console.log('👤 Existing client detected, showing welcome page');
+          } else {
+            console.log('👤 New user detected, showing welcome page');
+          }
+        } else {
+          console.log('👤 No user data or unsuccessful response, showing welcome page');
+        }
+
+        // If we reach here, show welcome page
+        hideLoading();
+        
+      } catch (error) {
+        console.error('❌ Error checking user type:', error);
+        console.error('🔍 Error details:', {
+          message: error.message,
+          stack: error.stack
+        });
+        
+        // Show error briefly, then show welcome page
+        updateLoadingText('error');
+        setTimeout(() => {
+          console.log('🔄 Showing welcome page after error');
+          hideLoading();
+        }, 2000);
+      } finally {
+        isChecking = false;
+      }
+    }
+
+    // Show driver redirect message
+    function showDriverRedirectMessage() {
+      const message = document.getElementById('driverRedirectMessage');
+      if (message) {
+        message.style.display = 'block';
+        console.log('📢 Driver redirect message shown');
+      }
+    }
+
+    // Enhanced logging version of getTelegramId
+    function getTelegramId() {
+      // Try to get from Telegram WebApp
+      if (window.Telegram && Telegram.WebApp) {
+        console.log('📱 Telegram WebApp available');
+        console.log('🔍 InitDataUnsafe:', Telegram.WebApp.initDataUnsafe);
+        
+        if (Telegram.WebApp.initDataUnsafe?.user) {
+          const id = Telegram.WebApp.initDataUnsafe.user.id;
+          console.log('✅ Got Telegram ID from WebApp:', id);
+          console.log('👤 User info:', Telegram.WebApp.initDataUnsafe.user);
+          return id;
+        } else {
+          console.log('⚠️ No user data in initDataUnsafe');
+        }
+      } else {
+        console.log('⚠️ Telegram WebApp not available');
+      }
+      
+      // For testing outside Telegram
+      const urlParams = new URLSearchParams(window.location.search);
+      const testId = urlParams.get('test_id');
+      if (testId) {
+        console.log('🧪 Using test Telegram ID:', testId);
+        return testId;
+      }
+      
+      console.log('❌ No Telegram ID available from any source');
+      return null;
+    }
+
+    // Update loading text
+    function updateLoadingText(key) {
+      const loadingText = document.querySelector('.loading-text');
+      if (loadingText && translations[currentLang][key]) {
+        loadingText.textContent = translations[currentLang][key];
+      }
+    }
+
+    // Hide loading overlay
+    function hideLoading() {
+      const overlay = document.getElementById('loadingOverlay');
+      overlay.classList.add('hidden');
+      
+      // Start welcome animations
+      setTimeout(() => {
+        document.querySelector('.main-container').style.opacity = '1';
+      }, 300);
+    }
+
+    // Language switching
+    function setLang(lang) {
+      if (isChecking || isRedirecting) {
+        console.log('🛑 Language change prevented - checking/redirecting in progress');
+        return;
+      }
+
+      currentLang = lang;
+      console.log('🌐 Language changed to:', lang);
+      
+      // Update active language button
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.getElementById('lang-' + lang).classList.add('active');
+      
+      // Update all translatable elements
+      document.querySelectorAll('[data-kz]').forEach(el => {
+        const text = el.getAttribute('data-' + lang);
+        if (text) {
+          el.textContent = text;
+        }
+      });
+
+      // Add subtle animation to show language change
+      document.querySelector('.brand-text').style.transform = 'scale(0.98)';
+      document.querySelector('.action-buttons').style.transform = 'scale(0.98)';
+      
+      setTimeout(() => {
+        document.querySelector('.brand-text').style.transform = 'scale(1)';
+        document.querySelector('.action-buttons').style.transform = 'scale(1)';
+      }, 150);
+    }
+
+    // Enhanced navigation function with better error handling
+    function navigateWithTransition(url) {
+      if (isChecking || isRedirecting) {
+        console.log('🛑 Navigation prevented - checking/redirecting in progress');
+        return false;
+      }
+
+      console.log('🔄 Navigating to:', url);
+      
+      // Add loading state
+      isRedirecting = true;
+      updateLoadingText('redirecting');
+      document.getElementById('loadingOverlay').classList.remove('hidden');
+      
+      // Navigate after brief delay
+      setTimeout(() => {
+        window.location.href = url;
+      }, 300);
+      
+      return true;
+    }
+
+    // Update action buttons with transition navigation
+    document.addEventListener('DOMContentLoaded', function() {
+      const deliveryBtn = document.getElementById('deliveryBtn');
+      const driverBtn = document.getElementById('driverBtn');
+      
+      if (deliveryBtn) {
+        deliveryBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          navigateWithTransition('/delivery');
+        });
+      }
+      
+      if (driverBtn) {
+        driverBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          navigateWithTransition('/register');
+        });
+      }
+    });
+
+    // Debug function to test the API endpoint directly
+    async function debugCheckWho() {
+      const telegramId = getTelegramId();
+      
+      if (!telegramId) {
+        console.log('❌ No Telegram ID for testing');
+        return;
+      }
+
+      try {
+        console.log('🧪 Testing /api/check/who endpoint...');
+        
+        const response = await fetch('/api/check/who', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            telegram_id: parseInt(telegramId)
+          })
+        });
+
+        console.log('📡 Response status:', response.status);
+        console.log('📡 Response headers:', [...response.headers.entries()]);
+
+        const result = await response.json();
+        console.log('📊 Raw response:', result);
+        console.log('🔍 Response structure analysis:');
+        console.log('  - result.success:', result.success);
+        console.log('  - result.data:', result.data);
+        
+        if (result.data) {
+          console.log('  - result.data.exists:', result.data.exists);
+          console.log('  - result.data.user_type:', result.data.user_type);
+          console.log('  - result.data.telegram_id:', result.data.telegram_id);
+          if (result.data.driver_data) {
+            console.log('  - result.data.driver_data:', result.data.driver_data);
+          }
+        }
+
+      } catch (error) {
+        console.error('❌ Debug test failed:', error);
+      }
+    }
+
+    // Force redirect function for testing
+    function forceRedirectToDeliveryList() {
+      console.log('🔧 FORCE REDIRECT - Testing redirect to delivery list');
+      isRedirecting = true;
+      showDriverRedirectMessage();
+      updateLoadingText('redirectingDriver');
+      document.getElementById('loadingOverlay').classList.remove('hidden');
+      
+      setTimeout(() => {
+        console.log('🔄 EXECUTING FORCE REDIRECT');
+        window.location.replace('/delivery-list');
+      }, 2000);
+    }
+
+    // Make functions globally available
+    window.setLang = setLang;
+    window.debugCheckWho = debugCheckWho;
+    window.forceRedirectToDeliveryList = forceRedirectToDeliveryList;
+
+    // Add performance monitoring
+    window.addEventListener('load', function() {
+      console.log('⚡ Page fully loaded');
+      
+      // Performance metrics
+      if (window.performance) {
+        const loadTime = window.performance.timing.loadEventEnd - window.performance.timing.navigationStart;
+        console.log(`📊 Page load time: ${loadTime}ms`);
+      }
+    });
+
+    // Handle page visibility changes
+    document.addEventListener('visibilitychange', function() {
+      if (document.hidden) {
+        console.log('👁️ Page hidden');
+      } else {
+        console.log('👁️ Page visible');
+        // If we're not checking and not redirecting, restart animations
+        if (!isChecking && !isRedirecting) {
+          document.querySelector('.logo').style.animationPlayState = 'running';
+        }
+      }
+    });
+
+    // Keyboard navigation support
+    document.addEventListener('keydown', function(e) {
+      if (isChecking || isRedirecting) return;
+      
+      switch(e.key) {
+        case '1':
+          navigateWithTransition('/delivery');
+          break;
+        case '2':
+          navigateWithTransition('/register');
+          break;
+        case 'd':
+          // Debug shortcut
+          debugCheckWho();
+          break;
+        case 'f':
+          // Force redirect shortcut (for testing)
+          forceRedirectToDeliveryList();
+          break;
+        case 'Escape':
+          if (window.Telegram && Telegram.WebApp) {
+            Telegram.WebApp.close();
+          }
+          break;
+      }
+    });
+
+    // Touch gesture support
+    let touchStartY = 0;
+    let touchEndY = 0;
+
+    document.addEventListener('touchstart', function(e) {
+      touchStartY = e.changedTouches[0].screenY;
+    });
+
+    document.addEventListener('touchend', function(e) {
+      touchEndY = e.changedTouches[0].screenY;
+      handleSwipe();
+    });
+
+    function handleSwipe() {
+      if (isChecking || isRedirecting) return;
+      
+      const swipeThreshold = 50;
+      const diff = touchStartY - touchEndY;
+      
+      if (Math.abs(diff) > swipeThreshold) {
+        if (diff > 0) {
+          // Swipe up - could trigger some action
+          console.log('👆 Swipe up detected');
+        } else {
+          // Swipe down - could refresh or close
+          console.log('👇 Swipe down detected');
+        }
+      }
+    }
+
+    // Error handling for network issues
+    window.addEventListener('online', function() {
+      console.log('🌐 Connection restored');
+      if (!isChecking && !isRedirecting) {
+        // Retry user check if we're still on welcome page
+        checkUserTypeAndRedirect();
+      }
+    });
+
+    window.addEventListener('offline', function() {
+      console.log('📵 Connection lost');
+      updateLoadingText('error');
+    });
+
+    // Prevent context menu on long press (mobile)
+    document.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+    });
+
+    // Add haptic feedback for Telegram
+    function addHapticFeedback() {
+      if (window.Telegram && Telegram.WebApp && Telegram.WebApp.HapticFeedback) {
+        Telegram.WebApp.HapticFeedback.impactOccurred('light');
+      }
+    }
+
+    // Add haptic feedback to buttons
+    document.querySelectorAll('.action-btn, .lang-btn').forEach(btn => {
+      btn.addEventListener('click', addHapticFeedback);
+    });
+
+    // Additional safety check - prevent infinite loops
+    let redirectAttempts = 0;
+    const maxRedirectAttempts = 3;
+
+    function safeRedirect(url) {
+      redirectAttempts++;
+      
+      if (redirectAttempts > maxRedirectAttempts) {
+        console.error('🚫 Too many redirect attempts, stopping');
+        updateLoadingText('error');
+        setTimeout(() => {
+          hideLoading();
+        }, 2000);
+        return;
+      }
+      
+      console.log(`🔄 Safe redirect attempt ${redirectAttempts}/${maxRedirectAttempts} to:`, url);
+      
+      try {
+        window.location.replace(url);
+      } catch (error) {
+        console.error('❌ Redirect failed:', error);
+        setTimeout(() => {
+          window.location.href = url; // Fallback to href
+        }, 1000);
+      }
+    }
+
+    // Override the redirect in checkUserTypeAndRedirect
+    function performDriverRedirect() {
+      console.log('🚗 Performing driver redirect...');
+      showDriverRedirectMessage();
+      isRedirecting = true;
+      updateLoadingText('redirectingDriver');
+      
+      // Use safe redirect
+      setTimeout(() => {
+        safeRedirect('/delivery-list');
+      }, 2000);
+    }
+
+    console.log('🎉 TezJet Welcome Page initialized successfully');
+    console.log('🔧 Debug commands: debugCheckWho(), forceRedirectToDeliveryList()');
+  </script>
+</body>
+</html>

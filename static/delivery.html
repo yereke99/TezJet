@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Delivery</title>
+  
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      height: 100vh;
+      overflow: hidden;
+      background: #f8f9fa;
+    }
+
+    #map {
+      height: 100vh;
+      width: 100vw;
+      position: fixed;
+      top: 0;
+      left: 0;
+    }
+
+    .leaflet-control { display: none; }
+
+    /* Top Controls */
+    .top-bar {
+      position: fixed;
+      top: env(safe-area-inset-top, 16px);
+      left: 16px;
+      right: 16px;
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .gps-status {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 12px 16px;
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .gps-dot {
+      width: 8px;
+      height: 8px;
+      background: #10b981;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.1); }
+    }
+
+    .lang-switch {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      display: flex;
+      padding: 3px;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .lang-btn {
+      padding: 8px 16px;
+      border: none;
+      background: none;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      color: #6b7280;
+    }
+
+    .lang-btn.active {
+      background: #000;
+      color: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    /* UBER-STYLE CENTER PIN - FIXED */
+    .center-pin {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -100%);
+      z-index: 999;
+      pointer-events: none;
+      display: none;
+    }
+
+    .center-pin.active {
+      display: block;
+      animation: pinDrop 0.3s ease-out;
+    }
+
+    @keyframes pinDrop {
+      0% { 
+        transform: translate(-50%, -150%) scale(0.8);
+        opacity: 0;
+      }
+      70% { 
+        transform: translate(-50%, -95%) scale(1.05);
+        opacity: 1;
+      }
+      100% { 
+        transform: translate(-50%, -100%) scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* UBER-STYLE PIN ICON - Small and Black */
+    .pin-icon {
+      width: 24px;
+      height: 24px;
+      background: #000;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      position: relative;
+      border: 2px solid #fff;
+    }
+
+    .pin-icon::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(45deg);
+      width: 6px;
+      height: 6px;
+      background: white;
+      border-radius: 50%;
+    }
+
+    /* Bottom Sheet */
+    .bottom-sheet {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-radius: 20px 20px 0 0;
+      box-shadow: 0 -4px 30px rgba(0,0,0,0.1);
+      z-index: 1001;
+      max-height: 75vh;
+      transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .sheet-handle {
+      width: 40px;
+      height: 4px;
+      background: #e5e7eb;
+      border-radius: 2px;
+      margin: 12px auto 8px;
+    }
+
+    .sheet-content {
+      padding: 0 20px 24px;
+      overflow-y: auto;
+      max-height: calc(75vh - 32px);
+    }
+
+    /* Step Indicator */
+    .step-indicator {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 20px;
+      padding: 0 20px;
+    }
+
+    .step-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #e5e7eb;
+      transition: all 0.3s ease;
+    }
+
+    .step-dot.active {
+      background: #000;
+      transform: scale(1.2);
+    }
+
+    /* Address Section */
+    .address-section {
+      margin-bottom: 24px;
+    }
+
+    .address-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: #f8f9fa;
+      border-radius: 16px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .address-card:active {
+      transform: scale(0.98);
+    }
+
+    .address-card.filled {
+      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+      border-color: #10b981;
+    }
+
+    .address-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #10b981, #059669);
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+    }
+
+    .address-card.filled::before {
+      transform: scaleX(1);
+    }
+
+    .marker {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #000;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 16px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .marker.dropoff {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+
+    .address-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .address-label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 4px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+
+    .address-value {
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.3;
+      color: #111827;
+    }
+
+    /* Route Info */
+    .route-info {
+      padding: 16px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      border-radius: 16px;
+      margin: 20px 0;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 600;
+      display: none;
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+    }
+
+    .route-info.active {
+      display: block;
+      animation: slideUp 0.5s ease;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Form Sections */
+    .form-step {
+      display: none;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .form-step.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: #111827;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .form-grid.two-col {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .form-field {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 16px;
+      border: 2px solid transparent;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .form-field:focus-within {
+      border-color: #10b981;
+      background: white;
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+    }
+
+    .field-label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 8px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .field-input {
+      width: 100%;
+      border: none;
+      background: none;
+      font-size: 16px;
+      font-weight: 500;
+      outline: none;
+      color: #111827;
+    }
+
+    .field-input::placeholder {
+      color: #9ca3af;
+    }
+
+    select.field-input {
+      cursor: pointer;
+    }
+
+    textarea.field-input {
+      min-height: 80px;
+      resize: none;
+      font-family: inherit;
+      line-height: 1.5;
+    }
+
+    /* Truck Type Grid */
+    .truck-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .truck-option {
+      padding: 16px;
+      background: #f8f9fa;
+      border-radius: 12px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+
+    .truck-option:hover {
+      background: #f3f4f6;
+    }
+
+    .truck-option.selected {
+      border-color: #10b981;
+      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+    }
+
+    .truck-icon {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .truck-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 4px;
+    }
+
+    .truck-desc {
+      font-size: 11px;
+      color: #6b7280;
+    }
+
+    /* FIXED BUTTON LAYOUT */
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #000, #374151);
+      color: white;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+
+    .btn-primary:disabled {
+      background: #d1d5db;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-secondary {
+      background: #f3f4f6;
+      color: #374151;
+      border: 2px solid #e5e7eb;
+    }
+
+    .btn-secondary:hover {
+      background: #e5e7eb;
+    }
+
+    /* FIXED BUTTON GRID - Full width for single buttons, side by side for two buttons */
+    .button-grid {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .button-grid.single {
+      grid-template-columns: 1fr;
+    }
+
+    .button-grid.double {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    /* Loading States */
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Success Screen */
+    .success-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      z-index: 3000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .success-screen.active {
+      display: flex;
+      animation: successSlideIn 0.5s ease-out;
+    }
+
+    @keyframes successSlideIn {
+      from { opacity: 0; transform: translateY(100%); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .success-icon {
+      font-size: 80px;
+      margin-bottom: 24px;
+      animation: successPulse 2s infinite;
+    }
+
+    @keyframes successPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    .success-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .success-message {
+      font-size: 18px;
+      opacity: 0.9;
+      margin-bottom: 32px;
+      line-height: 1.5;
+    }
+
+    .success-btn {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: 2px solid rgba(255,255,255,0.3);
+      padding: 16px 32px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .success-btn:hover {
+      background: rgba(255,255,255,0.3);
+      transform: translateY(-2px);
+    }
+
+    /* Picker Modal */
+    .picker-modal {
+      position: fixed;
+      inset: 0;
+      background: white;
+      z-index: 2000;
+      display: none;
+    }
+
+    .picker-modal.active {
+      display: block;
+      animation: slideInUp 0.4s ease;
+    }
+
+    @keyframes slideInUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .picker-header {
+      position: fixed;
+      top: env(safe-area-inset-top, 16px);
+      left: 16px;
+      right: 16px;
+      z-index: 2001;
+      display: flex;
+      gap: 12px;
+    }
+
+    .back-btn {
+      width: 44px;
+      height: 44px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.3s ease;
+      font-size: 18px;
+    }
+
+    .back-btn:hover {
+      transform: scale(1.05);
+    }
+
+    .search-box {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: none;
+      border-radius: 12px;
+      padding: 12px 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      font-size: 15px;
+      outline: none;
+      font-weight: 500;
+    }
+
+    .search-box::placeholder {
+      color: #9ca3af;
+    }
+
+    #pickerMap {
+      height: 100vh;
+      width: 100vw;
+    }
+
+    .address-bar {
+      position: fixed;
+      top: 84px;
+      left: 16px;
+      right: 16px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 2001;
+      display: none;
+      line-height: 1.4;
+    }
+
+    .address-bar.active {
+      display: block;
+    }
+
+    .confirm-btn {
+      position: fixed;
+      bottom: env(safe-area-inset-bottom, 24px);
+      left: 16px;
+      right: 16px;
+      z-index: 2001;
+    }
+
+    /* Suggestions */
+    .suggestions {
+      position: fixed;
+      top: 140px;
+      left: 16px;
+      right: 16px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      max-height: 60vh;
+      overflow-y: auto;
+      z-index: 2002;
+      display: none;
+    }
+
+    .suggestions.active {
+      display: block;
+    }
+
+    .suggestion-item {
+      padding: 16px;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .suggestion-item:hover {
+      background: rgba(0,0,0,0.02);
+    }
+
+    .suggestion-item:last-child {
+      border-bottom: none;
+    }
+
+    /* Custom Map Markers - Uber Style */
+    .user-marker {
+      width: 14px;
+      height: 14px;
+      background: #3b82f6;
+      border: 3px solid white;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .custom-marker {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: white;
+      font-size: 14px;
+      border: 3px solid white;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.25);
+    }
+
+    .custom-marker.pickup {
+      background: linear-gradient(135deg, #000, #374151);
+    }
+
+    .custom-marker.dropoff {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+
+    /* Mobile optimizations */
+    @media (max-height: 700px) {
+      .bottom-sheet {
+        max-height: 80vh;
+      }
+      .sheet-content {
+        max-height: calc(80vh - 32px);
+      }
+    }
+
+    /* Utilities */
+    .text-center { text-align: center; }
+    .mb-4 { margin-bottom: 16px; }
+    .mt-4 { margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  
+  <!-- Top Controls -->
+  <div class="top-bar">
+    <div class="gps-status">
+      <div class="gps-dot"></div>
+      <span id="gpsText">GPS активен</span>
+    </div>
+    <div class="lang-switch">
+      <button class="lang-btn active" onclick="setLang('ru')">РУС</button>
+      <button class="lang-btn" onclick="setLang('kz')">ҚАЗ</button>
+    </div>
+  </div>
+
+  <!-- UBER-STYLE CENTER PIN -->
+  <div class="center-pin" id="centerPin">
+    <div class="pin-icon"></div>
+  </div>
+
+  <!-- Success Screen -->
+  <div class="success-screen" id="successScreen">
+    <div class="success-icon">🎉</div>
+    <div class="success-title">Заказ отправлен!</div>
+    <div class="success-message">Ищем доступных водителей...<br>Это займет несколько секунд</div>
+    <button class="success-btn" onclick="goToDriverList()">Посмотреть водителей</button>
+  </div>
+
+  <!-- Bottom Sheet -->
+  <div class="bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="step-indicator">
+      <div class="step-dot active" id="step1"></div>
+      <div class="step-dot" id="step2"></div>
+      <div class="step-dot" id="step3"></div>
+    </div>
+    
+    <div class="sheet-content">
+      <!-- Step 1: Address Selection -->
+      <div class="form-step active" id="stepAddresses">
+        <div class="address-section">
+          <div class="address-card" onclick="openPicker('pickup')">
+            <div class="marker">A</div>
+            <div class="address-text">
+              <div class="address-label" data-i18n="from">📍 Откуда</div>
+              <div class="address-value" id="pickupAddr" data-i18n="locating">Определение местоположения...</div>
+            </div>
+          </div>
+
+          <div class="address-card" onclick="openPicker('dropoff')">
+            <div class="marker dropoff">B</div>
+            <div class="address-text">
+              <div class="address-label" data-i18n="to">📍 Куда</div>
+              <div class="address-value" id="dropoffAddr" data-i18n="selectDest">Выберите адрес назначения</div>
+            </div>
+          </div>
+
+          <div class="route-info" id="routeInfo"></div>
+        </div>
+
+        <div class="button-grid single">
+          <button class="btn btn-primary" id="nextStep1" onclick="goToStep(2)" disabled>
+            Далее
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: Delivery Details -->
+      <div class="form-step" id="stepDetails">
+        <div class="form-title">Детали доставки</div>
+        
+        <div class="form-grid">
+          <div class="form-field">
+            <div class="field-label">💰 Цена (тенге)</div>
+            <input type="number" class="field-input" id="price" placeholder="5000" min="2000" oninput="validateCurrentStep()">
+          </div>
+        </div>
+
+        <div class="field-label mb-4">🚚 Тип транспорта</div>
+        <div class="truck-grid">
+          <div class="truck-option" onclick="selectTruck('small')">
+            <div class="truck-icon">🚐</div>
+            <div class="truck-name">Малый</div>
+            <div class="truck-desc">до 1.5 тонн</div>
+          </div>
+          <div class="truck-option" onclick="selectTruck('medium')">
+            <div class="truck-icon">🚚</div>
+            <div class="truck-name">Средний</div>
+            <div class="truck-desc">до 5 тонн</div>
+          </div>
+          <div class="truck-option" onclick="selectTruck('large')">
+            <div class="truck-icon">🚛</div>
+            <div class="truck-name">Большой</div>
+            <div class="truck-desc">до 20 тонн</div>
+          </div>
+          <div class="truck-option" onclick="selectTruck('any')">
+            <div class="truck-icon">🚙</div>
+            <div class="truck-name">Любой</div>
+            <div class="truck-desc">подойдет любой</div>
+          </div>
+        </div>
+
+        <div class="form-grid two-col">
+          <div class="form-field">
+            <div class="field-label">📅 Дата</div>
+            <input type="date" class="field-input" id="date" oninput="validateCurrentStep()">
+          </div>
+          <div class="form-field">
+            <div class="field-label">⏰ Время</div>
+            <input type="time" class="field-input" id="time" oninput="validateCurrentStep()">
+          </div>
+        </div>
+
+        <div class="button-grid double">
+          <button class="btn btn-secondary" onclick="goToStep(1)">Назад</button>
+          <button class="btn btn-primary" id="nextStep2" onclick="goToStep(3)" disabled>Далее</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Contact & Submit -->
+      <div class="form-step" id="stepContact">
+        <div class="form-title">Контактная информация</div>
+        
+        <div class="form-grid">
+          <div class="form-field">
+            <div class="field-label">📱 Телефон</div>
+            <input type="tel" class="field-input" id="phone" placeholder="+7 (___) ___-__-__" oninput="formatPhone(this); validateCurrentStep()">
+          </div>
+          
+          <div class="form-field">
+            <div class="field-label">💬 Комментарий (необязательно)</div>
+            <textarea class="field-input" id="comment" placeholder="Дополнительная информация для водителя..."></textarea>
+          </div>
+        </div>
+
+        <div class="button-grid double">
+          <button class="btn btn-secondary" onclick="goToStep(2)">Назад</button>
+          <button class="btn btn-primary" id="submitBtn" onclick="submitOrder()" disabled>
+            <span id="submitText">Отправить заказ</span>
+            <div class="loading" id="submitLoading" style="display: none;"></div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Picker Modal -->
+  <div class="picker-modal" id="pickerModal">
+    <div id="pickerMap"></div>
+    <div class="picker-header">
+      <button class="back-btn" onclick="closePicker()">←</button>
+      <input type="text" class="search-box" id="searchBox" placeholder="Поиск адреса..." oninput="searchAddress(this.value)">
+    </div>
+    <div class="address-bar active" id="pickerAddress">Загрузка...</div>
+    <div class="center-pin active">
+      <div class="pin-icon"></div>
+    </div>
+    <div class="suggestions" id="suggestions"></div>
+    <button class="btn btn-primary confirm-btn" onclick="confirmPicker()">Выбрать эту точку</button>
+  </div>
+
+  <script>
+    // State
+    let state = {
+      lang: 'ru',
+      userLoc: null,
+      pickup: null,
+      dropoff: null,
+      pickingFor: null,
+      route: null,
+      currentStep: 1,
+      selectedTruck: null,
+      orderData: null
+    };
+
+    // i18n
+    const i18n = {
+      ru: {
+        from: '📍 Откуда',
+        to: '📍 Куда',
+        locating: 'Определение местоположения...',
+        selectDest: 'Выберите адрес назначения',
+        submit: 'Отправить заказ',
+        gpsActive: 'GPS активен',
+        searching: 'Поиск GPS...',
+        choose: 'Выбрать эту точку'
+      },
+      kz: {
+        from: '📍 Қайдан',
+        to: '📍 Қайда',
+        locating: 'Орынды анықтау...',
+        selectDest: 'Баратын жерді таңдаңыз',
+        submit: 'Тапсырысты жіберу',
+        gpsActive: 'GPS белсенді',
+        searching: 'GPS іздеу...',
+        choose: 'Бұл нүктені таңдау'
+      }
+    };
+
+    // Maps
+    let map, pickerMap, routeLayer;
+
+    // Initialize main map
+    function initMap() {
+      map = L.map('map', {
+        center: [43.238949, 76.889709],
+        zoom: 14,
+        zoomControl: false,
+        attributionControl: false
+      });
+
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19
+      }).addTo(map);
+
+      // Start GPS
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            const {latitude: lat, longitude: lng} = pos.coords;
+            state.userLoc = {lat, lng};
+            
+            // Add user marker
+            L.marker([lat, lng], {
+              icon: L.divIcon({
+                className: 'user-marker',
+                iconSize: [14, 14],
+                iconAnchor: [7, 7]
+              })
+            }).addTo(map);
+
+            // Set pickup to current location
+            reverseGeocode(lat, lng).then(addr => {
+              state.pickup = {lat, lng, address: addr};
+              document.getElementById('pickupAddr').textContent = addr;
+              document.querySelectorAll('.address-card')[0].classList.add('filled');
+              addMarker('pickup', lat, lng);
+              validateCurrentStep();
+            });
+
+            map.setView([lat, lng], 15);
+          },
+          () => console.log('GPS error'),
+          {enableHighAccuracy: true}
+        );
+      }
+    }
+
+    // Initialize picker map
+    function initPickerMap() {
+      if (pickerMap) return;
+      
+      pickerMap = L.map('pickerMap', {
+        center: map.getCenter(),
+        zoom: 16,
+        zoomControl: false,
+        attributionControl: false
+      });
+
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19
+      }).addTo(pickerMap);
+
+      // Update address on move
+      pickerMap.on('moveend', async () => {
+        const {lat, lng} = pickerMap.getCenter();
+        const addr = await reverseGeocode(lat, lng);
+        document.getElementById('pickerAddress').textContent = addr;
+      });
+    }
+
+    // Step management
+    function goToStep(step) {
+      // Hide all steps
+      document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.step-dot').forEach(d => d.classList.remove('active'));
+      
+      // Show current step
+      document.getElementById(`step${step === 1 ? 'Addresses' : step === 2 ? 'Details' : 'Contact'}`).classList.add('active');
+      document.getElementById(`step${step}`).classList.add('active');
+      
+      state.currentStep = step;
+      validateCurrentStep();
+    }
+
+    // Validate current step
+    function validateCurrentStep() {
+      let isValid = false;
+      
+      if (state.currentStep === 1) {
+        isValid = state.pickup && state.dropoff;
+        document.getElementById('nextStep1').disabled = !isValid;
+      } else if (state.currentStep === 2) {
+        const price = Number(document.getElementById('price').value);
+        const date = document.getElementById('date').value;
+        const time = document.getElementById('time').value;
+        isValid = price >= 2000 && date && time && state.selectedTruck;
+        document.getElementById('nextStep2').disabled = !isValid;
+      } else if (state.currentStep === 3) {
+        const phone = document.getElementById('phone').value;
+        isValid = phone.length >= 18; // Formatted phone length
+        document.getElementById('submitBtn').disabled = !isValid;
+      }
+    }
+
+    // Select truck type
+    function selectTruck(type) {
+      document.querySelectorAll('.truck-option').forEach(opt => opt.classList.remove('selected'));
+      event.target.closest('.truck-option').classList.add('selected');
+      state.selectedTruck = type;
+      validateCurrentStep();
+    }
+
+    // Reverse geocoding
+    async function reverseGeocode(lat, lng) {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=${state.lang}`);
+        const data = await res.json();
+        const addr = data.address || {};
+        return [addr.road, addr.house_number, addr.city || addr.town].filter(Boolean).join(', ') || data.display_name;
+      } catch {
+        return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      }
+    }
+
+    // Search address
+    async function searchAddress(query) {
+      if (query.length < 3) {
+        document.getElementById('suggestions').classList.remove('active');
+        return;
+      }
+
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=10&countrycodes=kz&accept-language=${state.lang}`);
+        const results = await res.json();
+        
+        const html = results.map(r => 
+          `<div class="suggestion-item" onclick="selectSuggestion(${r.lat}, ${r.lon})">${r.display_name}</div>`
+        ).join('');
+        
+        document.getElementById('suggestions').innerHTML = html;
+        document.getElementById('suggestions').classList.add('active');
+      } catch {
+        console.log('Search error');
+      }
+    }
+
+    // Select suggestion
+    function selectSuggestion(lat, lon) {
+      pickerMap.setView([lat, lon], 17);
+      document.getElementById('suggestions').classList.remove('active');
+      document.getElementById('searchBox').value = '';
+    }
+
+    // Open picker
+    function openPicker(type) {
+      state.pickingFor = type;
+      document.getElementById('pickerModal').classList.add('active');
+      initPickerMap();
+      
+      setTimeout(() => {
+        pickerMap.invalidateSize();
+        const center = type === 'pickup' && state.pickup ? 
+          [state.pickup.lat, state.pickup.lng] : 
+          type === 'dropoff' && state.dropoff ?
+          [state.dropoff.lat, state.dropoff.lng] :
+          state.userLoc ? [state.userLoc.lat, state.userLoc.lng] :
+          map.getCenter();
+        
+        pickerMap.setView(center, 16);
+        pickerMap.fire('moveend');
+      }, 100);
+    }
+
+    // Close picker
+    function closePicker() {
+      document.getElementById('pickerModal').classList.remove('active');
+      document.getElementById('suggestions').classList.remove('active');
+    }
+
+    // Confirm picker selection
+    async function confirmPicker() {
+      const {lat, lng} = pickerMap.getCenter();
+      const addr = await reverseGeocode(lat, lng);
+      
+      if (state.pickingFor === 'pickup') {
+        state.pickup = {lat, lng, address: addr};
+        document.getElementById('pickupAddr').textContent = addr;
+        document.querySelectorAll('.address-card')[0].classList.add('filled');
+        addMarker('pickup', lat, lng);
+      } else {
+        state.dropoff = {lat, lng, address: addr};
+        document.getElementById('dropoffAddr').textContent = addr;
+        document.querySelectorAll('.address-card')[1].classList.add('filled');
+        addMarker('dropoff', lat, lng);
+      }
+      
+      closePicker();
+      
+      if (state.pickup && state.dropoff) {
+        await drawRoute();
+        validateCurrentStep();
+      }
+    }
+
+    // Add marker
+    function addMarker(type, lat, lng) {
+      const icon = L.divIcon({
+        className: `custom-marker ${type}`,
+        html: type === 'pickup' ? 'A' : 'B',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+      });
+      
+      if (window[`${type}Marker`]) map.removeLayer(window[`${type}Marker`]);
+      window[`${type}Marker`] = L.marker([lat, lng], {icon}).addTo(map);
+    }
+
+    // Draw route with better scaling
+    async function drawRoute() {
+      if (routeLayer) map.removeLayer(routeLayer);
+      
+      try {
+        const res = await fetch(
+          `https://router.project-osrm.org/route/v1/driving/${state.pickup.lng},${state.pickup.lat};${state.dropoff.lng},${state.dropoff.lat}?overview=full&geometries=geojson`
+        );
+        const data = await res.json();
+        
+        if (data.routes?.[0]) {
+          const route = data.routes[0];
+          const coords = route.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+          
+          routeLayer = L.polyline(coords, {
+            color: '#10b981',
+            weight: 5,
+            opacity: 0.8,
+            lineJoin: 'round',
+            lineCap: 'round'
+          }).addTo(map);
+          
+          // Better bounds calculation for optimal route visibility
+          const bounds = L.latLngBounds(coords);
+          const paddingOptions = {
+            paddingTopLeft: [20, 120],     // Account for top controls
+            paddingBottomRight: [20, 280]   // Account for bottom sheet
+          };
+          
+          map.fitBounds(bounds, paddingOptions);
+          
+          const km = (route.distance / 1000).toFixed(1);
+          const min = Math.round(route.duration / 60);
+          
+          state.route = {
+            distance: route.distance,
+            duration: route.duration
+          };
+          
+          document.getElementById('routeInfo').innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; gap: 16px;">
+              <span>🛣️ ${km} км</span>
+              <span>⏱️ ${min} мин</span>
+            </div>
+          `;
+          document.getElementById('routeInfo').classList.add('active');
+        }
+      } catch {
+        console.log('Route error');
+      }
+    }
+
+    // Phone formatting
+    function formatPhone(input) {
+      let val = input.value.replace(/\D/g, '');
+      if (!val) return;
+      if (val[0] !== '7') val = '7' + val;
+      
+      let fmt = '+7';
+      if (val.length > 1) fmt += ` (${val.slice(1, 4)}`;
+      if (val.length >= 4) fmt += ')';
+      if (val.length > 4) fmt += ` ${val.slice(4, 7)}`;
+      if (val.length > 7) fmt += `-${val.slice(7, 9)}`;
+      if (val.length > 9) fmt += `-${val.slice(9, 11)}`;
+      
+      input.value = fmt;
+    }
+
+    // Submit order with proper API call
+    async function submitOrder() {
+      const submitBtn = document.getElementById('submitBtn');
+      const submitText = document.getElementById('submitText');
+      const submitLoading = document.getElementById('submitLoading');
+      const tg = window.Telegram?.WebApp;
+      
+      // Show loading state
+      submitBtn.disabled = true;
+      submitText.style.display = 'none';
+      submitLoading.style.display = 'block';
+      
+      try {
+        const formData = new FormData();
+        
+        // Add all form data
+        formData.append('from_address', state.pickup.address);
+        formData.append('from_lat', state.pickup.lat);
+        formData.append('from_lon', state.pickup.lng);
+        formData.append('to_address', state.dropoff.address);
+        formData.append('to_lat', state.dropoff.lat);
+        formData.append('to_lon', state.dropoff.lng);
+        formData.append('price', document.getElementById('price').value);
+        formData.append('truck_type', state.selectedTruck);
+        formData.append('date', document.getElementById('date').value);
+        formData.append('time', document.getElementById('time').value);
+        formData.append('contact', document.getElementById('phone').value);
+        formData.append('comment', document.getElementById('comment').value);
+        
+        // Add Telegram user info if available
+        if (tg?.initDataUnsafe?.user) {
+          formData.append('telegram_id', tg.initDataUnsafe.user.id);
+          formData.append('telegram_username', tg.initDataUnsafe.user.username || '');
+          formData.append('telegram_first_name', tg.initDataUnsafe.user.first_name || '');
+          formData.append('telegram_last_name', tg.initDataUnsafe.user.last_name || '');
+        }
+        
+        // Route info if available
+        if (state.route) {
+          formData.append('distance', state.route.distance);
+          formData.append('duration', state.route.duration);
+        }
+
+        const res = await fetch('/api/delivery-request', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const json = await res.json().catch(() => ({success: false}));
+        
+        if (json?.success) {
+          // Store order data for driver list
+          state.orderData = {
+            pickup: state.pickup,
+            dropoff: state.dropoff,
+            price: document.getElementById('price').value,
+            truck_type: state.selectedTruck,
+            contact: document.getElementById('phone').value,
+            comment: document.getElementById('comment').value,
+            request_id: json.data?.request_id
+          };
+          
+          // Show success screen
+          showSuccessScreen();
+          
+        } else {
+          throw new Error(json?.message || 'Request failed');
+        }
+        
+      } catch (error) {
+        const errorMsg = `Error: ${error.message}`;
+        
+        if (tg) {
+          tg.showAlert(errorMsg);
+        } else {
+          alert(errorMsg);
+        }
+      } finally {
+        // Reset button state
+        submitBtn.disabled = false;
+        submitText.style.display = 'block';
+        submitLoading.style.display = 'none';
+        validateCurrentStep();
+      }
+    }
+
+    // Show success screen
+    function showSuccessScreen() {
+      document.getElementById('successScreen').classList.add('active');
+      
+      // Auto redirect after 3 seconds
+      setTimeout(() => {
+        goToDriverList();
+      }, 3000);
+    }
+
+    // Go to driver list with order data
+    function goToDriverList() {
+      const orderData = encodeURIComponent(JSON.stringify(state.orderData));
+      window.location.href = `/driver-list?order=${orderData}`;
+    }
+
+    // Set language
+    function setLang(lang) {
+      state.lang = lang;
+      document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.dataset.i18n;
+        if (i18n[lang][key]) el.textContent = i18n[lang][key];
+      });
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      initMap();
+      
+      // Set default date/time
+      const now = new Date();
+      document.getElementById('date').valueAsDate = now;
+      document.getElementById('time').value = now.toTimeString().slice(0, 5);
+      
+      // Telegram WebApp setup
+      if (window.Telegram?.WebApp) {
+        const tg = Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        tg.disableVerticalSwipes();
+        
+        // Set theme colors
+        if (tg.colorScheme === 'dark') {
+          document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

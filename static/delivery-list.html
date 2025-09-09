@@ -1,0 +1,2373 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Заказы | Тапсырыстар</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <style>
+    :root {
+      --tg-theme-bg-color: #ffffff;
+      --tg-theme-text-color: #000000;
+      --tg-theme-hint-color: #999999;
+      --tg-theme-link-color: #2481cc;
+      --tg-theme-button-color: #2481cc;
+      --tg-theme-button-text-color: #ffffff;
+      --primary: #10b981;
+      --primary-dark: #059669;
+      --secondary: #3b82f6;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #22c55e;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+      --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.2);
+      --gradient: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      
+      /* Responsive breakpoints */
+      --mobile-max: 767px;
+      --tablet-min: 768px;
+      --tablet-max: 1023px;
+      --desktop-min: 1024px;
+      --large-desktop-min: 1440px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+      background: var(--tg-theme-bg-color, var(--bg));
+      color: var(--tg-theme-text-color, var(--text));
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding: 0;
+      margin: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      font-size: clamp(14px, 2vw, 16px);
+      line-height: 1.5;
+    }
+
+    /* Container for desktop layout */
+    .app-container {
+      max-width: 100%;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    /* Header - Responsive */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: var(--tg-theme-bg-color, white);
+      border-bottom: 1px solid var(--border);
+      padding: clamp(12px, 3vw, 20px) clamp(12px, 4vw, 24px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(20px);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: clamp(8px, 2vw, 16px);
+    }
+
+    .profile-btn {
+      width: clamp(36px, 8vw, 48px);
+      height: clamp(36px, 8vw, 48px);
+      border: none;
+      background: var(--gradient);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+      touch-action: manipulation;
+    }
+
+    .profile-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    .profile-btn:hover {
+      transform: scale(1.1);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .profile-btn.no-photo {
+      background: var(--gradient);
+      color: white;
+      font-size: clamp(16px, 4vw, 20px);
+      font-weight: bold;
+    }
+
+    .header-title {
+      font-size: clamp(14px, 3vw, 18px);
+      font-weight: 700;
+      color: var(--text);
+      cursor: pointer;
+      padding: clamp(6px, 2vw, 10px) clamp(8px, 3vw, 14px);
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      border: 1px solid var(--border);
+      background-color: #f8fafc;
+      touch-action: manipulation;
+    }
+
+    .header-title:hover {
+      background: var(--gradient);
+      color: white;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: clamp(8px, 2vw, 16px);
+    }
+
+    .refresh-btn {
+      width: clamp(36px, 8vw, 48px);
+      height: clamp(36px, 8vw, 48px);
+      border: none;
+      background: var(--gradient);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: clamp(14px, 3vw, 18px);
+      transition: all 0.3s ease;
+      touch-action: manipulation;
+    }
+
+    .refresh-btn:hover {
+      transform: rotate(180deg) scale(1.1);
+    }
+
+    .refresh-btn.loading {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .lang-switch {
+      display: flex;
+      background: #f1f5f9;
+      border-radius: 20px;
+      padding: 2px;
+    }
+
+    .lang-btn {
+      padding: clamp(4px, 1.5vw, 8px) clamp(8px, 2.5vw, 14px);
+      border: none;
+      background: transparent;
+      border-radius: 18px;
+      font-size: clamp(10px, 2.5vw, 13px);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      color: var(--text-muted);
+      touch-action: manipulation;
+      min-width: 44px; /* Minimum touch target */
+    }
+
+    .lang-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* Stats Bar - Responsive */
+    .stats-bar {
+      padding: clamp(12px, 3vw, 20px);
+      background: var(--gradient);
+      color: white;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: clamp(8px, 2vw, 16px);
+      text-align: center;
+    }
+
+    .stat-item {
+      padding: clamp(8px, 2vw, 12px);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .stat-value {
+      font-size: clamp(16px, 4vw, 24px);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: clamp(9px, 2vw, 12px);
+      opacity: 0.9;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Filter Bar - Responsive */
+    .filter-bar {
+      padding: clamp(8px, 2vw, 16px);
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: clamp(6px, 1.5vw, 12px);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .filter-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .filter-chip {
+      padding: clamp(6px, 1.5vw, 10px) clamp(10px, 2.5vw, 16px);
+      border-radius: 16px;
+      background: #f1f5f9;
+      color: var(--text-muted);
+      font-size: clamp(11px, 2.5vw, 14px);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+      border: 2px solid transparent;
+      touch-action: manipulation;
+      min-height: 44px; /* Minimum touch target */
+      display: flex;
+      align-items: center;
+    }
+
+    .filter-chip.active {
+      background: var(--primary);
+      color: white;
+      transform: scale(1.05);
+    }
+
+    /* New order notification - Responsive */
+    .new-order-notification {
+      position: fixed;
+      top: clamp(100px, 15vh, 140px);
+      left: clamp(12px, 3vw, 20px);
+      right: clamp(12px, 3vw, 20px);
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+      padding: clamp(12px, 3vw, 20px);
+      border-radius: 16px;
+      box-shadow: 0 8px 25px rgba(34, 197, 94, 0.4);
+      z-index: 1001;
+      display: none;
+      animation: slideInNotification 0.5s ease-out;
+    }
+
+    .new-order-notification.show {
+      display: block;
+    }
+
+    @keyframes slideInNotification {
+      from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .notification-content {
+      display: flex;
+      align-items: center;
+      gap: clamp(8px, 2vw, 16px);
+    }
+
+    .notification-icon {
+      font-size: clamp(20px, 5vw, 28px);
+      animation: bounceIcon 0.6s ease-out;
+    }
+
+    @keyframes bounceIcon {
+      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-8px); }
+      60% { transform: translateY(-4px); }
+    }
+
+    .notification-text {
+      flex: 1;
+    }
+
+    .notification-title {
+      font-size: clamp(14px, 3.5vw, 18px);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .notification-subtitle {
+      font-size: clamp(12px, 3vw, 15px);
+      opacity: 0.9;
+    }
+
+    /* Order List - Responsive Grid Layout */
+    .order-list {
+      padding: clamp(8px, 2vw, 16px);
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: clamp(8px, 2vw, 16px);
+      padding-bottom: clamp(80px, 15vh, 120px);
+      min-height: 60vh;
+    }
+
+    /* Desktop Layout */
+    @media (min-width: 1024px) {
+      .app-container {
+        max-width: 1200px;
+        padding: 0 20px;
+      }
+      
+      .order-list {
+        grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+        gap: 20px;
+        padding: 20px;
+      }
+      
+      .header {
+        padding: 20px 24px;
+      }
+      
+      .stats-bar {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+        padding: 24px;
+      }
+      
+      .filter-bar {
+        justify-content: center;
+        padding: 16px 24px;
+      }
+    }
+
+    /* Large Desktop Layout */
+    @media (min-width: 1440px) {
+      .app-container {
+        max-width: 1400px;
+      }
+      
+      .order-list {
+        grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+        gap: 24px;
+      }
+    }
+
+    /* Tablet Layout */
+    @media (min-width: 768px) and (max-width: 1023px) {
+      .order-list {
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 16px;
+        padding: 16px;
+      }
+      
+      .stats-bar {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+    }
+
+    .order-card {
+      background: var(--card);
+      border-radius: clamp(12px, 3vw, 20px);
+      padding: clamp(12px, 3vw, 20px);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      transform: translateY(0);
+      will-change: transform;
+      touch-action: manipulation;
+    }
+
+    .order-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 3px;
+      height: 100%;
+      background: var(--primary);
+      transition: all 0.3s ease;
+    }
+
+    .order-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .order-card.new::before {
+      background: var(--warning);
+    }
+
+    .order-card.loading {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: clamp(8px, 2vw, 16px);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .order-id {
+      font-size: clamp(10px, 2.5vw, 12px);
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .order-time {
+      font-size: clamp(10px, 2.5vw, 12px);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .new-badge {
+      background: var(--warning);
+      color: white;
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-size: clamp(8px, 2vw, 10px);
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-left: 6px;
+      animation: badgePulse 1s infinite;
+    }
+
+    @keyframes badgePulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .order-route {
+      margin-bottom: clamp(8px, 2vw, 16px);
+    }
+
+    .route-point {
+      display: flex;
+      align-items: flex-start;
+      gap: clamp(8px, 2vw, 12px);
+      margin-bottom: clamp(6px, 1.5vw, 10px);
+      position: relative;
+    }
+
+    .route-point:last-child {
+      margin-bottom: 0;
+    }
+
+    .route-point::after {
+      content: '';
+      position: absolute;
+      left: clamp(8px, 2vw, 12px);
+      top: clamp(18px, 4vw, 24px);
+      width: 2px;
+      height: calc(100% + 4px);
+      background: var(--border);
+      z-index: 1;
+    }
+
+    .route-point:last-child::after {
+      display: none;
+    }
+
+    .route-marker {
+      width: clamp(18px, 4vw, 24px);
+      height: clamp(18px, 4vw, 24px);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(9px, 2.5vw, 12px);
+      font-weight: bold;
+      color: white;
+      flex-shrink: 0;
+      z-index: 2;
+      position: relative;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    .route-marker.from {
+      background: var(--success);
+    }
+
+    .route-marker.to {
+      background: var(--danger);
+    }
+
+    .route-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .route-label {
+      font-size: clamp(9px, 2vw, 11px);
+      color: var(--text-muted);
+      margin-bottom: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .route-address {
+      font-size: clamp(12px, 3vw, 14px);
+      color: var(--text);
+      font-weight: 500;
+      line-height: 1.3;
+      word-wrap: break-word;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .order-details {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: clamp(6px, 1.5vw, 12px);
+      margin-bottom: clamp(6px, 1.5vw, 10px);
+    }
+
+    .detail-item {
+      text-align: center;
+      padding: clamp(6px, 1.5vw, 10px);
+      background: #f8fafc;
+      border-radius: 8px;
+    }
+
+    .detail-value {
+      font-size: clamp(12px, 3vw, 16px);
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+
+    .detail-value.price {
+      color: var(--primary);
+      font-size: clamp(14px, 3.5vw, 18px);
+    }
+
+    .detail-label {
+      font-size: clamp(8px, 2vw, 10px);
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .order-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: clamp(6px, 1.5vw, 10px);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .order-comment {
+      flex: 1;
+      font-size: clamp(11px, 2.5vw, 13px);
+      color: var(--text-muted);
+      font-style: italic;
+      margin-right: 8px;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .truck-type {
+      padding: 3px 6px;
+      background: #f1f5f9;
+      border-radius: 6px;
+      font-size: clamp(9px, 2vw, 11px);
+      font-weight: 600;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .distance-badge {
+      position: absolute;
+      top: clamp(10px, 2.5vw, 15px);
+      right: clamp(10px, 2.5vw, 15px);
+      background: var(--warning);
+      color: white;
+      padding: 3px 6px;
+      border-radius: 8px;
+      font-size: clamp(8px, 2vw, 10px);
+      font-weight: 700;
+    }
+
+    .distance-badge.nearby {
+      background: var(--success);
+    }
+
+    /* Empty State - Responsive */
+    .empty-state {
+      text-align: center;
+      padding: clamp(40px, 10vh, 80px) clamp(16px, 4vw, 24px);
+    }
+
+    .empty-icon {
+      font-size: clamp(36px, 8vw, 56px);
+      margin-bottom: clamp(12px, 3vw, 20px);
+      opacity: 0.5;
+    }
+
+    .empty-title {
+      font-size: clamp(16px, 4vw, 22px);
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: clamp(6px, 1.5vw, 10px);
+    }
+
+    .empty-message {
+      font-size: clamp(13px, 3vw, 16px);
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Loading State - Responsive */
+    .loading-state {
+      text-align: center;
+      padding: clamp(30px, 8vh, 50px) clamp(16px, 4vw, 24px);
+    }
+
+    .loading-spinner {
+      width: clamp(28px, 6vw, 40px);
+      height: clamp(28px, 6vw, 40px);
+      border: 3px solid var(--border);
+      border-top: 3px solid var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto clamp(12px, 3vw, 20px);
+    }
+
+    .loading-text {
+      font-size: clamp(13px, 3vw, 16px);
+      color: var(--text-muted);
+    }
+
+    /* Performance optimized card loading animation */
+    .order-card.fade-in {
+      animation: fadeInUp 0.4s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* UBER-STYLE Detail Modal - Responsive */
+    .detail-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      z-index: 2000;
+      display: none;
+      align-items: flex-end;
+    }
+
+    .detail-modal.show {
+      display: flex;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .detail-sheet {
+      background: var(--card);
+      border-radius: 20px 20px 0 0;
+      width: 100%;
+      height: 95vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    /* Desktop Modal Adjustments */
+    @media (min-width: 1024px) {
+      .detail-modal {
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .detail-sheet {
+        width: 90%;
+        max-width: 900px;
+        height: 85vh;
+        border-radius: 20px;
+        animation: scaleIn 0.3s ease;
+      }
+      
+      @keyframes scaleIn {
+        from { 
+          opacity: 0;
+          transform: scale(0.9);
+        }
+        to { 
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+    }
+
+    /* Tablet Modal Adjustments */
+    @media (min-width: 768px) and (max-width: 1023px) {
+      .detail-sheet {
+        height: 90vh;
+        border-radius: 20px 20px 0 0;
+      }
+    }
+
+    .detail-header {
+      padding: clamp(12px, 3vw, 20px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: white;
+      z-index: 10;
+    }
+
+    .detail-title {
+      font-size: clamp(15px, 3.5vw, 20px);
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .close-btn {
+      width: clamp(30px, 6vw, 40px);
+      height: clamp(30px, 6vw, 40px);
+      border: none;
+      background: #f1f5f9;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: clamp(14px, 3vw, 18px);
+      transition: all 0.3s ease;
+      touch-action: manipulation;
+    }
+
+    .close-btn:hover {
+      background: #e2e8f0;
+      transform: scale(1.1);
+    }
+
+    .detail-content {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Responsive Map Layout */
+    .detail-map {
+      height: 50%;
+      position: relative;
+      overflow: hidden;
+      background: #ffffff;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    @media (min-width: 1024px) {
+      .detail-content {
+        flex-direction: row;
+      }
+      
+      .detail-map {
+        width: 60%;
+        height: 100%;
+        border-bottom: none;
+        border-right: 1px solid #f0f0f0;
+      }
+      
+      .detail-info {
+        width: 40%;
+        height: 100%;
+      }
+    }
+
+    #detailMap {
+      width: 100%;
+      height: 100%;
+    }
+
+    .map-overlay {
+      position: absolute;
+      top: clamp(12px, 3vw, 24px);
+      left: clamp(12px, 3vw, 24px);
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(20px);
+      padding: clamp(8px, 2vw, 16px);
+      border-radius: 24px;
+      font-size: clamp(12px, 3vw, 16px);
+      font-weight: 600;
+      color: var(--text);
+      z-index: 1000;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      min-width: clamp(120px, 25vw, 160px);
+    }
+
+    .route-eta {
+      display: flex;
+      align-items: center;
+      gap: clamp(6px, 1.5vw, 10px);
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .route-eta span:first-child {
+      font-size: clamp(14px, 3.5vw, 18px);
+    }
+
+    /* Order Info Panel - Responsive */
+    .detail-info {
+      height: 50%;
+      background: white;
+      padding: clamp(16px, 4vw, 24px);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .price-highlight {
+      text-align: center;
+      margin-bottom: clamp(16px, 4vw, 24px);
+    }
+
+    .price-amount {
+      font-size: clamp(24px, 6vw, 36px);
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    .price-label {
+      font-size: clamp(10px, 2.5vw, 14px);
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .route-details {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: clamp(12px, 3vw, 20px);
+      margin-bottom: clamp(12px, 3vw, 20px);
+    }
+
+    .route-step {
+      display: flex;
+      align-items: center;
+      gap: clamp(10px, 2.5vw, 16px);
+      margin-bottom: clamp(10px, 2.5vw, 16px);
+    }
+
+    .route-step:last-child {
+      margin-bottom: 0;
+    }
+
+    .step-marker {
+      width: clamp(24px, 5vw, 32px);
+      height: clamp(24px, 5vw, 32px);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(10px, 2.5vw, 14px);
+      font-weight: bold;
+      color: white;
+      flex-shrink: 0;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .step-marker.pickup {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+    }
+
+    .step-marker.dropoff {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+
+    .step-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .step-address {
+      font-size: clamp(13px, 3vw, 16px);
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 3px;
+      line-height: 1.3;
+      word-wrap: break-word;
+    }
+
+    .step-label {
+      font-size: clamp(9px, 2vw, 12px);
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .order-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(10px, 2.5vw, 16px);
+      margin-bottom: clamp(12px, 3vw, 20px);
+    }
+
+    .meta-item {
+      text-align: center;
+      padding: clamp(8px, 2vw, 12px);
+      background: #f8fafc;
+      border-radius: 8px;
+    }
+
+    .meta-value {
+      font-size: clamp(14px, 3.5vw, 18px);
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 3px;
+    }
+
+    .meta-label {
+      font-size: clamp(9px, 2vw, 12px);
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .contact-section {
+      background: var(--gradient);
+      border-radius: 16px;
+      padding: clamp(12px, 3vw, 20px);
+      color: white;
+      text-align: center;
+      margin-bottom: clamp(12px, 3vw, 20px);
+    }
+
+    .contact-title {
+      font-size: clamp(13px, 3vw, 16px);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .contact-phone {
+      font-size: clamp(14px, 3.5vw, 18px);
+      margin-bottom: clamp(10px, 2.5vw, 16px);
+      opacity: 0.95;
+      font-weight: 600;
+    }
+
+    .contact-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(6px, 1.5vw, 10px);
+    }
+
+    .contact-btn {
+      padding: clamp(8px, 2vw, 12px);
+      border: none;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(4px, 1vw, 8px);
+      text-decoration: none;
+      font-size: clamp(11px, 2.5vw, 14px);
+      touch-action: manipulation;
+      min-height: 44px; /* Minimum touch target */
+    }
+
+    .contact-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .accept-button {
+      width: 100%;
+      padding: clamp(12px, 3vw, 18px);
+      background: var(--gradient);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: clamp(14px, 3.5vw, 18px);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+      touch-action: manipulation;
+      min-height: 48px; /* Minimum touch target */
+    }
+
+    .accept-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(16, 185, 129, 0.4);
+    }
+
+    /* Hide Leaflet controls */
+    .leaflet-control-attribution,
+    .leaflet-control-zoom,
+    .leaflet-control {
+      display: none !important;
+    }
+
+    /* UBER-STYLE Custom Leaflet Markers - Responsive */
+    .uber-marker {
+      width: clamp(30px, 6vw, 42px);
+      height: clamp(30px, 6vw, 42px);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+      font-size: clamp(12px, 3vw, 18px);
+      border: 4px solid white;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .uber-marker.pickup {
+      background: linear-gradient(135deg, #22c55e, #059669);
+    }
+
+    .uber-marker.dropoff {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+
+    .uber-marker:hover {
+      transform: scale(1.1);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .leaflet-container {
+      background: #ffffff !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif !important;
+    }
+
+    .leaflet-tile {
+      filter: contrast(1.1) brightness(1.1) saturate(0.8) !important;
+    }
+
+    /* Accessibility Improvements */
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* High contrast mode support */
+    @media (prefers-contrast: high) {
+      :root {
+        --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.4);
+      }
+      
+      .order-card {
+        border: 2px solid var(--border);
+      }
+      
+      .filter-chip {
+        border: 2px solid var(--text-muted);
+      }
+    }
+
+    /* Focus indicators for keyboard navigation */
+    .profile-btn:focus,
+    .refresh-btn:focus,
+    .lang-btn:focus,
+    .filter-chip:focus,
+    .order-card:focus,
+    .close-btn:focus,
+    .contact-btn:focus,
+    .accept-button:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    /* Make elements keyboard accessible */
+    .order-card {
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .order-card:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    /* Improve scrollbar styling */
+    .order-list::-webkit-scrollbar,
+    .detail-info::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .order-list::-webkit-scrollbar-track,
+    .detail-info::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .order-list::-webkit-scrollbar-thumb,
+    .detail-info::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 3px;
+    }
+
+    .order-list::-webkit-scrollbar-thumb:hover,
+    .detail-info::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.3);
+    }
+  </style>
+  
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <button class="profile-btn no-photo" id="profileBtn" onclick="openProfile()" tabindex="0">
+          👤
+        </button>
+        <div class="header-title" data-ru="Профиль" data-kz="Профиль" onclick="openProfile()" tabindex="0">Профиль</div>
+      </div>
+      <div class="header-right">
+        <button class="refresh-btn" id="refreshBtn" onclick="refreshOrders()" tabindex="0" aria-label="Обновить заказы">🔄</button>
+        <div class="lang-switch">
+          <button class="lang-btn active" onclick="setLang('ru')" id="lang-ru" tabindex="0">RU</button>
+          <button class="lang-btn" onclick="setLang('kz')" id="lang-kz" tabindex="0">KZ</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- New Order Notification -->
+    <div class="new-order-notification" id="newOrderNotification">
+      <div class="notification-content">
+        <div class="notification-icon">🚚</div>
+        <div class="notification-text">
+          <div class="notification-title" data-ru="Новый заказ!" data-kz="Жаңа тапсырыс!">Новый заказ!</div>
+          <div class="notification-subtitle" id="notificationSubtitle" data-ru="У вас есть новые заказы" data-kz="Сізде жаңа тапсырыстар бар">У вас есть новые заказы</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-value" id="totalOrders">0</div>
+        <div class="stat-label" data-ru="Всего" data-kz="Барлық">Всего</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="nearbyOrders">0</div>
+        <div class="stat-label" data-ru="Рядом" data-kz="Жақын">Рядом</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="avgPrice">0₸</div>
+        <div class="stat-label" data-ru="Средняя" data-kz="Орташа">Средняя</div>
+      </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-chip active" data-filter="all" onclick="setFilter('all')" tabindex="0" role="button">
+        <span data-ru="Все" data-kz="Барлық">Все</span>
+      </div>
+      <div class="filter-chip" data-filter="new" onclick="setFilter('new')" tabindex="0" role="button">
+        <span data-ru="Новые" data-kz="Жаңа">Новые</span>
+      </div>
+      <div class="filter-chip" data-filter="nearby" onclick="setFilter('nearby')" tabindex="0" role="button">
+        <span data-ru="Рядом" data-kz="Жақын">Рядом</span>
+      </div>
+      <div class="filter-chip" data-filter="expensive" onclick="setFilter('expensive')" tabindex="0" role="button">
+        <span data-ru="Дорогие" data-kz="Қымбат">Дорогие</span>
+      </div>
+    </div>
+
+    <!-- Order List -->
+    <div class="order-list" id="orderList">
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" data-ru="Загрузка заказов..." data-kz="Тапсырыстарды жүктеу...">Загрузка заказов...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- UBER-STYLE Order Detail Modal -->
+  <div class="detail-modal" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+    <div class="detail-sheet">
+      <div class="detail-header">
+        <div class="detail-title" id="detailTitle" data-ru="Детали заказа" data-kz="Тапсырыс мәліметтері">Детали заказа</div>
+        <button class="close-btn" onclick="closeDetail()" tabindex="0" aria-label="Закрыть">×</button>
+      </div>
+      
+      <div class="detail-content">
+        <div class="detail-map">
+          <div id="detailMap"></div>
+          <div class="map-overlay" id="mapOverlay">
+            <div class="route-eta">
+              <span>🚗</span>
+              <span id="routeEta">Загрузка...</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="detail-info" id="detailInfo">
+          <div class="price-highlight">
+            <div class="price-amount" id="detailPrice">0₸</div>
+            <div class="price-label" data-ru="За доставку" data-kz="Жеткізу үшін">За доставку</div>
+          </div>
+
+          <div class="route-details">
+            <div class="route-step">
+              <div class="step-marker pickup">A</div>
+              <div class="step-info">
+                <div class="step-address" id="pickupAddress">Загрузка...</div>
+                <div class="step-label" data-ru="Забрать" data-kz="Алып кету">Забрать</div>
+              </div>
+            </div>
+            
+            <div class="route-step">
+              <div class="step-marker dropoff">B</div>
+              <div class="step-info">
+                <div class="step-address" id="dropoffAddress">Загрузка...</div>
+                <div class="step-label" data-ru="Доставить" data-kz="Жеткізу">Доставить</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="order-meta">
+            <div class="meta-item">
+              <div class="meta-value" id="detailTruck">--</div>
+              <div class="meta-label" data-ru="Транспорт" data-kz="Көлік">Транспорт</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-value" id="detailTime">--</div>
+              <div class="meta-label" data-ru="Время" data-kz="Уақыт">Время</div>
+            </div>
+          </div>
+
+          <div class="contact-section" id="contactSection">
+            <div class="contact-title" data-ru="Контакт клиента" data-kz="Клиент байланысы">Контакт клиента</div>
+            <div class="contact-phone" id="contactPhone">+7 (___) ___-__-__</div>
+            
+            <div class="contact-buttons">
+              <a href="#" class="contact-btn" id="callBtn" tabindex="0">
+                <span>📞</span>
+                <span data-ru="Звонок" data-kz="Қоңырау">Звонок</span>
+              </a>
+              <a href="#" class="contact-btn" id="whatsappBtn" tabindex="0">
+                <span>💬</span>
+                <span>WhatsApp</span>
+              </a>
+            </div>
+          </div>
+
+          <button class="accept-button" onclick="acceptOrder()" id="acceptOrderBtn" tabindex="0">
+            <span data-ru="Принять заказ" data-kz="Тапсырысты қабылдау">Принять заказ</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global variables
+    let currentLang = 'ru';
+    let currentFilter = 'all';
+    let orders = [];
+    let driverLocation = null;
+    let refreshInterval = null;
+    let detailMap = null;
+    let driverData = null;
+    let currentOrder = null;
+    
+    // FIXED: Always-enabled sound notification system
+    let audioContext = null;
+    let previousOrderCount = 0;
+    let lastOrderIds = new Set();
+
+    // Enhanced Auto-Sound Notification System
+    class AutoSoundNotification {
+      constructor() {
+        this.audioContext = null;
+        this.enabled = true; // Always enabled
+        this.initAudioContext();
+        console.log('🔊 Auto-sound notifications always enabled');
+      }
+
+      async initAudioContext() {
+        try {
+          this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          console.log('🔊 Audio context initialized for auto-notifications');
+        } catch (error) {
+          console.warn('⚠️ Audio context not supported:', error);
+        }
+      }
+
+      async playNotificationSound() {
+        if (!this.audioContext) {
+          return;
+        }
+
+        try {
+          if (this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
+          }
+
+          // Enhanced notification sound with multiple tones
+          const oscillator1 = this.audioContext.createOscillator();
+          const oscillator2 = this.audioContext.createOscillator();
+          const oscillator3 = this.audioContext.createOscillator();
+          const gainNode = this.audioContext.createGain();
+
+          oscillator1.connect(gainNode);
+          oscillator2.connect(gainNode);
+          oscillator3.connect(gainNode);
+          gainNode.connect(this.audioContext.destination);
+
+          // Three-tone notification like phone alerts
+          oscillator1.frequency.setValueAtTime(800, this.audioContext.currentTime);
+          oscillator2.frequency.setValueAtTime(1000, this.audioContext.currentTime);
+          oscillator3.frequency.setValueAtTime(1200, this.audioContext.currentTime);
+
+          gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+          gainNode.gain.linearRampToValueAtTime(0.3, this.audioContext.currentTime + 0.1);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.8);
+
+          oscillator1.start(this.audioContext.currentTime);
+          oscillator2.start(this.audioContext.currentTime + 0.1);
+          oscillator3.start(this.audioContext.currentTime + 0.2);
+          
+          oscillator1.stop(this.audioContext.currentTime + 0.3);
+          oscillator2.stop(this.audioContext.currentTime + 0.5);
+          oscillator3.stop(this.audioContext.currentTime + 0.8);
+
+          console.log('🔊 Enhanced notification sound played');
+        } catch (error) {
+          console.error('❌ Error playing notification sound:', error);
+        }
+      }
+
+      isEnabled() {
+        return this.enabled; // Always true
+      }
+    }
+
+    // Initialize auto-sound notification system
+    const autoSoundNotification = new AutoSoundNotification();
+
+    // Translations
+    const translations = {
+      ru: {
+        orders: 'Всего',
+        nearby: 'Рядом',
+        avgPrice: 'Средняя',
+        all: 'Все',
+        new: 'Новые',
+        expensive: 'Дорогие',
+        loading: 'Загрузка заказов...',
+        noOrders: 'Нет доступных заказов',
+        noOrdersDesc: 'Заказы появятся автоматически',
+        from: 'Откуда',
+        to: 'Куда',
+        price: 'Цена',
+        distance: 'Расстояние',
+        time: 'Время',
+        comment: 'Комментарий',
+        truck: 'Транспорт',
+        contact: 'Связаться',
+        call: 'Звонок',
+        orderDetails: 'Детали заказа',
+        clientInfo: 'Контакт клиента',
+        km: 'км',
+        min: 'мин',
+        small: 'Малый',
+        medium: 'Средний', 
+        large: 'Большой',
+        refrigerator: 'Рефрижератор',
+        tow: 'Эвакуатор',
+        any: 'Любой',
+        acceptOrder: 'Принять заказ',
+        calculating: 'Расчет...',
+        pickup: 'Забрать',
+        deliver: 'Доставить',
+        now: 'Сейчас',
+        new_order: 'НОВЫЙ',
+        newOrderTitle: 'Новый заказ!',
+        newOrderSubtitle: 'У вас есть новые заказы'
+      },
+      kz: {
+        orders: 'Барлық',
+        nearby: 'Жақын',
+        avgPrice: 'Орташа',
+        all: 'Барлық',
+        new: 'Жаңа',
+        expensive: 'Қымбат',
+        loading: 'Тапсырыстарды жүктеу...',
+        noOrders: 'Қол жетімді тапсырыстар жоқ',
+        noOrdersDesc: 'Тапсырыстар автоматты түрде пайда болады',
+        from: 'Қайдан',
+        to: 'Қайда',
+        price: 'Бағасы',
+        distance: 'Қашықтық',
+        time: 'Уақыт',
+        comment: 'Түсініктеме',
+        truck: 'Көлік',
+        contact: 'Байланысу',
+        call: 'Қоңырау',
+        orderDetails: 'Тапсырыс мәліметтері',
+        clientInfo: 'Клиент байланысы',
+        km: 'км',
+        min: 'мин',
+        small: 'Кіші',
+        medium: 'Орта',
+        large: 'Үлкен',
+        refrigerator: 'Рефрижератор',
+        tow: 'Эвакуатор',
+        any: 'Кез келген',
+        acceptOrder: 'Тапсырысты қабылдау',
+        calculating: 'Есептеу...',
+        pickup: 'Алып кету',
+        deliver: 'Жеткізу',
+        now: 'Қазір',
+        new_order: 'ЖАҢА',
+        newOrderTitle: 'Жаңа тапсырыс!',
+        newOrderSubtitle: 'Сізде жаңа тапсырыстар бар'
+      }
+    };
+
+    // Initialize Telegram WebApp
+    function initTelegram() {
+      if (window.Telegram && Telegram.WebApp) {
+        console.log('📱 Initializing Telegram WebApp for delivery list');
+        
+        Telegram.WebApp.ready();
+        Telegram.WebApp.expand();
+        Telegram.WebApp.disableVerticalSwipes();
+        
+        if (Telegram.WebApp.colorScheme === 'dark') {
+          document.documentElement.style.setProperty('--tg-theme-bg-color', '#1c1c1e');
+          document.documentElement.style.setProperty('--tg-theme-text-color', '#ffffff');
+        }
+
+        const user = Telegram.WebApp.initDataUnsafe?.user;
+        if (user) {
+          window.telegramUserId = user.id;
+          console.log('👤 Got Telegram user ID:', user.id);
+        }
+
+        Telegram.WebApp.MainButton.hide();
+        
+        console.log('✅ Telegram WebApp initialized for delivery list');
+      } else {
+        console.log('⚠️ Telegram WebApp not available - running in browser mode');
+        window.telegramUserId = 12345;
+      }
+    }
+
+    // FIXED: Load driver profile with proper photo loading from ./ava directory
+    async function loadDriverProfile() {
+      try {
+        const telegramId = window.telegramUserId;
+        if (!telegramId) {
+          console.log('⚠️ No Telegram ID available for profile loading');
+          return;
+        }
+
+        console.log('👤 Loading driver profile for ID:', telegramId);
+
+        const response = await fetch('/api/check/who', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            telegram_id: parseInt(telegramId)
+          })
+        });
+
+        const result = await response.json();
+        console.log('📊 Driver profile response:', result);
+        
+        if (result.success && result.data.exists && result.data.user_type === 'driver') {
+          driverData = result.data.driver_data;
+          console.log('🚗 Driver data loaded:', driverData);
+          
+          const profileBtn = document.getElementById('profileBtn');
+          
+          // FIXED: Enhanced profile photo loading specifically from ./ava directory
+          if (driverData.profile_photo && driverData.profile_photo.trim() !== '') {
+            console.log('📸 Loading profile photo:', driverData.profile_photo);
+            
+            // FIXED: Primary path for profile photos from ./ava directory
+            const avatarPath = `./ava/${driverData.profile_photo}`;
+            
+            // Create image element to test loading
+            const img = new Image();
+            
+            img.onload = function() {
+              console.log('✅ Profile photo loaded successfully from ./ava directory:', avatarPath);
+              profileBtn.innerHTML = `<img src="${avatarPath}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+              profileBtn.classList.remove('no-photo');
+              profileBtn.title = `${driverData.first_name || ''} ${driverData.last_name || ''}`.trim();
+            };
+            
+            img.onerror = function() {
+              console.warn('❌ Failed to load profile photo from ./ava directory:', avatarPath);
+              
+              // Fallback: Try alternative paths
+              const fallbackPaths = [
+                `/ava/${driverData.profile_photo}`,
+                `/files/${driverData.profile_photo}`,
+                `/static/ava/${driverData.profile_photo}`
+              ];
+              
+              let loaded = false;
+              fallbackPaths.forEach((path, index) => {
+                if (loaded) return;
+                
+                const fallbackImg = new Image();
+                fallbackImg.onload = function() {
+                  if (!loaded) {
+                    loaded = true;
+                    console.log(`✅ Profile photo loaded from fallback path ${index + 1}:`, path);
+                    profileBtn.innerHTML = `<img src="${path}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                    profileBtn.classList.remove('no-photo');
+                  }
+                };
+                fallbackImg.onerror = function() {
+                  console.warn(`❌ Fallback path ${index + 1} failed:`, path);
+                };
+                fallbackImg.src = path;
+              });
+              
+              // Final fallback to default icon after 3 seconds
+              setTimeout(() => {
+                if (!loaded) {
+                  console.log('👤 Using default profile icon - all photo paths failed');
+                  profileBtn.innerHTML = '👤';
+                  profileBtn.classList.add('no-photo');
+                  profileBtn.title = `${driverData.first_name || ''} ${driverData.last_name || ''}`.trim();
+                }
+              }, 3000);
+            };
+            
+            // Start loading the primary image from ./ava directory
+            img.src = avatarPath;
+            
+          } else {
+            console.log('👤 No profile photo available - using default icon');
+            profileBtn.innerHTML = '👤';
+            profileBtn.classList.add('no-photo');
+            profileBtn.title = `${driverData.first_name || ''} ${driverData.last_name || ''}`.trim();
+          }
+          
+        } else {
+          console.log('⚠️ Not a valid driver or no driver data');
+          // Keep default icon for non-drivers
+          const profileBtn = document.getElementById('profileBtn');
+          profileBtn.innerHTML = '👤';
+          profileBtn.classList.add('no-photo');
+        }
+      } catch (error) {
+        console.error('❌ Error loading driver profile:', error);
+        // Keep default icon on error
+        const profileBtn = document.getElementById('profileBtn');
+        profileBtn.innerHTML = '👤';
+        profileBtn.classList.add('no-photo');
+      }
+    }
+
+    // FIXED: Open profile page with Telegram ID
+    function openProfile() {
+      console.log('🔧 Profile button clicked - navigating to driver update page');
+      
+      const telegramId = window.telegramUserId;
+      if (!telegramId) {
+        console.error('❌ No Telegram ID available for profile update');
+        alert('Ошибка: не удалось получить ID пользователя');
+        return;
+      }
+
+      // FIXED: Pass Telegram ID in URL parameter
+      const updateUrl = `/driver-update?telegram_id=${telegramId}`;
+      console.log('🔗 Navigating to:', updateUrl);
+      
+      if (window.Telegram && Telegram.WebApp) {
+        window.location.href = updateUrl;
+      } else {
+        window.location.href = updateUrl;
+      }
+    }
+
+    // Get driver location
+    function getDriverLocation() {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error('Geolocation not supported'));
+          return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            driverLocation = {
+              lat: position.coords.latitude,
+              lon: position.coords.longitude
+            };
+            console.log('📍 Driver location obtained:', driverLocation);
+            resolve(driverLocation);
+          },
+          (error) => {
+            console.warn('⚠️ Geolocation error:', error);
+            driverLocation = { lat: 43.238949, lon: 76.889709 };
+            resolve(driverLocation);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000
+          }
+        );
+      });
+    }
+
+    // Calculate distance between two points
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    // FIXED: Check for new orders with auto-sound
+    function checkForNewOrders(newOrders) {
+      if (!newOrders || newOrders.length === 0) {
+        return;
+      }
+
+      const currentOrderIds = new Set(newOrders.map(order => order.id));
+      const hasNewOrders = newOrders.some(order => !lastOrderIds.has(order.id));
+      
+      lastOrderIds = currentOrderIds;
+
+      if (hasNewOrders && previousOrderCount > 0) {
+        const newOrderCount = newOrders.length - previousOrderCount;
+        console.log('🆕 New orders detected:', newOrderCount);
+        
+        // FIXED: Always play sound (no toggle needed)
+        autoSoundNotification.playNotificationSound();
+        
+        showNewOrderVisualNotification(newOrderCount);
+      }
+
+      previousOrderCount = newOrders.length;
+    }
+
+    // Show visual notification for new orders
+    function showNewOrderVisualNotification(count = 1) {
+      const notification = document.getElementById('newOrderNotification');
+      const subtitle = document.getElementById('notificationSubtitle');
+      
+      if (notification && subtitle) {
+        const countText = count > 1 ? ` (${count})` : '';
+        if (currentLang === 'ru') {
+          subtitle.textContent = `У вас ${count === 1 ? 'новый заказ' : `${count} новых заказа`}`;
+        } else {
+          subtitle.textContent = `Сізде ${count === 1 ? 'жаңа тапсырыс' : `${count} жаңа тапсырыс`} бар`;
+        }
+
+        notification.classList.add('show');
+
+        setTimeout(() => {
+          notification.classList.remove('show');
+        }, 4000);
+      }
+    }
+
+    // OPTIMIZED: Load orders with better performance
+    async function loadOrders() {
+      try {
+        console.log('📦 Loading OPTIMIZED orders from API...');
+        
+        if (!driverLocation) {
+          await getDriverLocation();
+        }
+
+        const requestData = {
+          telegram_id: window.telegramUserId || 0,
+          driver_lat: driverLocation?.lat || 43.238949,
+          driver_lon: driverLocation?.lon || 76.889709,
+          radius: 50
+        };
+
+        console.log('🔍 Requesting orders with data:', requestData);
+
+        const response = await fetch('/api/delivery-list', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestData)
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('📊 OPTIMIZED Orders API response:', result);
+        
+        if (result.success && result.data) {
+          const newOrders = result.data.orders || [];
+          console.log('📦 Loaded OPTIMIZED orders count:', newOrders.length);
+          
+          checkForNewOrders(newOrders);
+          
+          orders = newOrders;
+          
+          // OPTIMIZED: Calculate distances more efficiently
+          if (driverLocation) {
+            orders.forEach(order => {
+              order.distance = calculateDistance(
+                driverLocation.lat, driverLocation.lon,
+                order.from_lat, order.from_lon
+              );
+              
+              const createdAt = new Date(order.created_at);
+              const now = new Date();
+              const diffMinutes = (now - createdAt) / (1000 * 60);
+              order.isNew = diffMinutes < 10;
+            });
+          }
+          
+          orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          
+          updateStats();
+          displayOrdersOptimized();
+        } else {
+          throw new Error(result.message || 'Failed to load orders');
+        }
+      } catch (error) {
+        console.error('❌ Error loading OPTIMIZED orders:', error);
+        showEmptyState();
+      }
+    }
+
+    // Update statistics
+    function updateStats() {
+      const nearbyOrders = orders.filter(order => (order.distance || 999) <= 5).length;
+      const avgPrice = orders.length > 0 ? 
+        Math.round(orders.reduce((sum, order) => sum + (order.price || 0), 0) / orders.length) : 0;
+
+      document.getElementById('totalOrders').textContent = orders.length;
+      document.getElementById('nearbyOrders').textContent = nearbyOrders;
+      document.getElementById('avgPrice').textContent = avgPrice + '₸';
+      
+      console.log('📊 Stats updated - Total:', orders.length, 'Nearby:', nearbyOrders, 'Avg price:', avgPrice);
+    }
+
+    // OPTIMIZED: Display orders with better performance
+    function displayOrdersOptimized() {
+      const container = document.getElementById('orderList');
+      
+      let filteredOrders = [...orders];
+      
+      switch (currentFilter) {
+        case 'new':
+          filteredOrders = orders.filter(order => order.isNew);
+          break;
+        case 'nearby':
+          filteredOrders = orders.filter(order => (order.distance || 999) <= 5);
+          break;
+        case 'expensive':
+          filteredOrders = orders.filter(order => (order.price || 0) >= 5000);
+          break;
+      }
+
+      console.log('🔍 Filtered orders count:', filteredOrders.length, 'Filter:', currentFilter);
+
+      if (filteredOrders.length === 0) {
+        showEmptyState();
+        return;
+      }
+
+      // OPTIMIZED: Use DocumentFragment for better performance
+      const fragment = document.createDocumentFragment();
+      
+      filteredOrders.forEach((order, index) => {
+        const orderElement = createOrderCardOptimized(order, index);
+        fragment.appendChild(orderElement);
+      });
+
+      container.innerHTML = '';
+      container.appendChild(fragment);
+      
+      // OPTIMIZED: Animate cards with staggered timing
+      const cards = container.querySelectorAll('.order-card');
+      cards.forEach((card, index) => {
+        setTimeout(() => {
+          card.classList.add('fade-in');
+        }, index * 50); // 50ms stagger
+      });
+    }
+
+    // OPTIMIZED: Create order card with better performance
+    function createOrderCardOptimized(order, index) {
+      const createdAt = new Date(order.created_at);
+      const timeText = formatTime(createdAt);
+      const distanceText = order.distance ? `${order.distance.toFixed(1)} ${translations[currentLang].km}` : '';
+      const truckType = formatTruckType(order.truck_type);
+      
+      const cardElement = document.createElement('div');
+      cardElement.className = `order-card ${order.isNew ? 'new' : ''}`;
+      cardElement.onclick = () => showOrderDetail(order.id);
+      cardElement.setAttribute('tabindex', '0');
+      cardElement.setAttribute('role', 'button');
+      cardElement.setAttribute('aria-label', `Заказ ${order.id}`);
+      
+      // Add keyboard support
+      cardElement.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          showOrderDetail(order.id);
+        }
+      });
+      
+      cardElement.innerHTML = `
+        ${order.distance && order.distance <= 5 ? `<div class="distance-badge nearby">${distanceText}</div>` : 
+          order.distance ? `<div class="distance-badge">${distanceText}</div>` : ''}
+        
+        <div class="order-header">
+          <div class="order-id">#${order.id}${order.isNew ? `<span class="new-badge">${translations[currentLang].new_order}</span>` : ''}</div>
+          <div class="order-time">
+            <span>⏰</span>
+            <span>${timeText}</span>
+          </div>
+        </div>
+        
+        <div class="order-route">
+          <div class="route-point">
+            <div class="route-marker from">A</div>
+            <div class="route-info">
+              <div class="route-label">${translations[currentLang].from}</div>
+              <div class="route-address">${order.from_address}</div>
+            </div>
+          </div>
+          
+          <div class="route-point">
+            <div class="route-marker to">B</div>
+            <div class="route-info">
+              <div class="route-label">${translations[currentLang].to}</div>
+              <div class="route-address">${order.to_address}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="order-details">
+          <div class="detail-item">
+            <div class="detail-value price">${order.price}₸</div>
+            <div class="detail-label">${translations[currentLang].price}</div>
+          </div>
+          
+          <div class="detail-item">
+            <div class="detail-value">${distanceText || '--'}</div>
+            <div class="detail-label">${translations[currentLang].distance}</div>
+          </div>
+          
+          <div class="detail-item">
+            <div class="detail-value">${formatTime(new Date(order.time_start || order.created_at))}</div>
+            <div class="detail-label">${translations[currentLang].time}</div>
+          </div>
+        </div>
+        
+        ${order.comment || order.truck_type ? `
+          <div class="order-footer">
+            <div class="order-comment">${order.comment || ''}</div>
+            <div class="truck-type">${truckType}</div>
+          </div>
+        ` : ''}
+      `;
+      
+      return cardElement;
+    }
+
+    // Show order detail with UBER-STYLE map
+    function showOrderDetail(orderId) {
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      console.log('📋 Showing UBER-STYLE order detail for ID:', orderId);
+      currentOrder = order;
+      
+      document.getElementById('detailModal').classList.add('show');
+      
+      document.getElementById('detailPrice').textContent = `${order.price}₸`;
+      document.getElementById('pickupAddress').textContent = order.from_address;
+      document.getElementById('dropoffAddress').textContent = order.to_address;
+      
+      document.getElementById('detailTruck').textContent = formatTruckType(order.truck_type);
+      document.getElementById('detailTime').textContent = formatTime(new Date(order.time_start || order.created_at));
+      
+      document.getElementById('contactPhone').textContent = order.contact;
+      document.getElementById('callBtn').href = `tel:${order.contact}`;
+      document.getElementById('whatsappBtn').href = `https://wa.me/${order.contact.replace(/\D/g, '')}`;
+      
+      setTimeout(() => {
+        initUberStyleDetailMap(order);
+      }, 300);
+    }
+
+    // UBER-STYLE: Initialize detail map
+    async function initUberStyleDetailMap(order) {
+      if (detailMap) {
+        detailMap.remove();
+      }
+
+      try {
+        console.log('🗺️ Initializing UBER-STYLE map for order:', order.id);
+        
+        const centerLat = (order.from_lat + order.to_lat) / 2;
+        const centerLon = (order.from_lon + order.to_lon) / 2;
+
+        detailMap = L.map('detailMap', {
+          zoomControl: false,
+          attributionControl: false,
+          scrollWheelZoom: true,
+          touchZoom: true,
+          doubleClickZoom: false,
+          boxZoom: false,
+          keyboard: false,
+          fadeAnimation: true,
+          zoomAnimation: true,
+          markerZoomAnimation: true
+        }).setView([centerLat, centerLon], 13);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+          maxZoom: 19,
+          attribution: '',
+          subdomains: 'abcd'
+        }).addTo(detailMap);
+
+        const pickupIcon = L.divIcon({
+          html: '<div class="uber-marker pickup">A</div>',
+          className: 'uber-marker-container',
+          iconSize: [36, 44],
+          iconAnchor: [18, 44]
+        });
+
+        const dropoffIcon = L.divIcon({
+          html: '<div class="uber-marker dropoff">B</div>',
+          className: 'uber-marker-container',
+          iconSize: [36, 44],
+          iconAnchor: [18, 44]
+        });
+
+        L.marker([order.from_lat, order.from_lon], { icon: pickupIcon }).addTo(detailMap);
+        L.marker([order.to_lat, order.to_lon], { icon: dropoffIcon }).addTo(detailMap);
+
+        await drawUberStyleRoute(order);
+
+        const bounds = L.latLngBounds([
+          [order.from_lat, order.from_lon],
+          [order.to_lat, order.to_lon]
+        ]);
+        
+        detailMap.fitBounds(bounds, {
+          padding: [40, 40],
+          maxZoom: 16
+        });
+
+      } catch (error) {
+        console.error('❌ Error initializing UBER-STYLE map:', error);
+      }
+    }
+
+    // UBER-STYLE: Draw route
+    async function drawUberStyleRoute(order) {
+      try {
+        console.log('🛣️ Drawing UBER-STYLE route...');
+        
+        document.getElementById('routeEta').innerHTML = `
+          <span>🚗</span>
+          <span>${translations[currentLang].calculating}</span>
+        `;
+
+        const url = `https://router.project-osrm.org/route/v1/driving/${order.from_lon},${order.from_lat};${order.to_lon},${order.to_lat}?overview=full&geometries=geojson&steps=true`;
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error('OSRM API request failed');
+        }
+        
+        const data = await response.json();
+        
+        if (data.routes && data.routes.length > 0) {
+          const route = data.routes[0];
+          const geometry = route.geometry;
+          
+          const coordinates = geometry.coordinates.map(coord => [coord[1], coord[0]]);
+          
+          const routeLine = L.polyline(coordinates, {
+            color: '#000000',
+            weight: 5,
+            opacity: 0.9,
+            smoothFactor: 1,
+            lineCap: 'round',
+            lineJoin: 'round'
+          }).addTo(detailMap);
+
+          const shadowLine = L.polyline(coordinates, {
+            color: '#00000030',
+            weight: 7,
+            opacity: 0.3,
+            smoothFactor: 1,
+            lineCap: 'round',
+            lineJoin: 'round'
+          });
+          
+          shadowLine.addTo(detailMap);
+          shadowLine.bringToBack();
+
+          const distanceKm = (route.distance / 1000).toFixed(1);
+          const durationMin = Math.round(route.duration / 60);
+          
+          document.getElementById('routeEta').innerHTML = `
+            <span>🚗</span>
+            <span>${distanceKm} ${translations[currentLang].km} • ${durationMin} ${translations[currentLang].min}</span>
+          `;
+          
+          console.log('✅ UBER-STYLE route drawn successfully');
+          
+        } else {
+          throw new Error('No route found');
+        }
+        
+      } catch (error) {
+        console.error('❌ Error drawing UBER-STYLE route:', error);
+        
+        const straightLine = L.polyline([
+          [order.from_lat, order.from_lon],
+          [order.to_lat, order.to_lon]
+        ], {
+          color: '#000000',
+          weight: 4,
+          opacity: 0.7,
+          dashArray: '10, 5',
+          lineCap: 'round'
+        }).addTo(detailMap);
+
+        const distance = calculateDistance(order.from_lat, order.from_lon, order.to_lat, order.to_lon);
+        const time = Math.round((distance / 40) * 60);
+        
+        document.getElementById('routeEta').innerHTML = `
+          <span>🚗</span>
+          <span>${distance.toFixed(1)} ${translations[currentLang].km} • ${time} ${translations[currentLang].min}</span>
+        `;
+      }
+    }
+
+    // Accept order function
+    async function acceptOrder() {
+      if (!currentOrder) return;
+      
+      try {
+        console.log('✅ Accepting order:', currentOrder.id);
+        
+        const acceptBtn = document.getElementById('acceptOrderBtn');
+        acceptBtn.disabled = true;
+        acceptBtn.innerHTML = '<span>⏳ Принимаем...</span>';
+        
+        const response = await fetch('/api/driver/accept-order', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            telegram_id: window.telegramUserId,
+            order_id: currentOrder.id
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          acceptBtn.innerHTML = '<span>✅ Заказ принят!</span>';
+          acceptBtn.style.background = '#22c55e';
+          
+          setTimeout(() => {
+            closeDetail();
+            loadOrders();
+          }, 2000);
+          
+        } else {
+          throw new Error(result.message || 'Failed to accept order');
+        }
+        
+      } catch (error) {
+        console.error('❌ Error accepting order:', error);
+        
+        const acceptBtn = document.getElementById('acceptOrderBtn');
+        acceptBtn.disabled = false;
+        acceptBtn.innerHTML = `<span>❌ Ошибка! Попробуйте снова</span>`;
+        acceptBtn.style.background = '#ef4444';
+        
+        setTimeout(() => {
+          acceptBtn.innerHTML = `<span>${translations[currentLang].acceptOrder}</span>`;
+          acceptBtn.style.background = '';
+        }, 3000);
+      }
+    }
+
+    // Close detail modal
+    function closeDetail() {
+      document.getElementById('detailModal').classList.remove('show');
+      currentOrder = null;
+      
+      if (detailMap) {
+        detailMap.remove();
+        detailMap = null;
+      }
+    }
+
+    // Show empty state
+    function showEmptyState() {
+      const container = document.getElementById('orderList');
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📦</div>
+          <div class="empty-title">${translations[currentLang].noOrders}</div>
+          <div class="empty-message">${translations[currentLang].noOrdersDesc}</div>
+        </div>
+      `;
+    }
+
+    // Format time
+    function formatTime(date) {
+      const now = new Date();
+      const diffMs = date - now;
+      const diffMinutes = Math.abs(diffMs) / (1000 * 60);
+      
+      if (diffMinutes < 60) {
+        return translations[currentLang].now;
+      } else {
+        return date.toLocaleTimeString(currentLang === 'ru' ? 'ru-RU' : 'kk-KZ', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+    }
+
+    // Format truck type
+    function formatTruckType(type) {
+      const types = {
+        small: translations[currentLang].small,
+        medium: translations[currentLang].medium,
+        large: translations[currentLang].large,
+        refrigerator: translations[currentLang].refrigerator,
+        tow: translations[currentLang].tow,
+        any: translations[currentLang].any,
+        '': translations[currentLang].any
+      };
+      return types[type] || type || translations[currentLang].any;
+    }
+
+    // Set filter
+    function setFilter(filter) {
+      currentFilter = filter;
+      console.log('🔍 Filter changed to:', filter);
+      
+      document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.classList.remove('active');
+      });
+      document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
+      
+      displayOrdersOptimized();
+    }
+
+    // Refresh orders
+    function refreshOrders() {
+      console.log('🔄 Manual refresh triggered');
+      const btn = document.getElementById('refreshBtn');
+      btn.classList.add('loading');
+      
+      loadOrders().finally(() => {
+        btn.classList.remove('loading');
+      });
+    }
+
+    // Set language
+    function setLang(lang) {
+      currentLang = lang;
+      console.log('🌐 Language changed to:', lang);
+      
+      document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`lang-${lang}`).classList.add('active');
+      
+      document.querySelectorAll('[data-ru]').forEach(el => {
+        const text = el.getAttribute(`data-${lang}`);
+        if (text) {
+          el.textContent = text;
+        }
+      });
+
+      updateStats();
+      displayOrdersOptimized();
+    }
+
+    // OPTIMIZED: Auto-refresh with better performance
+    function startAutoRefresh() {
+      console.log('🔄 Starting OPTIMIZED auto-refresh (8 seconds interval)');
+      refreshInterval = setInterval(() => {
+        loadOrders();
+      }, 8000); // Slightly faster refresh
+    }
+
+    function stopAutoRefresh() {
+      if (refreshInterval) {
+        console.log('🛑 Stopping auto-refresh');
+        clearInterval(refreshInterval);
+        refreshInterval = null;
+      }
+    }
+
+    // Initialize app
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('🚀 OPTIMIZED Multi-Device Delivery List App initializing...');
+      
+      initTelegram();
+      setLang('ru');
+      
+      loadDriverProfile();
+      loadOrders();
+      startAutoRefresh();
+      
+      console.log('✅ OPTIMIZED Multi-Device Delivery List App initialized with auto-sound and FIXED profile photo loading from ./ava');
+    });
+
+    // Handle page visibility changes
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        console.log('👁️ Page hidden - stopping auto-refresh');
+        stopAutoRefresh();
+      } else {
+        console.log('👁️ Page visible - restarting auto-refresh');
+        loadOrders();
+        startAutoRefresh();
+      }
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      console.log('🧹 Page unloading - cleaning up');
+      stopAutoRefresh();
+      if (detailMap) {
+        detailMap.remove();
+      }
+    });
+
+    // Close modal on backdrop click
+    document.getElementById('detailModal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        closeDetail();
+      }
+    });
+
+    // ESC key to close modal
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('detailModal').classList.contains('show')) {
+        closeDetail();
+      }
+    });
+
+    // Make functions globally available
+    window.openProfile = openProfile;
+    window.refreshOrders = refreshOrders;
+    window.setFilter = setFilter;
+    window.setLang = setLang;
+    window.showOrderDetail = showOrderDetail;
+    window.closeDetail = closeDetail;
+    window.acceptOrder = acceptOrder;
+
+    console.log('📋 OPTIMIZED Multi-Device Delivery List script loaded with FIXED profile photo loading from ./ava directory');
+  </script>
+</body>
+</html>
