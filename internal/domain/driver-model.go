@@ -2,12 +2,14 @@ package domain
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // Driver represents a driver in the system
 type Driver struct {
-	ID               int64      `json:"id" db:"id"`
-	TelegramID       int64      `json:"telegram_id" db:"telegram_id"`
+	ID               string     `json:"id" db:"id"`                   // Changed from int64 to string (UUID)
+	TelegramID       int64      `json:"telegram_id" db:"telegram_id"` // Kept as int64 for Telegram API
 	TelegramUsername string     `json:"telegram_username" db:"telegram_username"`
 	FirstName        string     `json:"first_name" db:"first_name"`
 	LastName         string     `json:"last_name" db:"last_name"`
@@ -37,9 +39,9 @@ type Driver struct {
 
 // DriverRoute represents a route offered by a driver
 type DriverRoute struct {
-	ID             int64      `json:"id" db:"id"`
-	DriverID       int64      `json:"driver_id" db:"driver_id"`
-	TelegramID     int64      `json:"telegram_id" db:"telegram_id"`
+	ID             string     `json:"id" db:"id"`                   // Changed from int64 to string (UUID)
+	DriverID       string     `json:"driver_id" db:"driver_id"`     // Changed from int64 to string (UUID)
+	TelegramID     int64      `json:"telegram_id" db:"telegram_id"` // Kept as int64 for Telegram API
 	FromAddress    string     `json:"from_address" db:"from_address"`
 	FromLat        float64    `json:"from_lat" db:"from_lat"`
 	FromLon        float64    `json:"from_lon" db:"from_lon"`
@@ -62,12 +64,12 @@ type DriverRoute struct {
 
 // DriverMatch represents a match between a driver route and delivery request
 type DriverMatch struct {
-	ID                int64      `json:"id" db:"id"`
-	DriverID          int64      `json:"driver_id" db:"driver_id"`
-	DriverRouteID     int64      `json:"driver_route_id" db:"driver_route_id"`
-	DeliveryRequestID int64      `json:"delivery_request_id" db:"delivery_request_id"`
-	ClientTelegramID  int64      `json:"client_telegram_id" db:"client_telegram_id"`
-	Status            string     `json:"status" db:"status"` // pending, accepted, rejected, completed
+	ID                string     `json:"id" db:"id"`                                   // Changed from int64 to string (UUID)
+	DriverID          string     `json:"driver_id" db:"driver_id"`                     // Changed from int64 to string (UUID)
+	DriverRouteID     string     `json:"driver_route_id" db:"driver_route_id"`         // Changed from int64 to string (UUID)
+	DeliveryRequestID string     `json:"delivery_request_id" db:"delivery_request_id"` // Changed from int64 to string (UUID)
+	ClientTelegramID  int64      `json:"client_telegram_id" db:"client_telegram_id"`   // Kept as int64 for Telegram API
+	Status            string     `json:"status" db:"status"`                           // pending, accepted, rejected, completed
 	ProposedPrice     int        `json:"proposed_price" db:"proposed_price"`
 	FinalPrice        *int       `json:"final_price" db:"final_price"`
 	PickupTime        *time.Time `json:"pickup_time" db:"pickup_time"`
@@ -145,7 +147,7 @@ type DriverWithRoute struct {
 
 // MatchedDriver represents a driver matched to a delivery request
 type MatchedDriver struct {
-	DriverID         int64     `json:"driver_id"`
+	DriverID         string    `json:"driver_id"` // Changed from int64 to string (UUID)
 	FullName         string    `json:"full_name"`
 	ProfilePhoto     string    `json:"profile_photo"`
 	ContactNumber    string    `json:"contact"`
@@ -191,10 +193,20 @@ const (
 	MatchStatusCompleted = "completed"
 )
 
+// Helper functions for UUID operations
+func GenerateDriverID() string {
+	return uuid.New().String()
+}
+
+func IsValidDriverID(id string) bool {
+	_, err := uuid.Parse(id)
+	return err == nil
+}
+
 // Validation methods
 func (d *Driver) IsValid() bool {
 	return d.TelegramID > 0 && d.FirstName != "" && d.LastName != "" &&
-		d.ContactNumber != "" && d.StartCity != ""
+		d.ContactNumber != "" && d.StartCity != "" && IsValidDriverID(d.ID)
 }
 
 func (d *Driver) IsValidAge() bool {
@@ -206,8 +218,8 @@ func (d *Driver) IsValidAge() bool {
 }
 
 func (dr *DriverRoute) IsValid() bool {
-	return dr.DriverID > 0 && dr.FromAddress != "" && dr.ToAddress != "" &&
-		dr.Price >= 2000 && !dr.DepartureTime.IsZero()
+	return IsValidDriverID(dr.DriverID) && dr.FromAddress != "" && dr.ToAddress != "" &&
+		dr.Price >= 2000 && !dr.DepartureTime.IsZero() && IsValidDriverID(dr.ID)
 }
 
 func (dr *DriverRoute) IsValidCoordinates() bool {
@@ -244,4 +256,31 @@ func (dm *DriverMatch) CanBeCompleted() bool {
 
 func (dm *DriverMatch) IsCompleted() bool {
 	return dm.Status == MatchStatusCompleted && dm.CompletedAt != nil
+}
+
+func (dm *DriverMatch) IsValid() bool {
+	return IsValidDriverID(dm.ID) && IsValidDriverID(dm.DriverID) &&
+		IsValidDriverID(dm.DriverRouteID) && IsValidDriverID(dm.DeliveryRequestID) &&
+		dm.ClientTelegramID > 0
+}
+
+// SetID generates and sets a new UUID for the driver if not already set
+func (d *Driver) SetID() {
+	if d.ID == "" {
+		d.ID = GenerateDriverID()
+	}
+}
+
+// SetID generates and sets a new UUID for the driver route if not already set
+func (dr *DriverRoute) SetID() {
+	if dr.ID == "" {
+		dr.ID = GenerateDriverID()
+	}
+}
+
+// SetID generates and sets a new UUID for the driver match if not already set
+func (dm *DriverMatch) SetID() {
+	if dm.ID == "" {
+		dm.ID = GenerateDriverID()
+	}
 }

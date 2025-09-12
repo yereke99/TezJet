@@ -14,13 +14,14 @@ import (
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
 // DriverTrip represents the driver trip data
 type DriverTrip struct {
-	ID               int64     `json:"id"`
-	DriverID         int64     `json:"driver_id"`
+	ID               string    `json:"id"`
+	DriverID         string    `json:"driver_id"`
 	TelegramID       int64     `json:"telegram_id"`
 	FromAddress      string    `json:"from_address"`
 	FromLat          float64   `json:"from_lat"`
@@ -46,7 +47,7 @@ type DriverTrip struct {
 // Enhanced DriverWithTrip for client matching
 type DriverWithTrip struct {
 	// Driver info
-	ID            int64  `json:"id"`
+	ID            string `json:"id"`
 	TelegramID    int64  `json:"telegram_id"`
 	FirstName     string `json:"first_name"`
 	LastName      string `json:"last_name"`
@@ -93,7 +94,7 @@ type DriverWithTrip struct {
 
 // DeliveryRequest represents the delivery request data
 type DeliveryRequest struct {
-	ID          int64     `json:"id"`
+	ID          string    `json:"id"`
 	FromAddress string    `json:"from_address"`
 	FromLat     float64   `json:"from_lat"`
 	FromLon     float64   `json:"from_lon"`
@@ -130,7 +131,7 @@ type DeliveryListResponse struct {
 
 // DriverRegistration represents the driver registration data
 type DriverRegistration struct {
-	ID            int64     `json:"id"`
+	ID            string    `json:"id"`
 	TelegramID    int64     `json:"telegram_id"`
 	FirstName     string    `json:"first_name"`
 	LastName      string    `json:"last_name"`
@@ -150,7 +151,7 @@ type DriverRegistration struct {
 
 // DriverRequestParams represents the request parameters for finding drivers
 type DriverRequestParams struct {
-	RequestID  int64   `json:"request_id"`
+	RequestID  string  `json:"request_id"`
 	PickupLat  float64 `json:"pickup_lat"`
 	PickupLon  float64 `json:"pickup_lon"`
 	DropoffLat float64 `json:"dropoff_lat"`
@@ -205,7 +206,7 @@ func (h *Handler) handleDriverRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.logger.Info("📊 Driver search parameters",
-		zap.Int64("request_id", params.RequestID),
+		zap.String("request_id", params.RequestID),
 		zap.Float64("pickup_lat", params.PickupLat),
 		zap.Float64("pickup_lon", params.PickupLon),
 		zap.Float64("dropoff_lat", params.DropoffLat),
@@ -356,7 +357,7 @@ LIMIT 200;
 	defer rows.Close()
 
 	var results []DriverWithTrip
-	seenDrivers := make(map[int64]bool) // Prevent duplicate drivers
+	seenDrivers := make(map[string]bool) // Prevent duplicate drivers
 
 	for rows.Next() {
 		var (
@@ -834,46 +835,6 @@ func (h *Handler) handleDriverListAPI(w http.ResponseWriter, r *http.Request) {
 	h.sendSuccessResponse(w, "Список водителей получен успешно", response)
 }
 
-// ===== UTILITY FUNCTIONS =====
-
-// haversineDistance calculates the great circle distance between two points
-func (h *Handler) haversineDistance(lat1, lon1, lat2, lon2 float64) float64 {
-	const R = 6371 // Earth's radius in kilometers
-
-	// Convert degrees to radians
-	lat1Rad := lat1 * math.Pi / 180
-	lon1Rad := lon1 * math.Pi / 180
-	lat2Rad := lat2 * math.Pi / 180
-	lon2Rad := lon2 * math.Pi / 180
-
-	// Haversine formula
-	dlat := lat2Rad - lat1Rad
-	dlon := lon2Rad - lon1Rad
-
-	a := math.Sin(dlat/2)*math.Sin(dlat/2) +
-		math.Cos(lat1Rad)*math.Cos(lat2Rad)*math.Sin(dlon/2)*math.Sin(dlon/2)
-	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
-
-	return R * c
-}
-
-// calculateProximityScore calculates a score (0-100) based on distance
-func (h *Handler) calculateProximityScore(distanceKm float64) float64 {
-	if distanceKm <= 1.0 {
-		return 100.0
-	} else if distanceKm <= 2.0 {
-		return 90.0
-	} else if distanceKm <= 5.0 {
-		return 70.0
-	} else if distanceKm <= 10.0 {
-		return 50.0
-	} else if distanceKm <= 20.0 {
-		return 30.0
-	} else {
-		return 10.0
-	}
-}
-
 // isValidCoordinates validates if coordinates are within Kazakhstan bounds
 func (h *Handler) isValidCoordinates(lat, lon float64) bool {
 	// Kazakhstan approximate bounds
@@ -883,7 +844,7 @@ func (h *Handler) isValidCoordinates(lat, lon float64) bool {
 // ===== EXISTING METHODS (keeping all the original functionality) =====
 
 // FIXED: handleDelivery with better form parsing and route calculation
-func (h *Handler) handleDelivery(b *bot.Bot) http.HandlerFunc {
+func (h *Handler) handleDelivery(ctx context.Context, b *bot.Bot) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
@@ -950,12 +911,12 @@ func (h *Handler) handleDelivery(b *bot.Bot) http.HandlerFunc {
 		req.Status = "pending"
 		req.CreatedAt = time.Now()
 
-		h.logger.Info("Delivery request saved successfully", zap.Int64("request_id", requestID))
+		h.logger.Info("Delivery request saved successfully", zap.String("request_id", requestID))
 
 		// Send confirmation message to user
 		go h.sendConfirmationMessage(b, req, requestID)
 		// Send to client order to driver
-		go h.SendToDriver(b, req)
+		go h.SendToDriver(ctx, b, req)
 
 		// Send success response
 		h.sendSuccessResponse(w, "Заявка успешно создана", map[string]interface{}{
@@ -967,8 +928,19 @@ func (h *Handler) handleDelivery(b *bot.Bot) http.HandlerFunc {
 	}
 }
 
-func (h *Handler) SendToDriver(b *bot.Bot, request *DeliveryRequest) {
+func (h *Handler) SendToDriver(ctx context.Context, b *bot.Bot, request *DeliveryRequest) {
 
+	// Look here write logic to send nearest driver to user
+	// and send him client request from  just A point
+
+	_, err := b.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID: 0,
+		Text:   "Sorry",
+	})
+	if err != nil {
+		h.logger.Error("Failed to send message", zap.Error(err))
+		return
+	}
 }
 
 // parseDeliveryRequest parses the delivery request form data
@@ -1140,34 +1112,36 @@ func (h *Handler) getOSRMRoute(fromLat, fromLon, toLat, toLon float64) (float64,
 }
 
 // saveDeliveryRequest saves the delivery request to database
-func (h *Handler) saveDeliveryRequest(req *DeliveryRequest) (int64, error) {
+func (h *Handler) saveDeliveryRequest(req *DeliveryRequest) (string, error) {
+	// Generate UUID for the delivery request
+	requestID := uuid.New().String()
+
 	query := `
 		INSERT INTO delivery_requests (
-			telegram_id, from_address, from_lat, from_lon, 
+			id, telegram_id, from_address, from_lat, from_lon, 
 			to_address, to_lat, to_lon, distance_km, eta_min,
 			price, truck_type, contact, time_start, comment, 
 			status, created_at
 		) VALUES (
-			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP
-		) RETURNING id`
+			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP
+		)`
 
-	var requestID int64
-	err := h.db.QueryRow(
+	_, err := h.db.Exec(
 		query,
-		req.TelegramID, req.FromAddress, req.FromLat, req.FromLon,
+		requestID, req.TelegramID, req.FromAddress, req.FromLat, req.FromLon,
 		req.ToAddress, req.ToLat, req.ToLon, req.DistanceKm, req.EtaMin,
 		req.Price, req.TruckType, req.Contact, req.TimeStart, req.Comment,
-	).Scan(&requestID)
+	)
 
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 
 	return requestID, nil
 }
 
 // sendConfirmationMessage sends confirmation message to client
-func (h *Handler) sendConfirmationMessage(b *bot.Bot, req *DeliveryRequest, requestID int64) {
+func (h *Handler) sendConfirmationMessage(b *bot.Bot, req *DeliveryRequest, requestID string) {
 	if req.TelegramID == 0 {
 		h.logger.Warn("No Telegram ID provided, skipping confirmation message")
 		return
@@ -1235,11 +1209,11 @@ func (h *Handler) sendConfirmationMessage(b *bot.Bot, req *DeliveryRequest, requ
 		h.logger.Error("Failed to send confirmation message",
 			zap.Error(err),
 			zap.Int64("telegram_id", req.TelegramID),
-			zap.Int64("request_id", requestID))
+			zap.String("request_id", requestID))
 	} else {
 		h.logger.Info("Confirmation message sent",
 			zap.Int64("telegram_id", req.TelegramID),
-			zap.Int64("request_id", requestID))
+			zap.String("request_id", requestID))
 	}
 }
 

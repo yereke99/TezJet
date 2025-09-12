@@ -6,6 +6,7 @@ import (
 	"tezjet/internal/domain"
 	"time"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -23,20 +24,20 @@ func NewUserRepository(db *sql.DB, logger *zap.Logger) *UserRepository {
 
 // CreateUser creates a new user in the database
 func (r *UserRepository) CreateUser(req *domain.CreateUserRequest) (*domain.User, error) {
+	userID := uuid.New().String() // Generate UUID for the user
+
 	query := `
 		INSERT INTO users (
-			telegram_id, telegram_username, first_name, last_name, 
+			id, telegram_id, telegram_username, first_name, last_name, 
 			phone_number, language_code, is_active, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-		RETURNING id`
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	now := time.Now()
-	var userID int64
 
-	err := r.db.QueryRow(query,
-		req.TelegramID, req.TelegramUsername, req.FirstName, req.LastName,
+	_, err := r.db.Exec(query,
+		userID, req.TelegramID, req.TelegramUsername, req.FirstName, req.LastName,
 		req.PhoneNumber, req.LanguageCode, true, now, now,
-	).Scan(&userID)
+	)
 
 	if err != nil {
 		r.logger.Error("Failed to create user", zap.Error(err))
@@ -47,8 +48,8 @@ func (r *UserRepository) CreateUser(req *domain.CreateUserRequest) (*domain.User
 	return r.GetUserByID(userID)
 }
 
-// GetUserByID retrieves a user by their database ID
-func (r *UserRepository) GetUserByID(userID int64) (*domain.User, error) {
+// GetUserByID retrieves a user by their database ID (UUID)
+func (r *UserRepository) GetUserByID(userID string) (*domain.User, error) {
 	query := `
 		SELECT id, telegram_id, telegram_username, first_name, last_name, 
 			   phone_number, language_code, is_active, offerta_accepted, 
@@ -69,7 +70,7 @@ func (r *UserRepository) GetUserByID(userID int64) (*domain.User, error) {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("user not found")
 		}
-		r.logger.Error("Failed to get user by ID", zap.Error(err), zap.Int64("user_id", userID))
+		r.logger.Error("Failed to get user by ID", zap.Error(err), zap.String("user_id", userID))
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 
@@ -156,23 +157,23 @@ func (r *UserRepository) AcceptOfferta(telegramID int64) error {
 }
 
 // CreateDeliveryRequest creates a new delivery request
-func (r *UserRepository) CreateDeliveryRequest(req *domain.CreateDeliveryRequestReq, userID int64, distance float64) (*domain.DeliveryRequest, error) {
+func (r *UserRepository) CreateDeliveryRequest(req *domain.CreateDeliveryRequestReq, userID string, distance float64) (*domain.DeliveryRequest, error) {
+	requestID := uuid.New().String() // Generate UUID for the delivery request
+
 	query := `
 		INSERT INTO delivery_requests (
-			user_id, telegram_id, from_address, from_lat, from_lon, 
+			id, user_id, telegram_id, from_address, from_lat, from_lon, 
 			to_address, to_lat, to_lon, price, contact, comment, 
 			truck_type, distance_km, status, item_photo_path, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-		RETURNING id`
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	now := time.Now()
-	var requestID int64
 
-	err := r.db.QueryRow(query,
-		userID, req.TelegramID, req.FromAddress, req.FromLat, req.FromLon,
+	_, err := r.db.Exec(query,
+		requestID, userID, req.TelegramID, req.FromAddress, req.FromLat, req.FromLon,
 		req.ToAddress, req.ToLat, req.ToLon, req.Price, req.Contact, req.Comment,
 		req.TruckType, distance, domain.DeliveryStatusPending, req.ItemPhotoPath, now, now,
-	).Scan(&requestID)
+	)
 
 	if err != nil {
 		r.logger.Error("Failed to create delivery request", zap.Error(err))
@@ -182,8 +183,8 @@ func (r *UserRepository) CreateDeliveryRequest(req *domain.CreateDeliveryRequest
 	return r.GetDeliveryRequestByID(requestID)
 }
 
-// GetDeliveryRequestByID retrieves a delivery request by ID
-func (r *UserRepository) GetDeliveryRequestByID(requestID int64) (*domain.DeliveryRequest, error) {
+// GetDeliveryRequestByID retrieves a delivery request by ID (UUID)
+func (r *UserRepository) GetDeliveryRequestByID(requestID string) (*domain.DeliveryRequest, error) {
 	query := `
 		SELECT id, user_id, telegram_id, from_address, from_lat, from_lon,
 			   to_address, to_lat, to_lon, price, contact, comment,
@@ -193,7 +194,7 @@ func (r *UserRepository) GetDeliveryRequestByID(requestID int64) (*domain.Delive
 		WHERE id = ?`
 
 	request := &domain.DeliveryRequest{}
-	var matchedDriverID sql.NullInt64
+	var matchedDriverID sql.NullString // Changed from sql.NullInt64 to sql.NullString
 	var completedAt sql.NullTime
 
 	err := r.db.QueryRow(query, requestID).Scan(
@@ -207,12 +208,12 @@ func (r *UserRepository) GetDeliveryRequestByID(requestID int64) (*domain.Delive
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("delivery request not found")
 		}
-		r.logger.Error("Failed to get delivery request", zap.Error(err), zap.Int64("request_id", requestID))
+		r.logger.Error("Failed to get delivery request", zap.Error(err), zap.String("request_id", requestID))
 		return nil, fmt.Errorf("failed to get delivery request: %w", err)
 	}
 
 	if matchedDriverID.Valid {
-		request.MatchedDriverID = &matchedDriverID.Int64
+		request.MatchedDriverID = &matchedDriverID.String // Fixed: Now using String instead of Int64
 	}
 	if completedAt.Valid {
 		request.CompletedAt = &completedAt.Time
@@ -243,7 +244,7 @@ func (r *UserRepository) GetUserDeliveryRequests(telegramID int64, limit, offset
 	var requests []*domain.DeliveryRequest
 	for rows.Next() {
 		request := &domain.DeliveryRequest{}
-		var matchedDriverID sql.NullInt64
+		var matchedDriverID sql.NullString // Changed from sql.NullInt64 to sql.NullString
 		var completedAt sql.NullTime
 
 		err := rows.Scan(
@@ -258,7 +259,7 @@ func (r *UserRepository) GetUserDeliveryRequests(telegramID int64, limit, offset
 		}
 
 		if matchedDriverID.Valid {
-			request.MatchedDriverID = &matchedDriverID.Int64
+			request.MatchedDriverID = &matchedDriverID.String // Fixed: Now using String instead of Int64
 		}
 		if completedAt.Valid {
 			request.CompletedAt = &completedAt.Time
@@ -271,7 +272,7 @@ func (r *UserRepository) GetUserDeliveryRequests(telegramID int64, limit, offset
 }
 
 // UpdateDeliveryRequestStatus updates the status of a delivery request
-func (r *UserRepository) UpdateDeliveryRequestStatus(requestID int64, status string, driverID *int64) error {
+func (r *UserRepository) UpdateDeliveryRequestStatus(requestID string, status string, driverID *string) error {
 	var query string
 	var args []interface{}
 
@@ -291,7 +292,7 @@ func (r *UserRepository) UpdateDeliveryRequestStatus(requestID int64, status str
 
 	result, err := r.db.Exec(query, args...)
 	if err != nil {
-		r.logger.Error("Failed to update delivery request status", zap.Error(err), zap.Int64("request_id", requestID))
+		r.logger.Error("Failed to update delivery request status", zap.Error(err), zap.String("request_id", requestID))
 		return fmt.Errorf("failed to update delivery request status: %w", err)
 	}
 
@@ -308,7 +309,7 @@ func (r *UserRepository) UpdateDeliveryRequestStatus(requestID int64, status str
 }
 
 // CompleteDeliveryRequest marks a delivery request as completed
-func (r *UserRepository) CompleteDeliveryRequest(requestID int64) error {
+func (r *UserRepository) CompleteDeliveryRequest(requestID string) error {
 	query := `
 		UPDATE delivery_requests 
 		SET status = ?, completed_at = ?, updated_at = ?
@@ -317,7 +318,7 @@ func (r *UserRepository) CompleteDeliveryRequest(requestID int64) error {
 	now := time.Now()
 	result, err := r.db.Exec(query, domain.DeliveryStatusCompleted, now, now, requestID, domain.DeliveryStatusInProgress)
 	if err != nil {
-		r.logger.Error("Failed to complete delivery request", zap.Error(err), zap.Int64("request_id", requestID))
+		r.logger.Error("Failed to complete delivery request", zap.Error(err), zap.String("request_id", requestID))
 		return fmt.Errorf("failed to complete delivery request: %w", err)
 	}
 
@@ -355,7 +356,7 @@ func (r *UserRepository) GetPendingDeliveryRequests(limit int) ([]*domain.Delive
 	var requests []*domain.DeliveryRequest
 	for rows.Next() {
 		request := &domain.DeliveryRequest{}
-		var matchedDriverID sql.NullInt64
+		var matchedDriverID sql.NullString // Changed from sql.NullInt64 to sql.NullString
 		var completedAt sql.NullTime
 
 		err := rows.Scan(
@@ -370,7 +371,7 @@ func (r *UserRepository) GetPendingDeliveryRequests(limit int) ([]*domain.Delive
 		}
 
 		if matchedDriverID.Valid {
-			request.MatchedDriverID = &matchedDriverID.Int64
+			request.MatchedDriverID = &matchedDriverID.String // Fixed: Now using String instead of Int64
 		}
 		if completedAt.Valid {
 			request.CompletedAt = &completedAt.Time
@@ -415,7 +416,7 @@ func (r *UserRepository) GetUserStatistics(telegramID int64) (*domain.UserStatis
 }
 
 // DeleteDeliveryRequest soft deletes a delivery request (marks as cancelled)
-func (r *UserRepository) DeleteDeliveryRequest(requestID int64, telegramID int64) error {
+func (r *UserRepository) DeleteDeliveryRequest(requestID string, telegramID int64) error {
 	query := `
 		UPDATE delivery_requests 
 		SET status = ?, updated_at = ?
@@ -425,7 +426,7 @@ func (r *UserRepository) DeleteDeliveryRequest(requestID int64, telegramID int64
 	result, err := r.db.Exec(query, domain.DeliveryStatusCancelled, now, requestID, telegramID,
 		domain.DeliveryStatusPending, domain.DeliveryStatusMatched)
 	if err != nil {
-		r.logger.Error("Failed to cancel delivery request", zap.Error(err), zap.Int64("request_id", requestID))
+		r.logger.Error("Failed to cancel delivery request", zap.Error(err), zap.String("request_id", requestID))
 		return fmt.Errorf("failed to cancel delivery request: %w", err)
 	}
 
@@ -503,7 +504,7 @@ func (r *UserRepository) GetActiveDeliveryRequests(telegramID int64) ([]*domain.
 	var requests []*domain.DeliveryRequest
 	for rows.Next() {
 		request := &domain.DeliveryRequest{}
-		var matchedDriverID sql.NullInt64
+		var matchedDriverID sql.NullString // Changed from sql.NullInt64 to sql.NullString
 		var completedAt sql.NullTime
 
 		err := rows.Scan(
@@ -518,7 +519,7 @@ func (r *UserRepository) GetActiveDeliveryRequests(telegramID int64) ([]*domain.
 		}
 
 		if matchedDriverID.Valid {
-			request.MatchedDriverID = &matchedDriverID.Int64
+			request.MatchedDriverID = &matchedDriverID.String // Fixed: Now using String instead of Int64
 		}
 		if completedAt.Valid {
 			request.CompletedAt = &completedAt.Time
@@ -528,4 +529,20 @@ func (r *UserRepository) GetActiveDeliveryRequests(telegramID int64) ([]*domain.
 	}
 
 	return requests, nil
+}
+
+// Helper method to get user ID by telegram ID
+func (r *UserRepository) GetUserIDByTelegramID(telegramID int64) (string, error) {
+	query := `SELECT id FROM users WHERE telegram_id = ?`
+
+	var userID string
+	err := r.db.QueryRow(query, telegramID).Scan(&userID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", fmt.Errorf("user not found")
+		}
+		return "", fmt.Errorf("failed to get user ID: %w", err)
+	}
+
+	return userID, nil
 }

@@ -5,6 +5,7 @@ import (
 	"os"
 	"tezjet/config"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -41,13 +42,19 @@ func InitDatabase(cfg *config.Config, logger *zap.Logger) (*sql.DB, error) {
 	return db, nil
 }
 
-// createTables creates delivery_requests, drivers, and driver_trips tables with all necessary columns
+// GenerateUUID generates a new UUID string
+func GenerateUUID() string {
+	return uuid.New().String()
+}
+
+// createTables creates delivery_requests, drivers, and driver_trips tables with UUID primary keys
 func CreateTables(db *sql.DB, logger *zap.Logger) error {
-	// Updated delivery_requests table with all necessary columns
+	// FIXED: Updated delivery_requests table with UUID primary key AND driver_id column
 	deliveryRequestsTable := `
 		CREATE TABLE IF NOT EXISTS delivery_requests (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
 			telegram_id INTEGER NOT NULL,
+			driver_id TEXT NULL,
 			from_address TEXT NOT NULL,
 			from_lat REAL NOT NULL,
 			from_lon REAL NOT NULL,
@@ -63,13 +70,14 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 			comment TEXT DEFAULT '',
 			status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'matched', 'in_progress', 'completed', 'cancelled')),
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (driver_id) REFERENCES drivers(id) ON DELETE SET NULL
 		);`
 
-	// Drivers table for driver registrations
+	// Drivers table with UUID primary key
 	driversTable := `
 		CREATE TABLE IF NOT EXISTS drivers (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
 			telegram_id INTEGER NOT NULL UNIQUE,
 			first_name TEXT NOT NULL,
 			last_name TEXT NOT NULL,
@@ -87,15 +95,15 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			approved_at DATETIME NULL,
-			approved_by INTEGER NULL
+			approved_by TEXT NULL
 		);`
 
-	// UPDATED: Driver trips table with all necessary columns for route matching
+	// Driver trips table with UUID primary key and foreign key
 	driverTripsTable := `
 		CREATE TABLE IF NOT EXISTS driver_trips (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			driver_id INTEGER NOT NULL,
-			telegram_id INTEGER NOT NULL,
+			id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+			driver_id TEXT NOT NULL,
+			telegram_id BIGINT NOT NULL,
 			from_address TEXT NOT NULL,
 			from_lat REAL NOT NULL,
 			from_lon REAL NOT NULL,
@@ -116,8 +124,7 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 			status TEXT DEFAULT 'active' CHECK (status IN ('active', 'completed', 'cancelled')),
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			FOREIGN KEY (driver_id) REFERENCES drivers(id) ON DELETE CASCADE,
-			FOREIGN KEY (telegram_id) REFERENCES drivers(telegram_id) ON DELETE CASCADE
+			FOREIGN KEY (driver_id) REFERENCES drivers(id) ON DELETE CASCADE
 		);`
 
 	// Table creation/verification
@@ -149,12 +156,13 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 		} else {
 			logger.Info("Table exists, checking for missing columns", zap.String("table", table.name))
 
-			// Add missing columns for delivery_requests if needed
+			// FIXED: Add missing columns for delivery_requests including driver_id
 			if table.name == "delivery_requests" {
 				columnsToAdd := []struct {
 					name string
 					sql  string
 				}{
+					{"driver_id", "ALTER TABLE delivery_requests ADD COLUMN driver_id TEXT NULL;"},
 					{"eta_min", "ALTER TABLE delivery_requests ADD COLUMN eta_min INTEGER DEFAULT 0;"},
 					{"time_start", "ALTER TABLE delivery_requests ADD COLUMN time_start TEXT DEFAULT '';"},
 					{"distance_km", "ALTER TABLE delivery_requests ADD COLUMN distance_km REAL DEFAULT 0.0;"},
@@ -184,7 +192,7 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 					sql  string
 				}{
 					{"approved_at", "ALTER TABLE drivers ADD COLUMN approved_at DATETIME NULL;"},
-					{"approved_by", "ALTER TABLE drivers ADD COLUMN approved_by INTEGER NULL;"},
+					{"approved_by", "ALTER TABLE drivers ADD COLUMN approved_by TEXT NULL;"},
 					{"truck_type", "ALTER TABLE drivers ADD COLUMN truck_type TEXT DEFAULT '';"},
 					{"is_verified", "ALTER TABLE drivers ADD COLUMN is_verified BOOLEAN DEFAULT FALSE;"},
 				}
@@ -243,6 +251,10 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 		{
 			name: "idx_delivery_requests_telegram_id",
 			sql:  "CREATE INDEX IF NOT EXISTS idx_delivery_requests_telegram_id ON delivery_requests(telegram_id);",
+		},
+		{
+			name: "idx_delivery_requests_driver_id",
+			sql:  "CREATE INDEX IF NOT EXISTS idx_delivery_requests_driver_id ON delivery_requests(driver_id);",
 		},
 		{
 			name: "idx_delivery_requests_status",
@@ -373,6 +385,6 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 		}
 	}
 
-	logger.Info("Database schema created successfully with enhanced driver_trips table")
+	logger.Info("Database schema created successfully with UUID primary keys and driver_id column")
 	return nil
 }

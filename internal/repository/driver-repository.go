@@ -7,6 +7,7 @@ import (
 	"tezjet/internal/domain"
 	"time"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -24,6 +25,8 @@ func NewDriverRepository(db *sql.DB, logger *zap.Logger) *DriverRepository {
 
 // CreateDriver creates a new driver in the database
 func (r *DriverRepository) CreateDriver(req *domain.CreateDriverRequest, files map[string]string) (*domain.Driver, error) {
+	driverID := uuid.New().String() // Generate UUID for the driver
+
 	birthday, err := time.Parse("2006-01-02", req.Birthday)
 	if err != nil {
 		return nil, fmt.Errorf("invalid birthday format: %w", err)
@@ -31,22 +34,20 @@ func (r *DriverRepository) CreateDriver(req *domain.CreateDriverRequest, files m
 
 	query := `
 		INSERT INTO drivers (
-			telegram_id, telegram_username, first_name, last_name, birthday,
+			id, telegram_id, telegram_username, first_name, last_name, birthday,
 			contact_number, start_city, latitude, longitude, profile_photo_path,
 			license_front_path, license_back_path, truck_photo_path, status,
 			is_approved, is_active, has_whatsapp, has_telegram, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-		RETURNING id`
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	now := time.Now()
-	var driverID int64
 
-	err = r.db.QueryRow(query,
-		req.TelegramID, req.TelegramUsername, req.FirstName, req.LastName, birthday,
+	_, err = r.db.Exec(query,
+		driverID, req.TelegramID, req.TelegramUsername, req.FirstName, req.LastName, birthday,
 		req.ContactNumber, req.StartCity, req.Latitude, req.Longitude,
 		files["profilePhoto"], files["licenseFront"], files["licenseBack"], files["truckPhoto"],
 		domain.DriverStatusPending, false, true, req.HasWhatsapp, req.HasTelegram, now, now,
-	).Scan(&driverID)
+	)
 
 	if err != nil {
 		r.logger.Error("Failed to create driver", zap.Error(err))
@@ -56,8 +57,8 @@ func (r *DriverRepository) CreateDriver(req *domain.CreateDriverRequest, files m
 	return r.GetDriverByID(driverID)
 }
 
-// GetDriverByID retrieves a driver by their database ID
-func (r *DriverRepository) GetDriverByID(driverID int64) (*domain.Driver, error) {
+// GetDriverByID retrieves a driver by their database ID (UUID)
+func (r *DriverRepository) GetDriverByID(driverID string) (*domain.Driver, error) {
 	query := `
 		SELECT id, telegram_id, telegram_username, first_name, last_name, birthday,
 			   contact_number, start_city, latitude, longitude, profile_photo_path,
@@ -82,7 +83,7 @@ func (r *DriverRepository) GetDriverByID(driverID int64) (*domain.Driver, error)
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("driver not found")
 		}
-		r.logger.Error("Failed to get driver by ID", zap.Error(err), zap.Int64("driver_id", driverID))
+		r.logger.Error("Failed to get driver by ID", zap.Error(err), zap.String("driver_id", driverID))
 		return nil, fmt.Errorf("failed to get driver: %w", err)
 	}
 
@@ -136,7 +137,23 @@ func (r *DriverRepository) GetDriverByTelegramID(telegramID int64) (*domain.Driv
 	return driver, nil
 }
 
-// This func to change status driver just a MVP version
+// Helper method to get driver ID by telegram ID
+func (r *DriverRepository) GetDriverIDByTelegramID(telegramID int64) (string, error) {
+	query := `SELECT id FROM drivers WHERE telegram_id = ?`
+
+	var driverID string
+	err := r.db.QueryRow(query, telegramID).Scan(&driverID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", fmt.Errorf("driver not found")
+		}
+		return "", fmt.Errorf("failed to get driver ID: %w", err)
+	}
+
+	return driverID, nil
+}
+
+// ChangeDriverStatus changes driver status and returns affected telegram IDs
 func (r *DriverRepository) ChangeDriverStatus(ctx context.Context, actualStatus, newStatus string) ([]int64, error) {
 	q := `UPDATE drivers SET status = ? WHERE status = ? RETURNING telegram_id;`
 	rows, err := r.db.QueryContext(ctx, q, newStatus, actualStatus)
@@ -156,7 +173,7 @@ func (r *DriverRepository) ChangeDriverStatus(ctx context.Context, actualStatus,
 }
 
 // ApproveDriver approves a driver
-func (r *DriverRepository) ApproveDriver(driverID int64) error {
+func (r *DriverRepository) ApproveDriver(driverID string) error {
 	query := `
 		UPDATE drivers 
 		SET is_approved = true, status = ?, approved_at = ?, updated_at = ?
@@ -165,7 +182,7 @@ func (r *DriverRepository) ApproveDriver(driverID int64) error {
 	now := time.Now()
 	result, err := r.db.Exec(query, domain.DriverStatusApproved, now, now, driverID)
 	if err != nil {
-		r.logger.Error("Failed to approve driver", zap.Error(err), zap.Int64("driver_id", driverID))
+		r.logger.Error("Failed to approve driver", zap.Error(err), zap.String("driver_id", driverID))
 		return fmt.Errorf("failed to approve driver: %w", err)
 	}
 
@@ -182,7 +199,7 @@ func (r *DriverRepository) ApproveDriver(driverID int64) error {
 }
 
 // RejectDriver rejects a driver
-func (r *DriverRepository) RejectDriver(driverID int64) error {
+func (r *DriverRepository) RejectDriver(driverID string) error {
 	query := `
 		UPDATE drivers 
 		SET is_approved = false, status = ?, updated_at = ?
@@ -190,7 +207,7 @@ func (r *DriverRepository) RejectDriver(driverID int64) error {
 
 	result, err := r.db.Exec(query, domain.DriverStatusRejected, time.Now(), driverID)
 	if err != nil {
-		r.logger.Error("Failed to reject driver", zap.Error(err), zap.Int64("driver_id", driverID))
+		r.logger.Error("Failed to reject driver", zap.Error(err), zap.String("driver_id", driverID))
 		return fmt.Errorf("failed to reject driver: %w", err)
 	}
 
@@ -207,25 +224,25 @@ func (r *DriverRepository) RejectDriver(driverID int64) error {
 }
 
 // CreateDriverRoute creates a new driver route
-func (r *DriverRepository) CreateDriverRoute(req *domain.CreateDriverRouteRequest, driverID int64, distance float64) (*domain.DriverRoute, error) {
+func (r *DriverRepository) CreateDriverRoute(req *domain.CreateDriverRouteRequest, driverID string, distance float64) (*domain.DriverRoute, error) {
+	routeID := uuid.New().String() // Generate UUID for the route
+
 	query := `
 		INSERT INTO driver_routes (
-			driver_id, telegram_id, from_address, from_lat, from_lon,
+			id, driver_id, telegram_id, from_address, from_lat, from_lon,
 			to_address, to_lat, to_lon, price, truck_type, max_weight,
 			comment, departure_time, distance_km, status, available_seats,
 			is_active, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-		RETURNING id`
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	now := time.Now()
-	var routeID int64
 
-	err := r.db.QueryRow(query,
-		driverID, req.TelegramID, req.FromAddress, req.FromLat, req.FromLon,
+	_, err := r.db.Exec(query,
+		routeID, driverID, req.TelegramID, req.FromAddress, req.FromLat, req.FromLon,
 		req.ToAddress, req.ToLat, req.ToLon, req.Price, req.TruckType, req.MaxWeight,
 		req.Comment, req.DepartureTime, distance, domain.RouteStatusActive, req.AvailableSeats,
 		true, now, now,
-	).Scan(&routeID)
+	)
 
 	if err != nil {
 		r.logger.Error("Failed to create driver route", zap.Error(err))
@@ -235,8 +252,8 @@ func (r *DriverRepository) CreateDriverRoute(req *domain.CreateDriverRouteReques
 	return r.GetDriverRouteByID(routeID)
 }
 
-// GetDriverRouteByID retrieves a driver route by ID
-func (r *DriverRepository) GetDriverRouteByID(routeID int64) (*domain.DriverRoute, error) {
+// GetDriverRouteByID retrieves a driver route by ID (UUID)
+func (r *DriverRepository) GetDriverRouteByID(routeID string) (*domain.DriverRoute, error) {
 	query := `
 		SELECT id, driver_id, telegram_id, from_address, from_lat, from_lon,
 			   to_address, to_lat, to_lon, price, truck_type, max_weight,
@@ -259,7 +276,7 @@ func (r *DriverRepository) GetDriverRouteByID(routeID int64) (*domain.DriverRout
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("driver route not found")
 		}
-		r.logger.Error("Failed to get driver route", zap.Error(err), zap.Int64("route_id", routeID))
+		r.logger.Error("Failed to get driver route", zap.Error(err), zap.String("route_id", routeID))
 		return nil, fmt.Errorf("failed to get driver route: %w", err)
 	}
 
@@ -401,9 +418,10 @@ func (r *DriverRepository) FindMatchingDrivers(fromLat, fromLon, toLat, toLon fl
 	for rows.Next() {
 		driver := &domain.MatchedDriver{}
 		var pickupDistance, dropoffDistance float64
+		var firstName, lastName string
 
 		err := rows.Scan(
-			&driver.DriverID, &driver.FullName, &driver.FullName, &driver.ProfilePhoto, &driver.ContactNumber,
+			&driver.DriverID, &firstName, &lastName, &driver.ProfilePhoto, &driver.ContactNumber,
 			&driver.Rating, &driver.TotalTrips, &driver.FromAddress, &driver.ToAddress, &driver.Price,
 			&driver.TruckType, &driver.Comment, &driver.DepartureTime, &driver.TruckPhoto,
 			&driver.HasWhatsapp, &driver.HasTelegram, &driver.TelegramUsername, &driver.FromLat, &driver.FromLon,
@@ -414,6 +432,12 @@ func (r *DriverRepository) FindMatchingDrivers(fromLat, fromLon, toLat, toLon fl
 			continue
 		}
 
+		// Combine first and last name
+		driver.FullName = firstName
+		if lastName != "" {
+			driver.FullName += " " + lastName
+		}
+
 		drivers = append(drivers, driver)
 	}
 
@@ -421,7 +445,7 @@ func (r *DriverRepository) FindMatchingDrivers(fromLat, fromLon, toLat, toLon fl
 }
 
 // UpdateDriverStatus updates driver status
-func (r *DriverRepository) UpdateDriverStatus(driverID int64, status string) error {
+func (r *DriverRepository) UpdateDriverStatus(driverID string, status string) error {
 	query := `
 		UPDATE drivers 
 		SET status = ?, updated_at = ?
@@ -429,7 +453,7 @@ func (r *DriverRepository) UpdateDriverStatus(driverID int64, status string) err
 
 	result, err := r.db.Exec(query, status, time.Now(), driverID)
 	if err != nil {
-		r.logger.Error("Failed to update driver status", zap.Error(err), zap.Int64("driver_id", driverID))
+		r.logger.Error("Failed to update driver status", zap.Error(err), zap.String("driver_id", driverID))
 		return fmt.Errorf("failed to update driver status: %w", err)
 	}
 
@@ -472,7 +496,7 @@ func (r *DriverRepository) UpdateDriverOnlineStatus(telegramID int64, isOnline b
 }
 
 // UpdateDriverRoute updates a driver route
-func (r *DriverRepository) UpdateDriverRoute(routeID int64, updates map[string]interface{}) error {
+func (r *DriverRepository) UpdateDriverRoute(routeID string, updates map[string]interface{}) error {
 	if len(updates) == 0 {
 		return fmt.Errorf("no updates provided")
 	}
@@ -495,7 +519,7 @@ func (r *DriverRepository) UpdateDriverRoute(routeID int64, updates map[string]i
 
 	result, err := r.db.Exec(query, args...)
 	if err != nil {
-		r.logger.Error("Failed to update driver route", zap.Error(err), zap.Int64("route_id", routeID))
+		r.logger.Error("Failed to update driver route", zap.Error(err), zap.String("route_id", routeID))
 		return fmt.Errorf("failed to update driver route: %w", err)
 	}
 
@@ -512,7 +536,7 @@ func (r *DriverRepository) UpdateDriverRoute(routeID int64, updates map[string]i
 }
 
 // CompleteDriverRoute marks a driver route as completed
-func (r *DriverRepository) CompleteDriverRoute(routeID int64) error {
+func (r *DriverRepository) CompleteDriverRoute(routeID string) error {
 	query := `
 		UPDATE driver_routes 
 		SET status = ?, arrival_time = ?, updated_at = ?
@@ -521,7 +545,7 @@ func (r *DriverRepository) CompleteDriverRoute(routeID int64) error {
 	now := time.Now()
 	result, err := r.db.Exec(query, domain.RouteStatusCompleted, now, now, routeID, domain.RouteStatusActive)
 	if err != nil {
-		r.logger.Error("Failed to complete driver route", zap.Error(err), zap.Int64("route_id", routeID))
+		r.logger.Error("Failed to complete driver route", zap.Error(err), zap.String("route_id", routeID))
 		return fmt.Errorf("failed to complete driver route: %w", err)
 	}
 
@@ -539,20 +563,20 @@ func (r *DriverRepository) CompleteDriverRoute(routeID int64) error {
 
 // CreateDriverMatch creates a match between a driver and delivery request
 func (r *DriverRepository) CreateDriverMatch(match *domain.DriverMatch) (*domain.DriverMatch, error) {
+	matchID := uuid.New().String() // Generate UUID for the match
+
 	query := `
 		INSERT INTO driver_matches (
-			driver_id, driver_route_id, delivery_request_id, client_telegram_id,
+			id, driver_id, driver_route_id, delivery_request_id, client_telegram_id,
 			status, proposed_price, driver_comment, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-		RETURNING id`
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	now := time.Now()
-	var matchID int64
 
-	err := r.db.QueryRow(query,
-		match.DriverID, match.DriverRouteID, match.DeliveryRequestID, match.ClientTelegramID,
+	_, err := r.db.Exec(query,
+		matchID, match.DriverID, match.DriverRouteID, match.DeliveryRequestID, match.ClientTelegramID,
 		domain.MatchStatusPending, match.ProposedPrice, match.DriverComment, now, now,
-	).Scan(&matchID)
+	)
 
 	if err != nil {
 		r.logger.Error("Failed to create driver match", zap.Error(err))
@@ -562,8 +586,8 @@ func (r *DriverRepository) CreateDriverMatch(match *domain.DriverMatch) (*domain
 	return r.GetDriverMatchByID(matchID)
 }
 
-// GetDriverMatchByID retrieves a driver match by ID
-func (r *DriverRepository) GetDriverMatchByID(matchID int64) (*domain.DriverMatch, error) {
+// GetDriverMatchByID retrieves a driver match by ID (UUID)
+func (r *DriverRepository) GetDriverMatchByID(matchID string) (*domain.DriverMatch, error) {
 	query := `
 		SELECT id, driver_id, driver_route_id, delivery_request_id, client_telegram_id,
 			   status, proposed_price, final_price, pickup_time, delivery_time,
@@ -588,7 +612,7 @@ func (r *DriverRepository) GetDriverMatchByID(matchID int64) (*domain.DriverMatc
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("driver match not found")
 		}
-		r.logger.Error("Failed to get driver match", zap.Error(err), zap.Int64("match_id", matchID))
+		r.logger.Error("Failed to get driver match", zap.Error(err), zap.String("match_id", matchID))
 		return nil, fmt.Errorf("failed to get driver match: %w", err)
 	}
 
@@ -618,7 +642,7 @@ func (r *DriverRepository) GetDriverMatchByID(matchID int64) (*domain.DriverMatc
 }
 
 // UpdateDriverMatchStatus updates the status of a driver match
-func (r *DriverRepository) UpdateDriverMatchStatus(matchID int64, status string) error {
+func (r *DriverRepository) UpdateDriverMatchStatus(matchID string, status string) error {
 	query := `
 		UPDATE driver_matches 
 		SET status = ?, updated_at = ?
@@ -626,7 +650,7 @@ func (r *DriverRepository) UpdateDriverMatchStatus(matchID int64, status string)
 
 	result, err := r.db.Exec(query, status, time.Now(), matchID)
 	if err != nil {
-		r.logger.Error("Failed to update driver match status", zap.Error(err), zap.Int64("match_id", matchID))
+		r.logger.Error("Failed to update driver match status", zap.Error(err), zap.String("match_id", matchID))
 		return fmt.Errorf("failed to update driver match status: %w", err)
 	}
 
@@ -677,18 +701,21 @@ func (r *DriverRepository) GetDriverStatistics(telegramID int64) (*domain.Driver
 		stats.LastActiveAt = &lastActiveAt.Time
 	}
 
-	// Calculate cancellation rate
-	cancelQuery := `
-		SELECT 
-			COUNT(CASE WHEN status = ? THEN 1 END) as cancelled_routes,
-			COUNT(*) as total_routes
-		FROM driver_routes 
-		WHERE driver_id = (SELECT id FROM drivers WHERE telegram_id = ?)`
+	// Calculate cancellation rate using driver ID lookup
+	driverID, err := r.GetDriverIDByTelegramID(telegramID)
+	if err == nil {
+		cancelQuery := `
+			SELECT 
+				COUNT(CASE WHEN status = ? THEN 1 END) as cancelled_routes,
+				COUNT(*) as total_routes
+			FROM driver_routes 
+			WHERE driver_id = ?`
 
-	var cancelledRoutes, totalRoutes int
-	err = r.db.QueryRow(cancelQuery, domain.RouteStatusCancelled, telegramID).Scan(&cancelledRoutes, &totalRoutes)
-	if err == nil && totalRoutes > 0 {
-		stats.CancellationRate = float64(cancelledRoutes) / float64(totalRoutes)
+		var cancelledRoutes, totalRoutes int
+		err = r.db.QueryRow(cancelQuery, domain.RouteStatusCancelled, driverID).Scan(&cancelledRoutes, &totalRoutes)
+		if err == nil && totalRoutes > 0 {
+			stats.CancellationRate = float64(cancelledRoutes) / float64(totalRoutes)
+		}
 	}
 
 	return stats, nil

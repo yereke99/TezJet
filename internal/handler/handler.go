@@ -18,6 +18,7 @@ import (
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
@@ -30,6 +31,38 @@ type Response struct {
 	Success bool        `json:"success"`
 	Message string      `json:"message,omitempty"`
 	Data    interface{} `json:"data,omitempty"`
+}
+
+type MatchedDriver struct {
+	ID                  string  `json:"id"` // FIXED: Changed to string
+	TelegramID          string  `json:"telegram_id"`
+	FirstName           string  `json:"first_name"`
+	LastName            string  `json:"last_name"`
+	ContactNumber       string  `json:"contact_number"`
+	TruckType           string  `json:"truck_type"`
+	ProfilePhoto        string  `json:"profile_photo"`
+	IsVerified          bool    `json:"is_verified"`
+	RouteID             string  `json:"route_id"` // FIXED: Changed to string
+	FromAddress         string  `json:"from_address"`
+	ToAddress           string  `json:"to_address"`
+	FromLat             float64 `json:"from_lat"`
+	FromLon             float64 `json:"from_lon"`
+	ToLat               float64 `json:"to_lat"`
+	ToLon               float64 `json:"to_lon"`
+	Price               int     `json:"price"`
+	DepartureTime       string  `json:"departure_time"`
+	Comment             string  `json:"comment"`
+	TruckPhoto          string  `json:"truck_photo"`
+	DistanceToPickupKm  float64 `json:"distance_to_pickup_km"`
+	DistanceToDropoffKm float64 `json:"distance_to_dropoff_km"`
+	RouteMatchScore     int     `json:"route_match_score"`
+	MatchQuality        string  `json:"match_quality"`
+	ETAMin              int     `json:"eta_min"`
+	IsOnline            bool    `json:"is_online"`
+	LastSeenMin         int     `json:"last_seen_min"`
+	HasWhatsApp         bool    `json:"has_whatsapp"`
+	HasTelegram         bool    `json:"has_telegram"`
+	ResponseTimeMin     int     `json:"response_time_min"`
 }
 
 type Handler struct {
@@ -130,11 +163,10 @@ func (h *Handler) handleDriverRegister(b *bot.Bot) http.HandlerFunc {
 		}
 
 		driver.ID = driverID
-		//driver.Status = "pending"
 		driver.Status = "approved"
 		driver.CreatedAt = time.Now()
 
-		h.logger.Info("Driver registration saved successfully", zap.Int64("driver_id", driverID))
+		h.logger.Info("Driver registration saved successfully", zap.String("driver_id", driverID))
 
 		go h.sendDriverConfirmationMessage(b, driver, driverID)
 
@@ -231,7 +263,7 @@ func (h *Handler) handleDriverStart(b *bot.Bot) http.HandlerFunc {
 			zap.Int("eta", trip.EtaMin),
 			zap.String("start_time", trip.StartTime),
 			zap.Int64("telegram_id", trip.TelegramID),
-			zap.Int64("driver_id", trip.DriverID))
+			zap.String("driver_id", trip.DriverID))
 
 		// Save driver trip to database
 		tripID, err := h.saveDriverTrip(trip)
@@ -245,7 +277,7 @@ func (h *Handler) handleDriverStart(b *bot.Bot) http.HandlerFunc {
 		trip.Status = "active"
 		trip.CreatedAt = time.Now()
 
-		h.logger.Info("Driver trip saved successfully", zap.Int64("trip_id", tripID))
+		h.logger.Info("Driver trip saved successfully", zap.String("trip_id", tripID))
 
 		// Send confirmation message to driver
 		go h.sendDriverTripConfirmation(b, trip, driver)
@@ -349,26 +381,28 @@ func (h *Handler) parseDriverTripRequest(r *http.Request) (*DriverTrip, error) {
 }
 
 // saveDriverTrip saves the driver trip to database
-func (h *Handler) saveDriverTrip(trip *DriverTrip) (int64, error) {
+func (h *Handler) saveDriverTrip(trip *DriverTrip) (string, error) {
+	tripID := uuid.New().String()
+
 	query := `
 		INSERT INTO driver_trips (
-			driver_id, telegram_id, from_address, from_lat, from_lon, 
+			id, driver_id, telegram_id, from_address, from_lat, from_lon, 
 			to_address, to_lat, to_lon, distance_km, eta_min,
 			price, start_time, comment, status, created_at
 		) VALUES (
-			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', CURRENT_TIMESTAMP
-		) RETURNING id`
+			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', CURRENT_TIMESTAMP
+		)`
 
-	var tripID int64
-	err := h.db.QueryRow(
+	_, err := h.db.Exec(
 		query,
+		tripID, // This is the generated UUID
 		trip.DriverID, trip.TelegramID, trip.FromAddress, trip.FromLat, trip.FromLon,
 		trip.ToAddress, trip.ToLat, trip.ToLon, trip.DistanceKm, trip.EtaMin,
 		trip.Price, trip.StartTime, trip.Comment,
-	).Scan(&tripID)
+	)
 
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 
 	return tripID, nil
@@ -384,9 +418,10 @@ func (h *Handler) sendDriverTripConfirmation(b *bot.Bot, trip *DriverTrip, drive
 	// Format start time
 	startTimeText := h.formatTripStartTime(trip.StartTime)
 
+	// FIXED: Using %s for string UUID
 	message := fmt.Sprintf(`🚚 <b>Жаңа сапар басталды!</b>
 
-📋 <b>Сапар нөмірі:</b> #%d
+📋 <b>Сапар нөмірі:</b> #%s
 
 👤 <b>Жүргізуші:</b> %s %s
 📱 <b>Байланыс:</b> %s
@@ -398,7 +433,7 @@ func (h *Handler) sendDriverTripConfirmation(b *bot.Bot, trip *DriverTrip, drive
 🛣️ <b>Қашықтық:</b> %.1f км
 ⏱️ <b>Болжамды уақыт:</b> %d мин
 %s`,
-		trip.ID,
+		trip.ID, // FIXED: Using %s for string UUID
 		driver.FirstName,
 		driver.LastName,
 		driver.ContactNumber,
@@ -422,7 +457,7 @@ func (h *Handler) sendDriverTripConfirmation(b *bot.Bot, trip *DriverTrip, drive
 		InlineKeyboard: [][]models.InlineKeyboardButton{
 			{
 				{Text: "🚚 Менің сапарларым", CallbackData: "my_trips"},
-				{Text: "✅ Аяқтау", CallbackData: fmt.Sprintf("complete_trip_%d", trip.ID)},
+				{Text: "✅ Аяқтау", CallbackData: fmt.Sprintf("complete_trip_%s", trip.ID)}, // FIXED: %s for string
 			},
 		},
 	}
@@ -440,11 +475,11 @@ func (h *Handler) sendDriverTripConfirmation(b *bot.Bot, trip *DriverTrip, drive
 		h.logger.Error("Failed to send driver trip confirmation message",
 			zap.Error(err),
 			zap.Int64("telegram_id", trip.TelegramID),
-			zap.Int64("trip_id", trip.ID))
+			zap.String("trip_id", trip.ID))
 	} else {
 		h.logger.Info("Driver trip confirmation message sent",
 			zap.Int64("telegram_id", trip.TelegramID),
-			zap.Int64("trip_id", trip.ID))
+			zap.String("trip_id", trip.ID))
 	}
 }
 
@@ -561,16 +596,6 @@ func (h *Handler) getDriverTrips(telegramID int64) ([]DriverTrip, error) {
 
 	return trips, nil
 }
-
-// Update your StartWebServer function to include these new routes:
-/*
-Add these routes to your StartWebServer function:
-
-	// Driver trip routes
-	r.HandleFunc("/driver", h.driverHandler).Methods("GET")
-	r.HandleFunc("/api/driver/start", h.handleDriverStart(b)).Methods("POST", "OPTIONS")
-	r.HandleFunc("/api/driver/trips", h.handleDriverTrips).Methods("GET", "POST", "OPTIONS")
-*/
 
 // parseDriverRegistration parses the driver registration form data
 func (h *Handler) parseDriverRegistration(r *http.Request) (*DriverRegistration, error) {
@@ -767,41 +792,43 @@ func (h *Handler) saveFile(r *http.Request, fieldName, dir string, telegramID in
 }
 
 // saveDriverRegistration saves driver registration to database
-func (h *Handler) saveDriverRegistration(driver *DriverRegistration) (int64, error) {
+func (h *Handler) saveDriverRegistration(driver *DriverRegistration) (string, error) {
+	driverID := uuid.New().String()
+
 	query := `
 		INSERT INTO drivers (
-			telegram_id, first_name, last_name, birthday, contact_number,
+			id, telegram_id, first_name, last_name, birthday, contact_number,
 			start_city, latitude, longitude, profile_photo, license_front,
 			license_back, status, created_at
 		) VALUES (
-			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP
-		) RETURNING id`
+			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP
+		)`
 
-	var driverID int64
-	err := h.db.QueryRow(
+	_, err := h.db.Exec(
 		query,
-		driver.TelegramID, driver.FirstName, driver.LastName, driver.Birthday,
+		driverID, driver.TelegramID, driver.FirstName, driver.LastName, driver.Birthday,
 		driver.ContactNumber, driver.StartCity, driver.Latitude, driver.Longitude,
 		driver.ProfilePhoto, driver.LicenseFront, driver.LicenseBack,
-	).Scan(&driverID)
+	)
 
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 
 	return driverID, nil
 }
 
 // sendDriverConfirmationMessage sends confirmation message to driver
-func (h *Handler) sendDriverConfirmationMessage(b *bot.Bot, driver *DriverRegistration, driverID int64) {
+func (h *Handler) sendDriverConfirmationMessage(b *bot.Bot, driver *DriverRegistration, driverID string) {
 	if driver.TelegramID == 0 {
 		h.logger.Warn("No Telegram ID provided for driver, skipping confirmation message")
 		return
 	}
 
+	// FIXED: Using %s for string UUID
 	message := fmt.Sprintf(`🚗 <b>Жүргізуші ретінде тіркелу!</b>
 
-📋 <b>Өтінім нөмірі:</b> #%d
+📋 <b>Өтінім нөмірі:</b> #%s
 
 👤 <b>Аты-жөні:</b> %s %s
 📱 <b>Байланыс:</b> %s
@@ -812,7 +839,7 @@ func (h *Handler) sendDriverConfirmationMessage(b *bot.Bot, driver *DriverRegist
 ⏳ Құжаттарды тексеру 24 сағат ішінде аяқталады.
 
 📞 Сұрақтар болса хабарласыңыз: @support`,
-		driverID,
+		driverID, // FIXED: Using %s for string UUID
 		driver.FirstName,
 		driver.LastName,
 		driver.ContactNumber,
@@ -832,15 +859,13 @@ func (h *Handler) sendDriverConfirmationMessage(b *bot.Bot, driver *DriverRegist
 		h.logger.Error("Failed to send driver confirmation message",
 			zap.Error(err),
 			zap.Int64("telegram_id", driver.TelegramID),
-			zap.Int64("driver_id", driverID))
+			zap.String("driver_id", driverID))
 	} else {
 		h.logger.Info("Driver confirmation message sent",
 			zap.Int64("telegram_id", driver.TelegramID),
-			zap.Int64("driver_id", driverID))
+			zap.String("driver_id", driverID))
 	}
 }
-
-// Add these functions to your handler.go file
 
 // CheckDriverExist checks if driver exists in database
 func (h *Handler) CheckDriverExist(telegramID int64) (*DriverRegistration, error) {
@@ -938,7 +963,7 @@ func (h *Handler) handleCheckWho(w http.ResponseWriter, r *http.Request) {
 		}
 
 		h.logger.Info("Driver found",
-			zap.Int64("driver_id", driver.ID),
+			zap.String("driver_id", driver.ID),
 			zap.String("status", driver.Status),
 			zap.String("name", driver.FirstName+" "+driver.LastName))
 	} else {
@@ -991,7 +1016,7 @@ func (h *Handler) handleDriverUpdate(b *bot.Bot) http.HandlerFunc {
 		}
 
 		h.logger.Info("Updating driver profile",
-			zap.Int64("driver_id", existingDriver.ID),
+			zap.String("driver_id", existingDriver.ID),
 			zap.String("name", existingDriver.FirstName+" "+existingDriver.LastName))
 
 		// Parse update data
@@ -1036,7 +1061,7 @@ func (h *Handler) handleDriverUpdate(b *bot.Bot) http.HandlerFunc {
 			return
 		}
 
-		h.logger.Info("Driver profile updated successfully", zap.Int64("driver_id", updateData.ID))
+		h.logger.Info("Driver profile updated successfully", zap.String("driver_id", updateData.ID))
 
 		// Send notification
 		go h.sendDriverUpdateNotification(b, updateData)
@@ -1175,11 +1200,6 @@ func (h *Handler) driverUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, path)
 }
 
-// Add these routes to your StartWebServer function:
-// r.HandleFunc("/api/check/who", h.handleCheckWho).Methods("GET", "POST", "OPTIONS")
-// r.HandleFunc("/api/driver/update", h.handleDriverUpdate(b)).Methods("POST", "OPTIONS")
-// r.HandleFunc("/driver-update", h.driverUpdateHandler).Methods("GET")
-
 // Additional handler methods for routes, CORS, etc. (keeping existing functionality)
 func (h *Handler) deliveryHandler(w http.ResponseWriter, r *http.Request) {
 	path := "./static/delivery.html"
@@ -1236,7 +1256,6 @@ func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 
 	// Main pages
 	r.HandleFunc("/", h.welcomeHandler).Methods("GET") // NEW - Welcome as default
-	//r.HandleFunc("/welcome", h.welcomeHandler).Methods("GET") // NEW - Explicit welcome route
 	r.HandleFunc("/delivery", h.deliveryHandler).Methods("GET")
 	r.HandleFunc("/register", h.registerDriverHandler).Methods("GET")
 	r.HandleFunc("/driver-update", h.driverUpdateHandler).Methods("GET")
@@ -1246,7 +1265,7 @@ func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 	r.HandleFunc("/api/driver/trips", h.handleDriverTrips).Methods("GET", "POST", "OPTIONS")
 
 	// API routes
-	r.HandleFunc("/api/delivery-request", h.handleDelivery(b)).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/delivery-request", h.handleDelivery(ctx, b)).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/driver/register", h.handleDriverRegister(b)).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/driver/update", h.handleDriverUpdate(b)).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/check/who", h.handleCheckWho).Methods("GET", "POST", "OPTIONS")
@@ -1286,7 +1305,7 @@ func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 		MaxHeaderBytes: 10 << 20,
 	}
 
-	h.logger.Info("Starting web server with welcome page", zap.String("port", ":"+port))
+	h.logger.Info("Starting web server with welcome page", zap.String("port", port))
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			h.logger.Fatal("Failed to start web server", zap.Error(err))
@@ -1377,7 +1396,7 @@ func (h *Handler) handleDeliveryList(w http.ResponseWriter, r *http.Request) {
 		// Log first few orders for debugging
 		if i < 3 {
 			h.logger.Debug("Order details",
-				zap.Int64("order_id", order.ID),
+				zap.String("order_id", order.ID),
 				zap.String("from", order.FromAddress),
 				zap.String("to", order.ToAddress),
 				zap.Int("price", order.Price),
@@ -1460,13 +1479,13 @@ func (h *Handler) getDeliveryOrdersInRadius(driverLat, driverLon, radiusKm float
 			// If coordinates are missing, assume it's within radius (fallback)
 			distance = radiusKm / 2
 			h.logger.Warn("Missing coordinates for order",
-				zap.Int64("order_id", order.ID),
+				zap.String("order_id", order.ID),
 				zap.Float64("order_lat", order.FromLat),
 				zap.Float64("order_lon", order.FromLon))
 		}
 
 		h.logger.Debug("Processing order",
-			zap.Int64("order_id", order.ID),
+			zap.String("order_id", order.ID),
 			zap.Float64("distance", distance),
 			zap.Float64("radius", radiusKm),
 			zap.String("from_address", order.FromAddress))
@@ -1476,7 +1495,7 @@ func (h *Handler) getDeliveryOrdersInRadius(driverLat, driverLon, radiusKm float
 			ordersInRadius++
 			allOrders = append(allOrders, order)
 			h.logger.Debug("Order included",
-				zap.Int64("order_id", order.ID),
+				zap.String("order_id", order.ID),
 				zap.Float64("distance", distance))
 		}
 	}
@@ -1524,7 +1543,7 @@ func (h *Handler) deliveryListHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, path)
 }
 
-// handleDriverAcceptOrder handles driver accepting an order
+// FIXED: handleDriverAcceptOrder handles driver accepting an order
 func (h *Handler) handleDriverAcceptOrder(b *bot.Bot) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -1532,10 +1551,10 @@ func (h *Handler) handleDriverAcceptOrder(b *bot.Bot) http.HandlerFunc {
 		h.logger.Info("Received driver accept order request",
 			zap.String("method", r.Method))
 
-		// Parse request body
+		// FIXED: Parse request body with proper types
 		var reqData struct {
-			TelegramID int64 `json:"telegram_id"`
-			OrderID    int64 `json:"order_id"`
+			TelegramID int64  `json:"telegram_id"`
+			OrderID    string `json:"order_id"` // FIXED: Changed to string for UUID support
 		}
 
 		if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
@@ -1544,7 +1563,7 @@ func (h *Handler) handleDriverAcceptOrder(b *bot.Bot) http.HandlerFunc {
 			return
 		}
 
-		if reqData.TelegramID == 0 || reqData.OrderID == 0 {
+		if reqData.TelegramID == 0 || reqData.OrderID == "" { // FIXED: Check for empty string
 			h.sendErrorResponse(w, "Telegram ID и Order ID обязательны", http.StatusBadRequest)
 			return
 		}
@@ -1594,8 +1613,8 @@ func (h *Handler) handleDriverAcceptOrder(b *bot.Bot) http.HandlerFunc {
 		}
 
 		h.logger.Info("Order accepted by driver",
-			zap.Int64("order_id", reqData.OrderID),
-			zap.Int64("driver_id", driver.ID),
+			zap.String("order_id", reqData.OrderID), // FIXED: String logging
+			zap.String("driver_id", driver.ID),
 			zap.String("driver_name", driver.FirstName+" "+driver.LastName))
 
 		// Send notifications
@@ -1609,8 +1628,8 @@ func (h *Handler) handleDriverAcceptOrder(b *bot.Bot) http.HandlerFunc {
 	}
 }
 
-// getDeliveryOrderById retrieves a delivery order by ID
-func (h *Handler) getDeliveryOrderById(orderID int64) (*DeliveryRequest, error) {
+// FIXED: getDeliveryOrderById retrieves a delivery order by ID
+func (h *Handler) getDeliveryOrderById(orderID string) (*DeliveryRequest, error) {
 	query := `
 		SELECT 
 			id, telegram_id, from_address, from_lat, from_lon, 
@@ -1638,8 +1657,8 @@ func (h *Handler) getDeliveryOrderById(orderID int64) (*DeliveryRequest, error) 
 	return &order, nil
 }
 
-// updateOrderStatus updates the status of a delivery order
-func (h *Handler) updateOrderStatus(orderID int64, status string, driverID int64) error {
+// FIXED: updateOrderStatus updates the status of a delivery order
+func (h *Handler) updateOrderStatus(orderID string, status string, driverID string) error {
 	// Validate status value against allowed values
 	allowedStatuses := map[string]bool{
 		"pending":     true,
@@ -1656,14 +1675,14 @@ func (h *Handler) updateOrderStatus(orderID int64, status string, driverID int64
 	var query string
 	var args []interface{}
 
-	if driverID > 0 {
+	if driverID != "" && driverID != "0" { // FIXED: Proper string comparison
 		query = `
 			UPDATE delivery_requests 
-			SET status = ?, telegram_id = ?, updated_at = CURRENT_TIMESTAMP
+			SET status = ?, driver_id = ?, updated_at = CURRENT_TIMESTAMP
 			WHERE id = ? AND status = 'pending'`
 		args = []interface{}{status, driverID, orderID}
 
-		log.Printf("🔄 Updating order %d: status='%s', driverID=%d", orderID, status, driverID)
+		log.Printf("🔄 Updating order %s: status='%s', driverID=%s", orderID, status, driverID) // FIXED: %s for strings
 	} else {
 		query = `
 			UPDATE delivery_requests 
@@ -1671,12 +1690,12 @@ func (h *Handler) updateOrderStatus(orderID int64, status string, driverID int64
 			WHERE id = ?`
 		args = []interface{}{status, orderID}
 
-		log.Printf("🔄 Updating order %d: status='%s'", orderID, status)
+		log.Printf("🔄 Updating order %s: status='%s'", orderID, status) // FIXED: %s for string
 	}
 
 	result, err := h.db.Exec(query, args...)
 	if err != nil {
-		log.Printf("❌ Database error updating order %d: %v", orderID, err)
+		log.Printf("❌ Database error updating order %s: %v", orderID, err) // FIXED: %s for string
 		return err
 	}
 
@@ -1686,21 +1705,22 @@ func (h *Handler) updateOrderStatus(orderID int64, status string, driverID int64
 	}
 
 	if rowsAffected == 0 {
-		log.Printf("⚠️ No rows affected for order %d (not found or already accepted)", orderID)
+		log.Printf("⚠️ No rows affected for order %s (not found or already accepted)", orderID) // FIXED: %s for string
 		return fmt.Errorf("order not found or already accepted")
 	}
 
-	log.Printf("✅ Successfully updated order %d status to '%s'", orderID, status)
+	log.Printf("✅ Successfully updated order %s status to '%s'", orderID, status) // FIXED: %s for string
 	return nil
 }
 
-// sendOrderAcceptedNotifications sends notifications when order is accepted
+// FIXED: sendOrderAcceptedNotifications sends notifications when order is accepted
 func (h *Handler) sendOrderAcceptedNotifications(b *bot.Bot, order *DeliveryRequest, driver *DriverRegistration) {
 	// Send notification to client
 	if order.TelegramID != 0 {
+		// FIXED: Using %s for string UUID
 		clientMessage := fmt.Sprintf(`🚚 Сіздің тапсырысыңыз қабылданды! 🎉
 
-📋 Тапсырыс: #%d
+📋 Тапсырыс: #%s
 
 👤 Жүргізуші: %s %s
 📱 Байланыс: %s
@@ -1711,7 +1731,7 @@ func (h *Handler) sendOrderAcceptedNotifications(b *bot.Bot, order *DeliveryRequ
 💰 Бағасы: %d ₸
 
 ✅ Жүргізуші сізбен жақын арада байланысады! 😊`,
-			order.ID,
+			order.ID, // FIXED: Using %s for string UUID
 			driver.FirstName,
 			driver.LastName,
 			driver.ContactNumber,
@@ -1733,15 +1753,16 @@ func (h *Handler) sendOrderAcceptedNotifications(b *bot.Bot, order *DeliveryRequ
 		} else {
 			h.logger.Info("Client notification sent",
 				zap.Int64("client_telegram_id", order.TelegramID),
-				zap.Int64("order_id", order.ID))
+				zap.String("order_id", order.ID))
 		}
 	}
 
 	// Send notification to driver
 	if driver.TelegramID != 0 {
+		// FIXED: Using %s for string UUID
 		driverMessage := fmt.Sprintf(`✅ Тапсырыс қабылданды! 🎊
 
-📋 Тапсырыс: #%d
+📋 Тапсырыс: #%s
 
 📍 Қайдан: %s
 🎯 Қайда: %s
@@ -1750,19 +1771,31 @@ func (h *Handler) sendOrderAcceptedNotifications(b *bot.Bot, order *DeliveryRequ
 📱 Клиент: %s
 
 🚚 Толық мәліметтер үшін клиентпен байланысыңыз! 💪`,
-			order.ID,
+			order.ID, // FIXED: Using %s for string UUID
 			order.FromAddress,
 			order.ToAddress,
 			order.Price,
 			order.Contact,
 		)
 
+		var onlyDigits func(s string) string
+		onlyDigits = func(s string) string {
+			var b strings.Builder
+			for i := 0; i < len(s); i++ {
+				r := rune(s[i])
+				if r >= '0' && r <= '9' {
+					b.WriteRune(r)
+				}
+			}
+			return b.String()
+		}
+
 		// Add contact buttons in Kazakh
 		keyboard := &models.InlineKeyboardMarkup{
 			InlineKeyboard: [][]models.InlineKeyboardButton{
 				{
 					{Text: "📞 Қоңырау шалу", URL: "tel:" + order.Contact},
-					{Text: "💬 WhatsApp", URL: "https://wa.me/" + strings.ReplaceAll(order.Contact, "+", "")},
+					{Text: "💬 WhatsApp", URL: "https://wa.me/" + onlyDigits(order.Contact)},
 				},
 			},
 		}
@@ -1781,7 +1814,7 @@ func (h *Handler) sendOrderAcceptedNotifications(b *bot.Bot, order *DeliveryRequ
 		} else {
 			h.logger.Info("Driver notification sent",
 				zap.Int64("driver_telegram_id", driver.TelegramID),
-				zap.Int64("order_id", order.ID))
+				zap.String("order_id", order.ID))
 		}
 	}
 }
@@ -1978,39 +2011,6 @@ func (h *Handler) calculateSearchStats(drivers []MatchedDriver, params DriverReq
 	}
 }
 
-// Enhanced response structures
-type MatchedDriver struct {
-	ID                  int     `json:"id"`
-	TelegramID          string  `json:"telegram_id"`
-	FirstName           string  `json:"first_name"`
-	LastName            string  `json:"last_name"`
-	ContactNumber       string  `json:"contact_number"`
-	TruckType           string  `json:"truck_type"`
-	ProfilePhoto        string  `json:"profile_photo"`
-	IsVerified          bool    `json:"is_verified"`
-	RouteID             int     `json:"route_id"`
-	FromAddress         string  `json:"from_address"`
-	ToAddress           string  `json:"to_address"`
-	FromLat             float64 `json:"from_lat"`
-	FromLon             float64 `json:"from_lon"`
-	ToLat               float64 `json:"to_lat"`
-	ToLon               float64 `json:"to_lon"`
-	Price               int     `json:"price"`
-	DepartureTime       string  `json:"departure_time"`
-	Comment             string  `json:"comment"`
-	TruckPhoto          string  `json:"truck_photo"`
-	DistanceToPickupKm  float64 `json:"distance_to_pickup_km"`
-	DistanceToDropoffKm float64 `json:"distance_to_dropoff_km"`
-	RouteMatchScore     int     `json:"route_match_score"`
-	MatchQuality        string  `json:"match_quality"`
-	ETAMin              int     `json:"eta_min"`
-	IsOnline            bool    `json:"is_online"`
-	LastSeenMin         int     `json:"last_seen_min"`
-	HasWhatsApp         bool    `json:"has_whatsapp"`
-	HasTelegram         bool    `json:"has_telegram"`
-	ResponseTimeMin     int     `json:"response_time_min"`
-}
-
 // findMatchingDrivers finds drivers whose trip start points are near the pickup location
 func (h *Handler) findMatchingDrivers(params DriverRequestParams) ([]DriverWithTrip, error) {
 	h.logger.Info("Finding matching drivers",
@@ -2066,7 +2066,7 @@ func (h *Handler) findMatchingDrivers(params DriverRequestParams) ([]DriverWithT
 		distance := h.haversineDistance(params.PickupLat, params.PickupLon, driver.FromLat, driver.FromLon)
 
 		h.logger.Debug("Processing driver",
-			zap.Int64("driver_id", driver.ID),
+			zap.String("driver_id", driver.ID),
 			zap.String("driver_name", driver.FirstName+" "+driver.LastName),
 			zap.Float64("distance_to_pickup", distance),
 			zap.Float64("max_radius", params.RadiusKm))
@@ -2090,7 +2090,7 @@ func (h *Handler) findMatchingDrivers(params DriverRequestParams) ([]DriverWithT
 			allDrivers = append(allDrivers, driver)
 
 			h.logger.Debug("Driver matched",
-				zap.Int64("driver_id", driver.ID),
+				zap.String("driver_id", driver.ID),
 				zap.Float64("distance", distance))
 		}
 	}
@@ -2169,17 +2169,43 @@ func (h *Handler) updateExpiredTrips() {
 	}
 }
 
-// Add these routes to your StartWebServer function:
-/*
-	// Driver matching routes
-	r.HandleFunc("/driver-list", h.handleDriverList).Methods("GET")
-	r.HandleFunc("/api/driver-list", h.handleDriverListAPI).Methods("GET", "OPTIONS")
-	r.HandleFunc("/api/driver-request", h.handleDriverRequest).Methods("POST", "OPTIONS")
-*/
+// haversineDistance calculates the distance between two points on Earth
+func (h *Handler) haversineDistance(lat1, lon1, lat2, lon2 float64) float64 {
+	const earthRadius = 6371 // Earth's radius in kilometers
 
-// Also create the driver-list.html file in your static directory using the HTML artifact above
+	// Convert degrees to radians
+	lat1Rad := lat1 * math.Pi / 180
+	lon1Rad := lon1 * math.Pi / 180
+	lat2Rad := lat2 * math.Pi / 180
+	lon2Rad := lon2 * math.Pi / 180
 
-// Updated DefaultHandler for Telegram bot to use welcome page
+	// Calculate differences
+	deltaLat := lat2Rad - lat1Rad
+	deltaLon := lon2Rad - lon1Rad
+
+	// Haversine formula
+	a := math.Sin(deltaLat/2)*math.Sin(deltaLat/2) +
+		math.Cos(lat1Rad)*math.Cos(lat2Rad)*
+			math.Sin(deltaLon/2)*math.Sin(deltaLon/2)
+
+	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+
+	return earthRadius * c
+}
+
+// calculateProximityScore calculates a score (0-100) based on distance
+func (h *Handler) calculateProximityScore(distanceKm float64) float64 {
+	if distanceKm <= 1.0 {
+		return 100.0
+	} else if distanceKm <= 5.0 {
+		return 100.0 - (distanceKm-1.0)*20.0 // 100 to 20
+	} else if distanceKm <= 20.0 {
+		return 20.0 - (distanceKm-5.0)*1.33 // 20 to 0
+	}
+	return 0.0
+}
+
+// DefaultHandler for Telegram bot to use welcome page
 func (h *Handler) DefaultHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 	if update.Message == nil {
 		return
@@ -2198,7 +2224,7 @@ func (h *Handler) DefaultHandler(ctx context.Context, b *bot.Bot, update *models
 					WebApp: &models.WebAppInfo{URL: h.cfg.BaseURL + "/driver"},
 				},
 				{
-					Text:   "🚀 Driver",
+					Text:   "🚀 Orders",
 					WebApp: &models.WebAppInfo{URL: h.cfg.BaseURL + "/delivery-list"},
 				},
 			},
