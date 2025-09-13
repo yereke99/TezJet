@@ -2,18 +2,12 @@
 <html lang="kz">
 <head>
   <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Delivery</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <!-- Yandex Maps v3 -->
-  <script
-    defer
-    src="https://api-maps.yandex.ru/v3/?apikey=8a3e4da0-9ef2-4176-9203-e7014c1dba6f&lang=ru_RU"
-  ></script>
+  <script defer src="https://api-maps.yandex.ru/v3/?apikey=8a3e4da0-9ef2-4176-9203-e7014c1dba6f&lang=ru_RU"></script>
 
   <style>
     * {
@@ -40,11 +34,11 @@
       left: 0;
     }
 
-    /* Let Yandex v3 capture gestures in webview */
-    #map,
-    #pickerMap {
-      touch-action: none; /* Yandex handles gestures itself */
-      -ms-touch-action: none;
+    /* Enable all touch gestures for maps */
+    #map, #pickerMap {
+      touch-action: auto !important;
+      -ms-touch-action: auto !important;
+      -webkit-touch-action: auto !important;
     }
 
     /* Top Controls */
@@ -57,11 +51,10 @@
       display: flex;
       justify-content: space-between;
       gap: 10px;
-      pointer-events: none; /* allow map gestures under */
+      pointer-events: none;
     }
-    .gps-status,
-    .lang-switch {
-      pointer-events: auto; /* but buttons still clickable */
+    .gps-status, .lang-switch {
+      pointer-events: auto;
     }
 
     .gps-status {
@@ -84,16 +77,12 @@
       border-radius: 50%;
       animation: pulse 2s infinite;
     }
+    .gps-dot.error {
+      background: #ef4444;
+    }
     @keyframes pulse {
-      0%,
-      100% {
-        opacity: 1;
-        transform: scale(1);
-      }
-      50% {
-        opacity: 0.5;
-        transform: scale(1.2);
-      }
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
     }
 
     .lang-switch {
@@ -137,18 +126,9 @@
       animation: pinDrop 0.3s ease-out;
     }
     @keyframes pinDrop {
-      0% {
-        transform: translate(-50%, -150%) scale(0.8);
-        opacity: 0;
-      }
-      70% {
-        transform: translate(-50%, -95%) scale(1.05);
-        opacity: 1;
-      }
-      100% {
-        transform: translate(-50%, -100%) scale(1);
-        opacity: 1;
-      }
+      0% { transform: translate(-50%, -150%) scale(0.8); opacity: 0; }
+      70% { transform: translate(-50%, -95%) scale(1.05); opacity: 1; }
+      100% { transform: translate(-50%, -100%) scale(1); opacity: 1; }
     }
     .pin-icon {
       width: 20px;
@@ -244,9 +224,7 @@
       overflow: hidden;
       min-height: 56px;
     }
-    .address-card:active {
-      transform: scale(0.98);
-    }
+    .address-card:active { transform: scale(0.98); }
     .address-card.filled {
       background: linear-gradient(135deg, #f0fdf4, #dcfce7);
       border-color: #10b981;
@@ -262,9 +240,8 @@
       transform: scaleX(0);
       transition: transform 0.3s ease;
     }
-    .address-card.filled::before {
-      transform: scaleX(1);
-    }
+    .address-card.filled::before { transform: scaleX(1); }
+
     .marker {
       width: 32px;
       height: 32px;
@@ -293,7 +270,6 @@
       font-size: 11px;
       color: #6b7280;
       margin: 0;
-      padding: 0;
       font-weight: 600;
       letter-spacing: 0.3px;
       line-height: 1;
@@ -328,14 +304,8 @@
       animation: slideUp 0.4s ease;
     }
     @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(16px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .form-step {
@@ -344,9 +314,7 @@
       flex-direction: column;
       min-height: 0;
     }
-    .form-step.active {
-      display: flex;
-    }
+    .form-step.active { display: flex; }
     .form-title {
       font-size: 16px;
       font-weight: 700;
@@ -367,9 +335,7 @@
       margin-bottom: 16px;
       flex-shrink: 0;
     }
-    .form-grid.two-col {
-      grid-template-columns: 1fr 1fr;
-    }
+    .form-grid.two-col { grid-template-columns: 1fr 1fr; }
 
     .form-field {
       background: #f8f9fa;
@@ -403,9 +369,7 @@
       outline: none;
       color: #111827;
     }
-    .field-input::placeholder {
-      color: #9ca3af;
-    }
+    .field-input::placeholder { color: #9ca3af; }
     textarea.field-input {
       min-height: 48px;
       resize: none;
@@ -413,7 +377,6 @@
       line-height: 1.3;
     }
 
-    /* TRUCKS */
     .truck-section {
       flex-shrink: 0;
       margin-bottom: 16px;
@@ -443,9 +406,7 @@
       transition: all 0.2s ease;
       text-align: center;
     }
-    .truck-option:active {
-      transform: scale(0.96);
-    }
+    .truck-option:active { transform: scale(0.96); }
     .truck-option.selected {
       border-color: #10b981;
       background: linear-gradient(135deg, #f0fdf4, #dcfce7);
@@ -465,7 +426,6 @@
       color: #6b7280;
     }
 
-    /* BUTTONS */
     .btn {
       width: 100%;
       padding: 14px;
@@ -513,14 +473,10 @@
       flex-shrink: 0;
       margin-top: 16px;
     }
-    .button-grid.single {
-      grid-template-columns: 1fr;
-    }
-    .button-grid.double {
-      grid-template-columns: 1fr 1fr;
-    }
+    .button-grid.single { grid-template-columns: 1fr; }
+    .button-grid.double { grid-template-columns: 1fr 1fr; }
 
-    /* Success */
+    /* Success Screen */
     .success-screen {
       position: fixed;
       inset: 0;
@@ -539,14 +495,8 @@
       animation: successSlideIn 0.5s ease-out;
     }
     @keyframes successSlideIn {
-      from {
-        opacity: 0;
-        transform: translateY(100%);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(100%); }
+      to { opacity: 1; transform: translateY(0); }
     }
     .success-icon {
       font-size: 72px;
@@ -554,13 +504,8 @@
       animation: successPulse 2s infinite;
     }
     @keyframes successPulse {
-      0%,
-      100% {
-        transform: scale(1);
-      }
-      50% {
-        transform: scale(1.1);
-      }
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
     }
     .success-title {
       font-size: 24px;
@@ -602,12 +547,8 @@
       animation: slideInUp 0.3s ease;
     }
     @keyframes slideInUp {
-      from {
-        transform: translateY(100%);
-      }
-      to {
-        transform: translateY(0);
-      }
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
     }
     .picker-header {
       position: fixed;
@@ -635,9 +576,7 @@
       font-size: 16px;
       font-weight: 600;
     }
-    .back-btn:active {
-      transform: scale(0.94);
-    }
+    .back-btn:active { transform: scale(0.94); }
     .search-box {
       flex: 1;
       background: rgba(255, 255, 255, 0.95);
@@ -668,11 +607,11 @@
       font-size: 12px;
       font-weight: 500;
       z-index: 2001;
-      display: none;
-      line-height: 1.3;
-    }
-    .address-bar.active {
       display: block;
+      line-height: 1.3;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
     }
     .confirm-btn {
       position: fixed;
@@ -697,9 +636,7 @@
       z-index: 2002;
       display: none;
     }
-    .suggestions.active {
-      display: block;
-    }
+    .suggestions.active { display: block; }
     .suggestion-item {
       padding: 12px;
       border-bottom: 1px solid rgba(0, 0, 0, 0.04);
@@ -707,21 +644,29 @@
       transition: background 0.2s ease;
       font-size: 13px;
     }
-    .suggestion-item:active {
-      background: rgba(0, 0, 0, 0.03);
-    }
-    .suggestion-item:last-child {
-      border-bottom: none;
-    }
+    .suggestion-item:active { background: rgba(0, 0, 0, 0.03); }
+    .suggestion-item:last-child { border-bottom: none; }
 
     /* HTML-based markers */
     .user-marker {
-      width: 12px;
-      height: 12px;
+      width: 14px;
+      height: 14px;
       background: #3b82f6;
-      border: 2px solid white;
+      border: 3px solid white;
       border-radius: 50%;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 3px 12px rgba(59, 130, 246, 0.4);
+      position: relative;
+    }
+    .user-marker::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 6px;
+      height: 6px;
+      background: white;
+      border-radius: 50%;
     }
     .custom-marker {
       width: 24px;
@@ -744,41 +689,19 @@
     }
 
     @media (max-height: 700px) {
-      .bottom-sheet {
-        min-height: 48vh;
-        max-height: 82vh;
-      }
-      .truck-grid {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 6px;
-      }
-      .truck-option {
-        padding: 8px 4px;
-      }
-      .truck-name {
-        font-size: 10px;
-      }
-      .truck-desc {
-        font-size: 8px;
-      }
+      .bottom-sheet { min-height: 48vh; max-height: 82vh; }
+      .truck-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+      .truck-option { padding: 8px 4px; }
+      .truck-name { font-size: 10px; }
+      .truck-desc { font-size: 8px; }
     }
     @media (max-height: 600px) {
-      .bottom-sheet {
-        min-height: 52vh;
-        max-height: 85vh;
-      }
-      .form-grid.two-col {
-        grid-template-columns: 1fr;
-      }
+      .bottom-sheet { min-height: 52vh; max-height: 85vh; }
+      .form-grid.two-col { grid-template-columns: 1fr; }
     }
     @media (orientation: landscape) and (max-height: 500px) {
-      .bottom-sheet {
-        min-height: 70vh;
-        max-height: 90vh;
-      }
-      .truck-grid {
-        grid-template-columns: repeat(4, 1fr);
-      }
+      .bottom-sheet { min-height: 70vh; max-height: 90vh; }
+      .truck-grid { grid-template-columns: repeat(4, 1fr); }
     }
   </style>
 </head>
@@ -807,8 +730,7 @@
     <div class="success-icon">🎉</div>
     <div class="success-title">Тапсырыс жіберілді!</div>
     <div class="success-message">
-      Қол жетімді жүргізушілерді іздеп жатырмыз...<br />Бұл бірнеше секундқа
-      созылады
+      Қол жетімді жүргізушілерді іздеп жатырмыз...<br />Бұл бірнеше секундқа созылады
     </div>
     <button class="success-btn" onclick="goToDriverList()">Жүргізушілерді көру</button>
   </div>
@@ -942,12 +864,14 @@
       <button class="back-btn" onclick="closePicker()">←</button>
       <input type="text" class="search-box" id="searchBox" placeholder="Мекенжай іздеу..." oninput="searchAddress(this.value)"/>
     </div>
-    <div class="address-bar active" id="pickerAddress">Жүктелуде...</div>
+    <div class="address-bar" id="pickerAddress">Картаны жүктеу...</div>
     <div class="center-pin active">
       <div class="pin-icon"></div>
     </div>
     <div class="suggestions" id="suggestions"></div>
-    <button class="btn btn-primary confirm-btn" onclick="confirmPicker()">Осы нүктені таңдау</button>
+    <button class="btn btn-primary confirm-btn" onclick="confirmPicker()">
+      <span data-i18n="choose">Осы нүктені таңдау</span>
+    </button>
   </div>
 
   <script>
@@ -976,6 +900,10 @@
     // ===== Yandex v3 globals =====
     let map, pickerMap, userMarker, pickupMarker, dropoffMarker, routeLine;
     let geolocationWatchId = null;
+    let pickerMapLoaded = false;
+    let mapUpdateInterval = null;
+    let locationPermissionGranted = false;
+    let currentUserLocation = null;
 
     // Utility: create an HTML marker
     function createDivMarker(html, className = '', size = [24, 24]) {
@@ -998,144 +926,290 @@
       return el;
     }
 
-    // Prevent Telegram WebView from eating pinch/touch on the map areas
-    function wireGestureGuards(container) {
-      if (!container) return;
-      const handler = (e) => {
-        // allow single-finger pans to bubble; block only multi-touch so YMaps gets it
-        if (e.touches && e.touches.length > 1) {
-          e.preventDefault();
-        }
-      };
-      // Use non-passive so preventDefault works
-      ['touchstart', 'touchmove', 'gesturestart', 'gesturechange'].forEach((ev) =>
-        container.addEventListener(ev, handler, { passive: false })
-      );
-    }
-
-    // Init main map
+    // Init main map with zoom controls - FIXED VERSION
     async function initMap() {
       await ymaps3.ready;
-      const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapMarker } = ymaps3;
+      const { 
+        YMap, 
+        YMapDefaultSchemeLayer, 
+        YMapDefaultFeaturesLayer, 
+        YMapControls, 
+        YMapControl, 
+        YMapZoomControl 
+      } = ymaps3;
 
-      map = new YMap(document.getElementById('map'), {
-        location: {
-          center: [76.889709, 43.238949], // [lng, lat] Almaty
-          zoom: 14
-        },
-        behaviors: ['drag', 'scrollZoom', 'dblClick', 'multiTouch'] // multiTouch = pinch zoom
-      });
-      map.addChild(new YMapDefaultSchemeLayer({}));  // scheme (yellow-ish by default)
-      map.addChild(new YMapDefaultFeaturesLayer({}));
-
-      wireGestureGuards(document.getElementById('map'));
-
-      // Start real-time geolocation
-      startRealtimeGeolocation();
+      // Request location permission and start tracking
+      requestLocationPermission();
     }
 
-    // Init picker map (create fresh each time for reliability)
-    async function buildPickerMap(center) {
-      await ymaps3.ready;
-      const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer } = ymaps3;
-      const el = document.getElementById('pickerMap');
-
-      // Destroy old map if exists
-      if (pickerMap && pickerMap.destroy) {
-        try { pickerMap.destroy(); } catch {}
+    // PROPER LOCATION PERMISSION REQUEST - Like your working examples
+    function requestLocationPermission() {
+      updateLocationStatus('searching', state.lang === 'kz' ? i18n.kz.searching : i18n.ru.searching);
+      
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            locationPermissionGranted = true;
+            currentUserLocation = [position.coords.latitude, position.coords.longitude];
+            updateLocationStatus('active', state.lang === 'kz' ? i18n.kz.gpsActive : i18n.ru.gpsActive);
+            initMapWithPosition(currentUserLocation);
+            startRealtimeLocationTracking();
+          },
+          (error) => {
+            console.error('Location permission denied:', error);
+            updateLocationStatus('error', 'GPS қатесі');
+            // Initialize map with default location (Almaty)
+            initMapWithPosition([43.238949, 76.889709]);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          }
+        );
+      } else {
+        updateLocationStatus('error', 'GPS қол жетімді емес');
+        initMapWithPosition([43.238949, 76.889709]);
       }
-      pickerMap = null;
-      el.innerHTML = ''; // clean container
-
-      pickerMap = new YMap(el, {
-        location: { center, zoom: 16 },
-        behaviors: ['drag', 'scrollZoom', 'dblClick', 'multiTouch']
-      });
-      pickerMap.addChild(new YMapDefaultSchemeLayer({}));
-      pickerMap.addChild(new YMapDefaultFeaturesLayer({}));
-
-      wireGestureGuards(el);
-
-      // Update address while moving (debounced)
-      let moveTimeout;
-      pickerMap.addListener('update', () => {
-        clearTimeout(moveTimeout);
-        moveTimeout = setTimeout(async () => {
-          const c = pickerMap.location.center; // [lng, lat]
-          const addr = await reverseGeocode(c[1], c[0]);
-          document.getElementById('pickerAddress').textContent = addr;
-        }, 250);
-      });
     }
 
-    // ===== Real-time geolocation =====
-    function startRealtimeGeolocation() {
-      const gpsText = document.getElementById('gpsText');
-      gpsText.textContent = state.lang === 'kz' ? i18n.kz.searching : i18n.ru.searching;
+    // REAL-TIME LOCATION TRACKING - Like your working examples
+    function startRealtimeLocationTracking() {
+      if (!navigator.geolocation || !locationPermissionGranted) return;
 
-      if (!navigator.geolocation) return;
-
+      // Start watchPosition for continuous tracking
       geolocationWatchId = navigator.geolocation.watchPosition(
-        async (pos) => {
-          const { latitude: lat, longitude: lng, accuracy } = pos.coords;
-          gpsText.textContent = state.lang === 'kz' ? i18n.kz.gpsActive : i18n.ru.gpsActive;
-
-          state.userLoc = { lat, lng, accuracy };
-          await updateUserMarker(lat, lng);
-
-          // First fix -> set pickup to user location
-          if (!state.pickup) {
-            const addr = await reverseGeocode(lat, lng);
-            state.pickup = { lat, lng, address: addr };
-            document.getElementById('pickupAddr').textContent = addr;
-            document.querySelectorAll('.address-card')[0].classList.add('filled');
-            await addMarker('pickup', lat, lng);
-            validateCurrentStep();
-
-            if (map) {
-              map.update({ location: { center: [lng, lat], zoom: 15 } });
+        (position) => {
+          const newCoords = [position.coords.latitude, position.coords.longitude];
+          const accuracy = position.coords.accuracy;
+          
+          console.log('GPS update:', newCoords, 'accuracy:', accuracy);
+          
+          // Only update if we got a good reading
+          if (accuracy <= 100) { // Less than 100 meters accuracy
+            currentUserLocation = newCoords;
+            state.userLoc = {lat: newCoords[0], lng: newCoords[1], accuracy};
+            
+            updateUserMarker(newCoords[0], newCoords[1]);
+            
+            // Auto-center on user location with smooth animation
+            if (map && state.currentStep === 1) {
+              map.update({ 
+                location: { 
+                  center: [newCoords[1], newCoords[0]], 
+                  zoom: map.location.zoom || 15 
+                },
+                duration: 1000
+              });
             }
           }
         },
-        (err) => {
-          console.log('GPS error', err);
+        (error) => {
+          console.error('Real-time location error:', error);
+          updateLocationStatus('error', 'GPS қатесі');
         },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 1000 }
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 1000
+        }
       );
 
-      // One-shot center
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude: lat, longitude: lng } = pos.coords;
-          state.userLoc = { lat, lng };
-          if (map) map.update({ location: { center: [lng, lat], zoom: 15 } });
-        },
-        () => {},
-        { enableHighAccuracy: true }
-      );
+      // Also update location every 2 seconds using getCurrentPosition for higher accuracy
+      mapUpdateInterval = setInterval(() => {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const newCoords = [position.coords.latitude, position.coords.longitude];
+            const accuracy = position.coords.accuracy;
+            
+            // Only update if we got a more accurate reading
+            if (accuracy <= 50) { // Less than 50 meters accuracy
+              currentUserLocation = newCoords;
+              state.userLoc = {lat: newCoords[0], lng: newCoords[1], accuracy};
+              
+              if (userMarker) {
+                updateUserMarker(newCoords[0], newCoords[1]);
+              }
+              
+              updateLocationStatus('active', `GPS белсенді (±${Math.round(accuracy)}m)`);
+            }
+          },
+          (error) => {
+            console.error('Interval location error:', error);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 1000,
+            maximumAge: 0
+          }
+        );
+      }, 2000); // Update every 2 seconds
     }
 
-    function stopRealtimeGeolocation() {
-      if (geolocationWatchId) {
-        navigator.geolocation.clearWatch(geolocationWatchId);
-        geolocationWatchId = null;
+    function updateLocationStatus(status, message) {
+      const gpsText = document.getElementById('gpsText');
+      const gpsDot = document.getElementById('gpsDot');
+      
+      gpsText.textContent = message;
+      
+      gpsDot.classList.remove('error');
+      if (status === 'error') {
+        gpsDot.classList.add('error');
       }
     }
 
-    // ===== Markers =====
-    async function updateUserMarker(lat, lng) {
+    // INIT MAP WITH POSITION AND PROPER ZOOM CONTROLS
+    async function initMapWithPosition(center) {
+      await ymaps3.ready;
+      const { 
+        YMap, 
+        YMapDefaultSchemeLayer, 
+        YMapDefaultFeaturesLayer, 
+        YMapControls, 
+        YMapControl, 
+        YMapZoomControl 
+      } = ymaps3;
+
+      map = new YMap(document.getElementById('map'), {
+        location: {
+          center: [center[1], center[0]], // [lng, lat] format for Yandex
+          zoom: 15
+        }
+      });
+
+      // Add layers
+      map.addChild(new YMapDefaultSchemeLayer({}));
+      map.addChild(new YMapDefaultFeaturesLayer({}));
+
+      // Add zoom controls - FIXED VERSION
+      const controls = new YMapControls({ position: 'right' });
+      const control = new YMapControl({});
+      control.addChild(new YMapZoomControl({}));
+      controls.addChild(control);
+      map.addChild(controls);
+
+      // Add user location marker
+      await addUserLocationMarker(center);
+
+      // First fix -> set pickup to user location
+      if (locationPermissionGranted && !state.pickup) {
+        const addr = await reverseGeocode(center[0], center[1]);
+        state.pickup = { lat: center[0], lng: center[1], address: addr };
+        document.getElementById('pickupAddr').textContent = addr;
+        document.querySelectorAll('.address-card')[0].classList.add('filled');
+        await addMarker('pickup', center[0], center[1]);
+        validateCurrentStep();
+      }
+    }
+
+    // ADD USER LOCATION MARKER - Like your working examples
+    async function addUserLocationMarker(coords) {
       await ymaps3.ready;
       const { YMapMarker } = ymaps3;
-
-      if (userMarker && map) map.removeChild(userMarker);
 
       const el = document.createElement('div');
       el.className = 'user-marker';
 
-      userMarker = new YMapMarker({ coordinates: [lng, lat] }, el);
+      userMarker = new YMapMarker({ coordinates: [coords[1], coords[0]] }, el);
       if (map) map.addChild(userMarker);
     }
 
+    // UPDATE USER MARKER POSITION
+    async function updateUserMarker(lat, lng) {
+      if (!userMarker || !map) return;
+      
+      try {
+        // Remove old marker
+        map.removeChild(userMarker);
+        
+        // Add new marker at updated position
+        await addUserLocationMarker([lat, lng]);
+      } catch (e) {
+        console.log('Error updating user marker:', e);
+      }
+    }
+
+    // Init picker map
+    async function buildPickerMap(center) {
+      console.log('Building picker map with center:', center);
+      await ymaps3.ready;
+      pickerMapLoaded = false;
+      
+      const { 
+        YMap, 
+        YMapDefaultSchemeLayer, 
+        YMapDefaultFeaturesLayer, 
+        YMapControls, 
+        YMapControl, 
+        YMapZoomControl 
+      } = ymaps3;
+      
+      const el = document.getElementById('pickerMap');
+
+      // Clear previous map
+      if (pickerMap) {
+        try { 
+          pickerMap.destroy(); 
+        } catch (e) { 
+          console.log('Error destroying picker map:', e); 
+        }
+      }
+      pickerMap = null;
+      el.innerHTML = '';
+
+      // Wait for next frame
+      await new Promise(resolve => requestAnimationFrame(resolve));
+
+      try {
+        pickerMap = new YMap(el, {
+          location: { center, zoom: 16 }
+        });
+
+        // Add layers
+        pickerMap.addChild(new YMapDefaultSchemeLayer({}));
+        pickerMap.addChild(new YMapDefaultFeaturesLayer({}));
+
+        // Add zoom controls to picker map too
+        const controls = new YMapControls({ position: 'right' });
+        const control = new YMapControl({});
+        control.addChild(new YMapZoomControl({}));
+        controls.addChild(control);
+        pickerMap.addChild(controls);
+
+        pickerMapLoaded = true;
+        console.log('Picker map created successfully');
+
+        // Initial address update
+        setTimeout(updatePickerAddress, 500);
+
+        // Update address while moving (debounced)
+        let moveTimeout;
+        pickerMap.addListener('update', () => {
+          clearTimeout(moveTimeout);
+          moveTimeout = setTimeout(updatePickerAddress, 300);
+        });
+
+      } catch (e) {
+        console.error('Error creating picker map:', e);
+        document.getElementById('pickerAddress').textContent = 'Картаны жүктеу мүмкін болмады';
+      }
+    }
+
+    // Update picker address - FIXED VERSION
+    async function updatePickerAddress() {
+      if (!pickerMap || !pickerMapLoaded) return;
+      
+      try {
+        const center = pickerMap.location.center;
+        const addr = await reverseGeocode(center[1], center[0]); // lat, lng format for geocoding
+        document.getElementById('pickerAddress').textContent = addr;
+      } catch (e) {
+        console.log('Address update error:', e);
+        document.getElementById('pickerAddress').textContent = 'Мекенжайды анықтау мүмкін болмады';
+      }
+    }
+
+    // ===== Markers =====
     async function addMarker(type, lat, lng) {
       await ymaps3.ready;
       const { YMapMarker } = ymaps3;
@@ -1144,26 +1218,17 @@
       const marker = new YMapMarker({ coordinates: [lng, lat] }, el);
 
       if (type === 'pickup') {
-        if (pickupMarker && map) map.removeChild(pickupMarker);
+        if (pickupMarker && map) {
+          try { map.removeChild(pickupMarker); } catch (e) {}
+        }
         pickupMarker = marker;
       } else {
-        if (dropoffMarker && map) map.removeChild(dropoffMarker);
+        if (dropoffMarker && map) {
+          try { map.removeChild(dropoffMarker); } catch (e) {}
+        }
         dropoffMarker = marker;
       }
       map.addChild(marker);
-    }
-
-    async function updateMarker(type, lat, lng) {
-      if (type === 'pickup' && pickupMarker) {
-        pickupMarker.update({ coordinates: [lng, lat] });
-        state.pickup.lat = lat;
-        state.pickup.lng = lng;
-      }
-      if (type === 'dropoff' && dropoffMarker) {
-        dropoffMarker.update({ coordinates: [lng, lat] });
-        state.dropoff.lat = lat;
-        state.dropoff.lng = lng;
-      }
     }
 
     // ===== Geocoding (Yandex) =====
@@ -1179,7 +1244,8 @@
           feature?.metaDataProperty?.GeocoderMetaData?.Address?.formatted ||
           feature?.metaDataProperty?.GeocoderMetaData?.text;
         return text || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-      } catch {
+      } catch (e) {
+        console.log('Geocoding error:', e);
         return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
       }
     }
@@ -1214,17 +1280,17 @@
     }
 
     function selectSuggestion(lat, lng) {
-      if (pickerMap) {
+      if (pickerMap && pickerMapLoaded) {
         pickerMap.update({ location: { center: [lng, lat], zoom: 17 } });
       }
       document.getElementById('suggestions').classList.remove('active');
       document.getElementById('searchBox').value = '';
     }
 
-    // ===== Routing (Yandex Router API) =====
+    // ===== Routing =====
     async function drawRoute() {
       if (routeLine && map) {
-        map.removeChild(routeLine);
+        try { map.removeChild(routeLine); } catch (e) {}
         routeLine = null;
       }
 
@@ -1249,7 +1315,7 @@
         });
         map.addChild(routeLine);
 
-        // Fit bounds (with padding & same-point fallback)
+        // Fit bounds
         const minLng = Math.min(state.pickup.lng, state.dropoff.lng);
         const maxLng = Math.max(state.pickup.lng, state.dropoff.lng);
         const minLat = Math.min(state.pickup.lat, state.dropoff.lat);
@@ -1260,7 +1326,7 @@
           map.update({ location: { center: [state.pickup.lng, state.pickup.lat], zoom: 16 } });
         } else {
           const padLng = (maxLng - minLng) * 0.15 + 0.01;
-          const padLat = (maxLat - minLat) * 0.25 + 0.01; // extra vertical padding
+          const padLat = (maxLat - minLat) * 0.25 + 0.01;
           map.update({
             location: {
               bounds: [
@@ -1313,7 +1379,7 @@
         document.getElementById('nextStep2').disabled = !isValid;
       } else if (state.currentStep === 3) {
         const phone = document.getElementById('phone').value;
-        isValid = phone.length >= 18; // formatted phone length
+        isValid = phone.length >= 18;
         document.getElementById('submitBtn').disabled = !isValid;
       }
     }
@@ -1327,60 +1393,84 @@
 
     // ===== Picker open/close/confirm =====
     async function openPicker(type) {
+      console.log('Opening picker for:', type);
       state.pickingFor = type;
       const modal = document.getElementById('pickerModal');
       modal.classList.add('active');
 
-      // Choose a sensible center
+      // Choose center
       const center =
         (type === 'pickup' && state.pickup && [state.pickup.lng, state.pickup.lat]) ||
         (type === 'dropoff' && state.dropoff && [state.dropoff.lng, state.dropoff.lat]) ||
-        (state.userLoc && [state.userLoc.lng, state.userLoc.lat]) ||
-        (map ? map.location.center : [76.889709, 43.238949]);
+        (currentUserLocation && [currentUserLocation[1], currentUserLocation[0]]) ||
+        [76.889709, 43.238949];
 
-      // Build picker map fresh after modal is visible (ensures correct size)
-      await new Promise((r) => requestAnimationFrame(r));
+      console.log('Using center:', center);
+
+      // Show loading
+      document.getElementById('pickerAddress').textContent = 'Картаны жүктеу...';
+
+      // Wait for modal to be visible
+      await new Promise((resolve) => {
+        setTimeout(resolve, 100);
+      });
+
       await buildPickerMap(center);
-
-      // Prime the address label
-      const addr = await reverseGeocode(center[1], center[0]);
-      document.getElementById('pickerAddress').textContent = addr;
     }
 
     function closePicker() {
       document.getElementById('pickerModal').classList.remove('active');
       document.getElementById('suggestions').classList.remove('active');
-      // Optional: destroy pickerMap to free memory; we recreate next time anyway
-      if (pickerMap && pickerMap.destroy) {
-        try { pickerMap.destroy(); } catch {}
+      document.getElementById('searchBox').value = '';
+      
+      if (pickerMap) {
+        try { 
+          pickerMap.destroy(); 
+        } catch (e) { 
+          console.log('Error destroying picker map:', e); 
+        }
       }
       pickerMap = null;
+      pickerMapLoaded = false;
     }
 
+    // FIXED CONFIRM PICKER - Now properly gets center coordinates
     async function confirmPicker() {
-      if (!pickerMap) return;
-      const center = pickerMap.location.center; // [lng, lat]
-      const lng = center[0],
-        lat = center[1];
-      const addr = await reverseGeocode(lat, lng);
-
-      if (state.pickingFor === 'pickup') {
-        state.pickup = { lat, lng, address: addr };
-        document.getElementById('pickupAddr').textContent = addr;
-        document.querySelectorAll('.address-card')[0].classList.add('filled');
-        await addMarker('pickup', lat, lng);
-      } else {
-        state.dropoff = { lat, lng, address: addr };
-        document.getElementById('dropoffAddr').textContent = addr;
-        document.querySelectorAll('.address-card')[1].classList.add('filled');
-        await addMarker('dropoff', lat, lng);
+      console.log('Confirming picker, map loaded:', pickerMapLoaded);
+      
+      if (!pickerMap || !pickerMapLoaded) {
+        console.log('Picker map not ready');
+        return;
       }
+      
+      try {
+        const center = pickerMap.location.center;
+        const lng = center[0], lat = center[1];
+        console.log('Selected coordinates:', lat, lng);
+        
+        const addr = await reverseGeocode(lat, lng);
+        console.log('Address:', addr);
 
-      closePicker();
+        if (state.pickingFor === 'pickup') {
+          state.pickup = { lat, lng, address: addr };
+          document.getElementById('pickupAddr').textContent = addr;
+          document.querySelectorAll('.address-card')[0].classList.add('filled');
+          await addMarker('pickup', lat, lng);
+        } else {
+          state.dropoff = { lat, lng, address: addr };
+          document.getElementById('dropoffAddr').textContent = addr;
+          document.querySelectorAll('.address-card')[1].classList.add('filled');
+          await addMarker('dropoff', lat, lng);
+        }
 
-      if (state.pickup && state.dropoff) {
-        await drawRoute();
-        validateCurrentStep();
+        closePicker();
+
+        if (state.pickup && state.dropoff) {
+          await drawRoute();
+          validateCurrentStep();
+        }
+      } catch (e) {
+        console.log('Confirm picker error:', e);
       }
     }
 
@@ -1481,6 +1571,18 @@
       window.location.href = `/driver-list?order=${orderData}`;
     }
 
+    // CLEANUP FUNCTION
+    function stopRealtimeGeolocation() {
+      if (geolocationWatchId) {
+        navigator.geolocation.clearWatch(geolocationWatchId);
+        geolocationWatchId = null;
+      }
+      if (mapUpdateInterval) {
+        clearInterval(mapUpdateInterval);
+        mapUpdateInterval = null;
+      }
+    }
+
     // ===== Lang =====
     function setLang(lang) {
       state.lang = lang;
@@ -1509,19 +1611,15 @@
 
     // ===== Boot =====
     document.addEventListener('DOMContentLoaded', async () => {
+      console.log('DOM loaded, initializing...');
+      
       if (!window.ymaps3) {
-        console.error('Yandex Maps v3 failed to load. Check apikey and referrers.');
+        console.error('Yandex Maps v3 failed to load');
         return;
       }
+      
       await initMap();
-
-      // Warm-up: (optional) pre-build picker after first frame if you want
-      // setTimeout(async () => {
-      //   await buildPickerMap(map ? map.location.center : [76.889709, 43.238949]);
-      //   // Immediately destroy to free, we just warm cached resources
-      //   if (pickerMap?.destroy) pickerMap.destroy();
-      //   pickerMap = null;
-      // }, 0);
+      console.log('Map initialized');
 
       // Default date/time
       const now = new Date();
@@ -1540,7 +1638,12 @@
       }
     });
 
-    // Expose
+    // Clean up on page unload
+    window.addEventListener('beforeunload', () => {
+      stopRealtimeGeolocation();
+    });
+
+    // Expose functions
     window.setLang = setLang;
     window.openPicker = openPicker;
     window.closePicker = closePicker;

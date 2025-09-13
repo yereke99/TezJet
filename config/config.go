@@ -60,7 +60,7 @@ func NewConfig() (*Config, error) {
 
 		// Telegram defaults
 		Token:      "7654139572:AAGpRqJa7d_bJNE9bYydJgcwASUbfHjP8Os",
-		BaseURL:    "https://d831f0ea2b73.ngrok-free.app",
+		BaseURL:    "https://098065613d9d.ngrok-free.app",
 		AdminToken: "admin-secret-token-change-in-production",
 
 		// Database defaults
