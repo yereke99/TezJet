@@ -35,6 +35,16 @@ type Driver struct {
 	LastActiveAt     *time.Time `json:"last_active_at" db:"last_active_at"`
 	CreatedAt        time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt        time.Time  `json:"updated_at" db:"updated_at"`
+	
+	FromLat    float64 `json:"from_lat" db:"from_lat"`
+    FromLon    float64 `json:"from_lon" db:"from_lon"` 
+    ToLat      float64 `json:"to_lat" db:"to_lat"`
+    ToLon      float64 `json:"to_lon" db:"to_lon"`
+    // Alternative field names
+    PickupLat  float64 `json:"pickup_lat" db:"pickup_lat"`
+    PickupLon  float64 `json:"pickup_lon" db:"pickup_lon"`
+    DropoffLat float64 `json:"dropoff_lat" db:"dropoff_lat"`  
+    DropoffLon float64 `json:"dropoff_lon" db:"dropoff_lon"`
 }
 
 // DriverRoute represents a route offered by a driver

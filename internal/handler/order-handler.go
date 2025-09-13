@@ -181,13 +181,12 @@ type SearchStats struct {
 
 // ===== CORE DRIVER MATCHING SYSTEM =====
 
-// FIXED: Enhanced handleDriverRequest with application-level distance calculations
+// Updated handleDriverRequest to use route matching
 func (h *Handler) handleDriverRequest(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	h.logger.Info("🔍 Processing driver matching request",
-		zap.String("method", r.Method),
-		zap.String("user_agent", r.Header.Get("User-Agent")))
+	h.logger.Info("🔍 Processing driver route matching request",
+		zap.String("method", r.Method))
 
 	// Parse request parameters
 	var params DriverRequestParams
@@ -205,35 +204,35 @@ func (h *Handler) handleDriverRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.logger.Info("📊 Driver search parameters",
+	// Force 50km radius as requested
+	params.RadiusKm = 50.0
+
+	h.logger.Info("📊 Route matching parameters",
 		zap.String("request_id", params.RequestID),
-		zap.Float64("pickup_lat", params.PickupLat),
-		zap.Float64("pickup_lon", params.PickupLon),
-		zap.Float64("dropoff_lat", params.DropoffLat),
-		zap.Float64("dropoff_lon", params.DropoffLon),
-		zap.Int("price_range", params.PriceRange),
-		zap.String("truck_type", params.TruckType),
-		zap.Float64("radius_km", params.RadiusKm))
+		zap.Float64("client_pickup_lat", params.PickupLat),
+		zap.Float64("client_pickup_lon", params.PickupLon),
+		zap.Float64("client_dropoff_lat", params.DropoffLat),
+		zap.Float64("client_dropoff_lon", params.DropoffLon),
+		zap.Float64("radius_km", params.RadiusKm),
+		zap.String("truck_type", params.TruckType))
 
-	// Set default search radius
-	if params.RadiusKm == 0 {
-		params.RadiusKm = 20.0 // Larger default radius for Kazakhstan
-	}
-
-	// Execute driver search with fallback
+	// Execute route-to-route matching
 	startTime := time.Now()
 
-	drivers, err := h.findMatchingDriversFixed(params)
+	drivers, err := h.findDriversByRouteMatching(
+		params.PickupLat, params.PickupLon, 
+		params.DropoffLat, params.DropoffLon,
+		params.RadiusKm, params.TruckType)
 	if err != nil {
-		h.logger.Error("❌ Driver search failed", zap.Error(err))
-		h.sendErrorResponse(w, "Ошибка поиска водителей", http.StatusInternalServerError)
+		h.logger.Error("❌ Route matching failed", zap.Error(err))
+		h.sendErrorResponse(w, "Ошибка поиска водителей по маршруту", http.StatusInternalServerError)
 		return
 	}
 
 	searchDuration := time.Since(startTime)
 
-	// Calculate search statistics
-	stats := h.calculateSearchStatsFixed(drivers, params)
+	// Calculate statistics
+	stats := h.calculateRouteMatchingStats(drivers)
 
 	response := DriverMatchResponse{
 		Drivers:        drivers,
@@ -244,22 +243,82 @@ func (h *Handler) handleDriverRequest(w http.ResponseWriter, r *http.Request) {
 		GoodMatches:    stats.GoodMatches,
 		SearchRadius:   params.RadiusKm,
 		MatchingCriteria: map[string]interface{}{
-			"point_a_priority":     true,
+			"matching_type":        "route_to_route",
+			"radius_km":            params.RadiusKm,
+			"description":          "A→B driver route matches A→B client route within radius",
 			"truck_type_filter":    params.TruckType != "" && params.TruckType != "any",
-			"price_compatibility":  params.PriceRange > 0,
-			"route_optimization":   true,
-			"distance_calculation": "haversine_go",
+			"distance_calculation": "haversine_go_dual_point",
 		},
 	}
 
-	h.logger.Info("✅ Driver matching completed successfully",
-		zap.Int("total_found", len(drivers)),
+	h.logger.Info("✅ Route matching completed successfully",
+		zap.Int("route_matches_found", len(drivers)),
 		zap.Int("perfect_matches", stats.PerfectMatches),
 		zap.Int("good_matches", stats.GoodMatches),
-		zap.Float64("avg_distance_km", stats.AvgDistance),
+		zap.Float64("avg_pickup_distance_km", stats.AvgDistance),
 		zap.String("search_duration", searchDuration.String()))
 
-	h.sendSuccessResponse(w, "Водители найдены успешно", response)
+	h.sendSuccessResponse(w, "Водители по маршруту найдены успешно", response)
+}
+
+
+
+// Calculate statistics for route matching
+func (h *Handler) calculateRouteMatchingStats(drivers []DriverWithTrip) SearchStats {
+	if len(drivers) == 0 {
+		return SearchStats{}
+	}
+
+	var totalPickupDistance float64
+	var perfectMatches, goodMatches int
+
+	for _, driver := range drivers {
+		totalPickupDistance += driver.DistanceToPickupKm
+
+		switch driver.MatchQuality {
+		case "perfect":
+			perfectMatches++
+		case "good":
+			goodMatches++
+		}
+	}
+
+	return SearchStats{
+		AvgDistance:    totalPickupDistance / float64(len(drivers)),
+		PerfectMatches: perfectMatches,
+		GoodMatches:    goodMatches,
+	}
+}
+
+
+// Helper function to calculate search statistics for Go-calculated distances
+func (h *Handler) calculateSearchStatsForGoCalculation(drivers []DriverWithTrip, params DriverRequestParams) SearchStats {
+	if len(drivers) == 0 {
+		return SearchStats{}
+	}
+
+	var totalDistance float64
+	var perfectMatches, goodMatches int
+
+	for _, driver := range drivers {
+		totalDistance += driver.DistanceKm
+
+		// Calculate dropoff distance for match quality assessment
+		dropoffDistance := h.haversineDistance(params.DropoffLat, params.DropoffLon, driver.ToLat, driver.ToLon)
+
+		// Determine match quality
+		if driver.DistanceKm <= 2.0 && dropoffDistance <= 5.0 {
+			perfectMatches++
+		} else if driver.DistanceKm <= 5.0 && dropoffDistance <= 10.0 {
+			goodMatches++
+		}
+	}
+
+	return SearchStats{
+		AvgDistance:    totalDistance / float64(len(drivers)),
+		PerfectMatches: perfectMatches,
+		GoodMatches:    goodMatches,
+	}
 }
 
 // Fixed driver matching function with proper city names and distance filtering
@@ -745,7 +804,7 @@ func (h *Handler) calculateSearchStatsFixed(drivers []DriverWithTrip, params Dri
 
 // ===== CLIENT-DRIVER MATCHING API =====
 
-// handleDriverListAPI handles GET /api/driver-list for showing available drivers
+// Fixed route-to-route matching: A→B driver route matches A→B client route
 func (h *Handler) handleDriverListAPI(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -776,64 +835,578 @@ func (h *Handler) handleDriverListAPI(w http.ResponseWriter, r *http.Request) {
 		toLon = 76.889709
 	}
 	if radius == 0 {
-		radius = 25.0 // Default 25km radius for city-level matching
+		radius = 50.0 // Fixed 50km radius as requested
 	}
 	if truckType == "" {
 		truckType = "any"
 	}
 
-	h.logger.Info("📊 Driver list search parameters",
-		zap.Float64("from_lat", fromLat),
-		zap.Float64("from_lon", fromLon),
-		zap.Float64("to_lat", toLat),
-		zap.Float64("to_lon", toLon),
+	h.logger.Info("📊 Route matching search parameters",
+		zap.Float64("client_from_lat", fromLat),
+		zap.Float64("client_from_lon", fromLon),
+		zap.Float64("client_to_lat", toLat),
+		zap.Float64("client_to_lon", toLon),
 		zap.Float64("radius", radius),
 		zap.String("truck_type", truckType))
 
-	// Create search parameters
-	params := DriverRequestParams{
-		PickupLat:  fromLat,
-		PickupLon:  fromLon,
-		DropoffLat: toLat,
-		DropoffLon: toLon,
-		RadiusKm:   radius,
-		TruckType:  truckType,
-	}
-
-	// Find drivers within radius
-	drivers, err := h.findMatchingDriversFixed(params)
+	// Find drivers whose A→B route matches client's A→B route
+	drivers, err := h.findDriversByRouteMatching(fromLat, fromLon, toLat, toLon, radius, truckType)
 	if err != nil {
-		h.logger.Error("❌ Failed to find drivers", zap.Error(err))
+		h.logger.Error("❌ Failed to find matching drivers", zap.Error(err))
 		h.sendErrorResponse(w, "Ошибка получения списка водителей", http.StatusInternalServerError)
 		return
 	}
 
-	h.logger.Info("✅ Driver list completed",
+	h.logger.Info("✅ Route matching completed",
 		zap.Int("drivers_found", len(drivers)),
 		zap.Float64("search_radius", radius))
 
-	// Build response with search metadata
+	// Build response with route matching metadata
 	response := map[string]interface{}{
 		"drivers": drivers,
 		"count":   len(drivers),
 		"search_params": map[string]interface{}{
-			"from_lat":   fromLat,
-			"from_lon":   fromLon,
-			"to_lat":     toLat,
-			"to_lon":     toLon,
-			"radius":     radius,
-			"truck_type": truckType,
+			"client_from_lat": fromLat,
+			"client_from_lon": fromLon,
+			"client_to_lat":   toLat,
+			"client_to_lon":   toLon,
+			"radius":          radius,
+			"truck_type":      truckType,
 		},
-		"search_area": map[string]interface{}{
-			"center_lat":  fromLat,
-			"center_lon":  fromLon,
+		"matching_logic": map[string]interface{}{
+			"type":        "route_to_route",
+			"description": "Drivers whose A→B route matches client A→B route within radius",
 			"radius_km":   radius,
-			"description": fmt.Sprintf("Поиск в радиусе %.0f км от точки (%.6f, %.6f)", radius, fromLat, fromLon),
 		},
 	}
 
 	h.sendSuccessResponse(w, "Список водителей получен успешно", response)
 }
+
+
+// Core route-to-route matching function: A→B driver matches A→B client
+func (h *Handler) findDriversByRouteMatching(clientFromLat, clientFromLon, clientToLat, clientToLon, radiusKm float64, truckType string) ([]DriverWithTrip, error) {
+	h.logger.Info("🔍 Finding drivers by route matching (A→B matches A→B)",
+		zap.Float64("client_A_lat", clientFromLat),
+		zap.Float64("client_A_lon", clientFromLon),
+		zap.Float64("client_B_lat", clientToLat),
+		zap.Float64("client_B_lon", clientToLon),
+		zap.Float64("radius_km", radiusKm))
+
+	// Get all active driver trips with coordinates
+	const query = `
+SELECT
+  d.id,
+  d.telegram_id,
+  d.first_name,
+  d.last_name,
+  d.contact_number,
+  d.profile_photo,
+  d.truck_type,
+  d.is_verified,
+  d.status,
+  
+  -- Driver trip data
+  dt.from_address,
+  dt.to_address,
+  CAST(dt.from_lat AS REAL) as from_lat,
+  CAST(dt.from_lon AS REAL) as from_lon,
+  CAST(dt.to_lat AS REAL) as to_lat,
+  CAST(dt.to_lon AS REAL) as to_lon,
+  dt.price,
+  dt.departure_time,
+  dt.comment,
+  dt.has_whatsapp,
+  dt.has_telegram,
+  dt.telegram_username,
+  dt.created_at
+
+FROM drivers d
+JOIN driver_trips dt ON d.id = dt.driver_id
+WHERE 
+  -- Status filters
+  LOWER(d.status) = 'approved' 
+  AND dt.status = 'active'
+  
+  -- Coordinate data quality
+  AND dt.from_lat IS NOT NULL 
+  AND dt.from_lon IS NOT NULL
+  AND dt.to_lat IS NOT NULL 
+  AND dt.to_lon IS NOT NULL
+  AND dt.from_lat != 0 AND dt.from_lon != 0
+  AND dt.to_lat != 0 AND dt.to_lon != 0
+  
+  -- Address quality
+  AND dt.from_address IS NOT NULL
+  AND dt.from_address != ''
+  AND dt.from_address != 'Адрес не указан'
+  AND dt.to_address IS NOT NULL
+  AND dt.to_address != ''
+  AND dt.to_address != 'Адрес не указан'
+  
+  -- Recent trips only
+  AND dt.created_at >= datetime('now', '-24 hours')
+  
+  -- Truck type filter
+  AND (? = 'any' OR LOWER(d.truck_type) = LOWER(?))
+
+ORDER BY dt.created_at DESC
+LIMIT 500;
+`
+
+	rows, err := h.db.Query(query, truckType, truckType)
+	if err != nil {
+		h.logger.Error("❌ Database query failed", zap.Error(err))
+		return nil, fmt.Errorf("database query failed: %w", err)
+	}
+	defer rows.Close()
+
+	var matchingDrivers []DriverWithTrip
+	var totalDrivers, routeMatches int
+
+	for rows.Next() {
+		var (
+			driver          DriverWithTrip
+			driverTruckType sql.NullString
+			isVerifiedB     sql.NullBool
+			status          sql.NullString
+			fromAddress     sql.NullString
+			toAddress       sql.NullString
+			fromLatN        sql.NullFloat64
+			fromLonN        sql.NullFloat64
+			toLatN          sql.NullFloat64
+			toLonN          sql.NullFloat64
+			price           sql.NullInt64
+			departureTime   sql.NullString
+			comment         sql.NullString
+			hasWhatsAppB    sql.NullBool
+			hasTelegramB    sql.NullBool
+			tgUsername      sql.NullString
+			createdAt       sql.NullString
+		)
+
+		if err := rows.Scan(
+			&driver.ID,
+			&driver.TelegramID,
+			&driver.FirstName,
+			&driver.LastName,
+			&driver.ContactNumber,
+			&driver.ProfilePhoto,
+			&driverTruckType,
+			&isVerifiedB,
+			&status,
+			&fromAddress,
+			&toAddress,
+			&fromLatN,
+			&fromLonN,
+			&toLatN,
+			&toLonN,
+			&price,
+			&departureTime,
+			&comment,
+			&hasWhatsAppB,
+			&hasTelegramB,
+			&tgUsername,
+			&createdAt,
+		); err != nil {
+			h.logger.Warn("⚠️ Failed to scan driver row", zap.Error(err))
+			continue
+		}
+
+		totalDrivers++
+
+		// Skip if missing coordinates
+		if !fromLatN.Valid || !fromLonN.Valid || !toLatN.Valid || !toLonN.Valid {
+			continue
+		}
+
+		driverFromLat, driverFromLon := fromLatN.Float64, fromLonN.Float64
+		driverToLat, driverToLon := toLatN.Float64, toLonN.Float64
+
+		// CORE LOGIC: Route-to-route matching
+		// Check if driver's A point is within radius of client's A point
+		distanceA := h.haversineDistance(clientFromLat, clientFromLon, driverFromLat, driverFromLon)
+		// Check if driver's B point is within radius of client's B point  
+		distanceB := h.haversineDistance(clientToLat, clientToLon, driverToLat, driverToLon)
+
+		h.logger.Debug("Checking route match",
+			zap.String("driver_id", driver.ID),
+			zap.String("driver_name", driver.FirstName+" "+driver.LastName),
+			zap.Float64("distance_A_km", distanceA),
+			zap.Float64("distance_B_km", distanceB),
+			zap.Float64("max_radius", radiusKm))
+
+		// MATCH CRITERIA: Both A and B points must be within radius
+		if distanceA <= radiusKm && distanceB <= radiusKm {
+			routeMatches++
+
+			// Build driver data
+			driver.FromAddress = "Адрес не указан"
+			if fromAddress.Valid && strings.TrimSpace(fromAddress.String) != "" {
+				driver.FromAddress = strings.TrimSpace(fromAddress.String)
+			}
+
+			driver.ToAddress = "Адрес не указан"
+			if toAddress.Valid && strings.TrimSpace(toAddress.String) != "" {
+				driver.ToAddress = strings.TrimSpace(toAddress.String)
+			}
+
+			// Extract city names
+			driver.StartCity = h.extractCityFromAddress(driver.FromAddress)
+			driver.EndCity = h.extractCityFromAddress(driver.ToAddress)
+
+			// Set coordinates
+			driver.FromLat = driverFromLat
+			driver.FromLon = driverFromLon
+			driver.ToLat = driverToLat
+			driver.ToLon = driverToLon
+
+			// Store matching distances for sorting/display
+			driver.DistanceKm = distanceA // Primary distance (pickup point)
+			driver.DistanceToPickupKm = distanceA
+			driver.DistanceToDropoffKm = distanceB
+
+			// Truck type
+			driver.TruckType = "any"
+			if driverTruckType.Valid && driverTruckType.String != "" {
+				driver.TruckType = strings.ToLower(driverTruckType.String)
+			}
+
+			// Driver info
+			driver.IsVerified = isVerifiedB.Valid && isVerifiedB.Bool
+			driver.FullName = strings.TrimSpace(driver.FirstName + " " + driver.LastName)
+			driver.Contact = driver.ContactNumber
+
+			// Price
+			if price.Valid && price.Int64 > 0 {
+				driver.Price = int(price.Int64)
+			}
+
+			// Departure time
+			if departureTime.Valid && strings.TrimSpace(departureTime.String) != "" {
+				driver.DepartureTime = strings.TrimSpace(departureTime.String)
+			} else {
+				driver.DepartureTime = time.Now().Add(time.Hour).Format("2006-01-02 15:04:05")
+			}
+
+			// Comment
+			if comment.Valid && comment.String != "" {
+				driver.Comment = strings.TrimSpace(comment.String)
+			}
+
+			// Contact preferences
+			driver.HasWhatsApp = hasWhatsAppB.Valid && hasWhatsAppB.Bool
+			driver.HasTelegram = hasTelegramB.Valid && hasTelegramB.Bool
+			if tgUsername.Valid && tgUsername.String != "" {
+				driver.TelegramUsername = strings.TrimSpace(tgUsername.String)
+			}
+
+			// ETA calculation (based on pickup distance)
+			driver.ETAMin = int(distanceA*2) + 5 // 2 minutes per km + 5 minutes base
+
+			// Match quality assessment
+			if distanceA <= 5.0 && distanceB <= 10.0 {
+				driver.MatchQuality = "perfect"
+			} else if distanceA <= 15.0 && distanceB <= 25.0 {
+				driver.MatchQuality = "good" 
+			} else {
+				driver.MatchQuality = "fair"
+			}
+
+			matchingDrivers = append(matchingDrivers, driver)
+
+			h.logger.Debug("✅ Route matched",
+				zap.String("driver", driver.FullName),
+				zap.String("route", fmt.Sprintf("%s → %s", driver.StartCity, driver.EndCity)),
+				zap.Float64("A_distance", distanceA),
+				zap.Float64("B_distance", distanceB),
+				zap.String("quality", driver.MatchQuality))
+		}
+	}
+
+	// Sort by combined route matching quality (A distance + B distance)
+	sort.Slice(matchingDrivers, func(i, j int) bool {
+		scoreI := matchingDrivers[i].DistanceToPickupKm + matchingDrivers[j].DistanceToDropoffKm*0.5
+		scoreJ := matchingDrivers[j].DistanceToPickupKm + matchingDrivers[j].DistanceToDropoffKm*0.5
+		return scoreI < scoreJ
+	})
+
+	h.logger.Info("✅ Route matching completed",
+		zap.Int("total_drivers_checked", totalDrivers),
+		zap.Int("route_matches_found", routeMatches),
+		zap.Float64("radius_km", radiusKm),
+		zap.String("matching_logic", "A→B driver route matches A→B client route"))
+
+	// Log some examples
+	for i, driver := range matchingDrivers {
+		if i < 3 { // Log first 3 matches
+			h.logger.Info("📊 Route match example",
+				zap.Int("rank", i+1),
+				zap.String("driver", driver.FullName),
+				zap.String("driver_route", fmt.Sprintf("%s → %s", driver.StartCity, driver.EndCity)),
+				zap.Float64("A_distance_km", driver.DistanceToPickupKm),
+				zap.Float64("B_distance_km", driver.DistanceToDropoffKm),
+				zap.String("match_quality", driver.MatchQuality),
+				zap.Int("price", driver.Price))
+		}
+	}
+
+	return matchingDrivers, nil
+}
+
+
+// Fixed driver matching function - calculates distance in Go instead of SQL
+func (h *Handler) findMatchingDriversWithGoCalculation(params DriverRequestParams) ([]DriverWithTrip, error) {
+	h.logger.Info("🔍 Finding drivers (Go distance calculation)",
+		zap.Float64("pickup_lat", params.PickupLat),
+		zap.Float64("pickup_lon", params.PickupLon),
+		zap.Float64("radius_km", params.RadiusKm),
+		zap.String("truck_type", params.TruckType))
+
+	// SQL query WITHOUT distance calculation - fetch all active drivers
+	const query = `
+SELECT
+  d.id,
+  d.telegram_id,
+  d.first_name,
+  d.last_name,
+  d.contact_number,
+  d.profile_photo,
+  d.truck_type,
+  d.is_verified,
+  d.status,
+  
+  -- Driver trip data with addresses
+  dt.from_address,
+  dt.to_address,
+  CAST(dt.from_lat AS REAL) as from_lat,
+  CAST(dt.from_lon AS REAL) as from_lon,
+  CAST(dt.to_lat AS REAL) as to_lat,
+  CAST(dt.to_lon AS REAL) as to_lon,
+  dt.price,
+  dt.departure_time,
+  dt.comment,
+  dt.has_whatsapp,
+  dt.has_telegram,
+  dt.telegram_username,
+  dt.created_at
+
+FROM drivers d
+JOIN driver_trips dt ON d.id = dt.driver_id
+WHERE 
+  1=1  -- Always true base condition
+  
+  -- Status filter: only approved drivers
+  AND LOWER(d.status) = 'approved' 
+  
+  -- Data quality filters
+  AND dt.from_lat IS NOT NULL 
+  AND dt.from_lon IS NOT NULL
+  AND dt.from_address IS NOT NULL
+  AND dt.from_address != ''
+  AND dt.from_address != 'Адрес не указан'
+  
+  -- Time filter: recent trips only
+  AND dt.created_at >= datetime('now', '-24 hours')
+  
+  -- Truck type filter (if specified and not 'any')
+  AND (? = 'any' OR LOWER(d.truck_type) = LOWER(?))
+
+ORDER BY dt.created_at DESC
+LIMIT 500;
+`
+
+	// Execute query
+	rows, err := h.db.Query(query, params.TruckType, params.TruckType)
+	if err != nil {
+		h.logger.Error("❌ Database query failed", zap.Error(err))
+		return nil, fmt.Errorf("database query failed: %w", err)
+	}
+	defer rows.Close()
+
+	var allDrivers []DriverWithTrip
+	seenDrivers := make(map[string]bool)
+
+	for rows.Next() {
+		var (
+			driver          DriverWithTrip
+			driverTruckType sql.NullString
+			isVerifiedB     sql.NullBool
+			status          sql.NullString
+			fromAddress     sql.NullString
+			toAddress       sql.NullString
+			fromLatN        sql.NullFloat64
+			fromLonN        sql.NullFloat64
+			toLatN          sql.NullFloat64
+			toLonN          sql.NullFloat64
+			price           sql.NullInt64
+			departureTime   sql.NullString
+			comment         sql.NullString
+			hasWhatsAppB    sql.NullBool
+			hasTelegramB    sql.NullBool
+			tgUsername      sql.NullString
+			createdAt       sql.NullString
+		)
+
+		if err := rows.Scan(
+			&driver.ID,
+			&driver.TelegramID,
+			&driver.FirstName,
+			&driver.LastName,
+			&driver.ContactNumber,
+			&driver.ProfilePhoto,
+			&driverTruckType,
+			&isVerifiedB,
+			&status,
+			&fromAddress,
+			&toAddress,
+			&fromLatN,
+			&fromLonN,
+			&toLatN,
+			&toLonN,
+			&price,
+			&departureTime,
+			&comment,
+			&hasWhatsAppB,
+			&hasTelegramB,
+			&tgUsername,
+			&createdAt,
+		); err != nil {
+			h.logger.Warn("⚠️ Failed to scan driver row", zap.Error(err))
+			continue
+		}
+
+		// Skip duplicate drivers (only take the most recent trip per driver)
+		if seenDrivers[driver.ID] {
+			continue
+		}
+		seenDrivers[driver.ID] = true
+
+		// Skip inactive drivers
+		if status.Valid && strings.ToLower(status.String) != "approved" {
+			continue
+		}
+
+		// Set addresses - Extract real city names
+		driver.FromAddress = "Адрес не указан"
+		if fromAddress.Valid && strings.TrimSpace(fromAddress.String) != "" {
+			driver.FromAddress = strings.TrimSpace(fromAddress.String)
+		}
+
+		driver.ToAddress = "Адрес не указан"
+		if toAddress.Valid && strings.TrimSpace(toAddress.String) != "" {
+			driver.ToAddress = strings.TrimSpace(toAddress.String)
+		}
+
+		// Extract city names from addresses
+		driver.StartCity = h.extractCityFromAddress(driver.FromAddress)
+		driver.EndCity = h.extractCityFromAddress(driver.ToAddress)
+
+		// Set coordinates
+		if fromLatN.Valid && fromLonN.Valid {
+			driver.FromLat = fromLatN.Float64
+			driver.FromLon = fromLonN.Float64
+		} else {
+			// Skip drivers without valid coordinates
+			continue
+		}
+		
+		if toLatN.Valid && toLonN.Valid {
+			driver.ToLat = toLatN.Float64
+			driver.ToLon = toLonN.Float64
+		}
+
+		// CRITICAL: Calculate distance in Go using Haversine formula
+		distance := h.haversineDistance(params.PickupLat, params.PickupLon, driver.FromLat, driver.FromLon)
+		driver.DistanceKm = distance
+
+		// Filter by radius in Go code
+		if distance > params.RadiusKm {
+			continue // Skip drivers outside radius
+		}
+
+		// Truck type with fallback
+		driver.TruckType = "any"
+		if driverTruckType.Valid && driverTruckType.String != "" {
+			driver.TruckType = strings.ToLower(driverTruckType.String)
+		}
+
+		// Basic driver info
+		driver.IsVerified = isVerifiedB.Valid && isVerifiedB.Bool
+		driver.FullName = strings.TrimSpace(driver.FirstName + " " + driver.LastName)
+		driver.Contact = driver.ContactNumber
+
+		// Price with validation
+		if price.Valid && price.Int64 > 0 {
+			driver.Price = int(price.Int64)
+		}
+
+		// Departure time - keep as string for simplicity
+		if departureTime.Valid && strings.TrimSpace(departureTime.String) != "" {
+			driver.DepartureTime = strings.TrimSpace(departureTime.String)
+		} else {
+			// Set default departure time if not provided
+			driver.DepartureTime = time.Now().Add(time.Hour).Format("2006-01-02 15:04:05")
+		}
+
+		// Comments
+		if comment.Valid && comment.String != "" {
+			driver.Comment = strings.TrimSpace(comment.String)
+		}
+
+		// Contact preferences
+		driver.HasWhatsApp = hasWhatsAppB.Valid && hasWhatsAppB.Bool
+		driver.HasTelegram = hasTelegramB.Valid && hasTelegramB.Bool
+		if tgUsername.Valid && tgUsername.String != "" {
+			driver.TelegramUsername = strings.TrimSpace(tgUsername.String)
+		}
+
+		// ETA calculation based on distance
+		driver.ETAMin = int(distance*2) + 5 // 2 minutes per km + 5 minutes base time
+
+		// Cap ETA at reasonable limits
+		if driver.ETAMin > 120 {
+			driver.ETAMin = 120
+		}
+		if driver.ETAMin < 5 {
+			driver.ETAMin = 5
+		}
+
+		allDrivers = append(allDrivers, driver)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	// Sort by distance (closest first)
+	sort.Slice(allDrivers, func(i, j int) bool {
+		return allDrivers[i].DistanceKm < allDrivers[j].DistanceKm
+	})
+
+	// Log results summary
+	h.logger.Info("✅ Found matching drivers (Go calculation)",
+		zap.Int("total_found", len(allDrivers)),
+		zap.Float64("within_km", params.RadiusKm),
+		zap.String("truck_type", params.TruckType))
+
+	// Log some details about found drivers for debugging
+	if len(allDrivers) > 0 {
+		h.logger.Info("📊 Driver search results summary",
+			zap.Float64("closest_distance", allDrivers[0].DistanceKm),
+			zap.String("closest_driver", allDrivers[0].FullName),
+			zap.String("closest_start_city", allDrivers[0].StartCity))
+		
+		if len(allDrivers) > 1 {
+			h.logger.Info("📊 Driver search results - farthest",
+				zap.Float64("farthest_distance", allDrivers[len(allDrivers)-1].DistanceKm),
+				zap.String("farthest_driver", allDrivers[len(allDrivers)-1].FullName))
+		}
+	}
+
+	return allDrivers, nil
+}
+
 
 // isValidCoordinates validates if coordinates are within Kazakhstan bounds
 func (h *Handler) isValidCoordinates(lat, lon float64) bool {
@@ -842,7 +1415,6 @@ func (h *Handler) isValidCoordinates(lat, lon float64) bool {
 }
 
 // ===== EXISTING METHODS (keeping all the original functionality) =====
-
 // FIXED: handleDelivery with better form parsing and route calculation
 func (h *Handler) handleDelivery(ctx context.Context, b *bot.Bot) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

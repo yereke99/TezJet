@@ -25,17 +25,13 @@
       position: fixed;
       width: 100%;
     }
-    #map {
+    #map, #pickerMap {
       height: 100vh;
       height: 100dvh;
       width: 100vw;
       position: fixed;
       top: 0;
       left: 0;
-    }
-
-    /* FIXED: Remove touch-action override to allow map gestures */
-    #map, #pickerMap {
       touch-action: none;
       -ms-touch-action: none;
       -webkit-touch-action: none;
@@ -109,60 +105,6 @@
       background: #000;
       color: white;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    }
-
-    /* CENTER PIN */
-    .center-pin {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -100%);
-      z-index: 999;
-      pointer-events: none;
-      display: none;
-    }
-    .center-pin.active {
-      display: block;
-      animation: pinDrop 0.3s ease-out;
-    }
-    
-    /* FIXED: Separate picker pin class */
-    .picker-center-pin {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -100%);
-      z-index: 999;
-      pointer-events: none;
-      display: block;
-      animation: pinDrop 0.3s ease-out;
-    }
-    
-    @keyframes pinDrop {
-      0% { transform: translate(-50%, -150%) scale(0.8); opacity: 0; }
-      70% { transform: translate(-50%, -95%) scale(1.05); opacity: 1; }
-      100% { transform: translate(-50%, -100%) scale(1); opacity: 1; }
-    }
-    .pin-icon {
-      width: 20px;
-      height: 20px;
-      background: #000;
-      border-radius: 50% 50% 50% 0;
-      transform: rotate(-45deg);
-      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);
-      position: relative;
-      border: 2px solid #fff;
-    }
-    .pin-icon::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) rotate(45deg);
-      width: 4px;
-      height: 4px;
-      background: white;
-      border-radius: 50%;
     }
 
     /* Bottom sheet */
@@ -255,7 +197,6 @@
     }
     .address-card.filled::before { transform: scaleX(1); }
 
-    /* FIXED: High specificity marker styles */
     .marker {
       width: 32px !important;
       height: 32px !important;
@@ -300,7 +241,8 @@
       text-overflow: ellipsis;
     }
 
-    .route-info {
+    /* Distance info */
+    .distance-info {
       padding: 12px;
       background: linear-gradient(135deg, #10b981, #059669);
       color: white;
@@ -313,7 +255,7 @@
       box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
       flex-shrink: 0;
     }
-    .route-info.active {
+    .distance-info.active {
       display: block;
       animation: slideUp 0.4s ease;
     }
@@ -406,12 +348,11 @@
       gap: 4px;
     }
     .truck-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+      margin-bottom: 16px;
+    }
 
     .truck-option {
       padding: 10px;
@@ -424,11 +365,11 @@
     }
     .truck-option:active { transform: scale(0.96); }
     .truck-option.selected {
-  border-color: #10b981;
-  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-  box-shadow: 0 6px 20px rgba(16,185,129,.25);
-  transform: translateY(-1px);
-}
+      border-color: #10b981;
+      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+      box-shadow: 0 6px 20px rgba(16,185,129,.25);
+      transform: translateY(-1px);
+    }
     .truck-icon {
       font-size: 16px;
       margin-bottom: 4px;
@@ -607,40 +548,38 @@
       outline: none;
       font-weight: 500;
     }
-    #pickerMap {
-      height: 100vh;
-      height: 100dvh;
-      width: 100vw;
-    }
-    .address-bar {
+
+    /* Instructions for picker */
+    .picker-instructions {
       position: fixed;
       top: 68px;
       left: 12px;
       right: 12px;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
       padding: 12px;
       border-radius: 14px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
       font-size: 12px;
       font-weight: 500;
       z-index: 2001;
       display: block;
-      line-height: 1.3;
-      min-height: 44px;
-      display: flex;
-      align-items: center;
+      line-height: 1.4;
+      text-align: center;
     }
+
+    /* Confirm button */
     .confirm-btn {
       position: fixed;
       bottom: env(safe-area-inset-bottom, 16px);
-      left: 12px;
-      right: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100vw - 24px);
+      max-width: 400px;
       z-index: 2010;
-      pointer-events: auto; /* FIXED: Ensure button is clickable */
+      pointer-events: auto;
     }
 
-    /* FIXED: Suggestions z-index below confirm button */
     .suggestions {
       position: fixed;
       top: 120px;
@@ -666,14 +605,14 @@
     .suggestion-item:active { background: rgba(0, 0, 0, 0.03); }
     .suggestion-item:last-child { border-bottom: none; }
 
-    /* FIXED: High specificity HTML-based markers */
+    /* Map markers - BLACK AND THIN */
     .user-marker {
       width: 14px !important;
       height: 14px !important;
       background: #3b82f6 !important;
-      border: 3px solid white !important;
+      border: 2px solid white !important;
       border-radius: 50% !important;
-      box-shadow: 0 3px 12px rgba(59, 130, 246, 0.4) !important;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4) !important;
       position: relative !important;
       animation: userPulse 2s infinite !important;
     }
@@ -683,41 +622,60 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 6px;
-      height: 6px;
+      width: 4px;
+      height: 4px;
       background: white;
       border-radius: 50%;
     }
 
     @keyframes userPulse {
-      0%, 100% { transform: scale(1); box-shadow: 0 3px 12px rgba(59, 130, 246, 0.4); }
-      50% { transform: scale(1.1); box-shadow: 0 3px 20px rgba(59, 130, 246, 0.6); }
+      0%, 100% { transform: scale(1); box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4); }
+      50% { transform: scale(1.1); box-shadow: 0 2px 12px rgba(59, 130, 246, 0.6); }
     }
 
+    /* BLACK AND THIN MARKERS */
     .custom-marker {
-      width: 24px !important;
-      height: 24px !important;
+      width: 20px !important;
+      height: 20px !important;
       border-radius: 50% !important;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
       font-weight: 700 !important;
       color: white !important;
-      font-size: 12px !important;
-      border: 2px solid white !important;
-      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25) !important;
-      animation: markerBounce 0.6s ease-out !important;
+      font-size: 11px !important;
+      border: 1px solid white !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+      animation: markerBounce 0.5s ease-out !important;
+      background: #000 !important;
     }
     .custom-marker.pickup {
-      background: linear-gradient(135deg, #000, #374151) !important;
+      background: #000 !important;
     }
     .custom-marker.dropoff {
-      background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+      background: #000 !important;
+    }
+
+    /* Placed pin marker - for manual placement */
+    .placed-pin {
+      width: 16px !important;
+      height: 16px !important;
+      background: #000 !important;
+      border: 1px solid white !important;
+      border-radius: 50% !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+      animation: pinDrop 0.4s ease-out !important;
     }
 
     @keyframes markerBounce {
       0% { transform: scale(0); opacity: 0; }
       50% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes pinDrop {
+      0% { transform: scale(0); opacity: 0; }
+      50% { transform: scale(1.3); opacity: 1; }
       100% { transform: scale(1); opacity: 1; }
     }
 
@@ -753,11 +711,6 @@
     </div>
   </div>
 
-  <!-- CENTER PIN -->
-  <div class="center-pin" id="centerPin">
-    <div class="pin-icon"></div>
-  </div>
-
   <!-- Success Screen -->
   <div class="success-screen" id="successScreen">
     <div class="success-icon">🎉</div>
@@ -778,7 +731,7 @@
     </div>
 
     <div class="sheet-content">
-      <!-- Step 1 -->
+      <!-- Step 1: Address Selection -->
       <div class="form-step active" id="stepAddresses">
         <div class="address-section">
           <div class="address-card" onclick="openPicker('pickup')">
@@ -797,7 +750,7 @@
             </div>
           </div>
 
-          <div class="route-info" id="routeInfo"></div>
+          <div class="distance-info" id="distanceInfo"></div>
         </div>
 
         <div class="button-grid single">
@@ -805,7 +758,7 @@
         </div>
       </div>
 
-      <!-- Step 2 -->
+      <!-- Step 2: Order Details -->
       <div class="form-step" id="stepDetails">
         <div class="form-title">Жеткізу мәліметтері</div>
 
@@ -821,11 +774,10 @@
             <div class="truck-label">🚚 Көлік түрі</div>
             <div class="truck-grid">
               <div class="truck-option" data-truck="intercity" onclick="selectTruck('intercity', this)">
-              <div class="truck-icon">🚕</div>
-              <div class="truck-name" id="truckIntercityName">Қала аралық такси</div>
-              <div class="truck-desc" id="truckIntercityDesc">қаладан қалаға</div>
-            </div>
-
+                <div class="truck-icon">🚕</div>
+                <div class="truck-name">Қала аралық такси</div>
+                <div class="truck-desc">қаладан қалаға</div>
+              </div>
               <div class="truck-option" data-truck="small" onclick="selectTruck('small', this)">
                 <div class="truck-icon">🚐</div>
                 <div class="truck-name">Кіші</div>
@@ -867,7 +819,7 @@
         </div>
       </div>
 
-      <!-- Step 3 -->
+      <!-- Step 3: Contact Info -->
       <div class="form-step" id="stepContact">
         <div class="form-title">Байланыс ақпараты</div>
 
@@ -903,10 +855,12 @@
       <button class="back-btn" onclick="closePicker()">←</button>
       <input type="text" class="search-box" id="searchBox" placeholder="Мекенжай іздеу..." oninput="searchAddress(this.value)" onblur="hideSuggestionsDelayed()"/>
     </div>
-    <div class="address-bar" id="pickerAddress">Картаны жүктеу...</div>
-    <div class="picker-center-pin">
-      <div class="pin-icon"></div>
+    
+    <!-- Instructions for manual pin placement -->
+    <div class="picker-instructions" id="pickerInstructions">
+      📍 Картада нүктені таңдау үшін басыңыз немесе жоғарыда іздеңіз
     </div>
+    
     <div class="suggestions" id="suggestions"></div>
     <button class="btn btn-primary confirm-btn" onclick="confirmPicker()">
       <span data-i18n="choose">Осы нүктені таңдау</span>
@@ -914,41 +868,42 @@
   </div>
 
   <script>
-    // ===== CONFIG =====
+    // Configuration
     const Y_KEY = '8a3e4da0-9ef2-4176-9203-e7014c1dba6f';
     const YA_LANG = () => (state.lang === 'kz' ? 'kk_KZ' : 'ru_RU');
 
-    // ===== STATE =====
+    // Application State
     let state = {
       lang: 'kz',
       userLoc: null,
       pickup: null,
       dropoff: null,
       pickingFor: null,
-      route: null,
       currentStep: 1,
       selectedTruck: null,
       orderData: null,
-      userHasPanned: false // Track if user manually panned map
+      userHasPanned: false,
+      manuallyPlacedPin: null
     };
 
+    // Internationalization
     const i18n = {
       kz: {
         from:'Қайдан', to:'Қайда', locating:'Орынды анықтау...', selectDest:'Баратын жерді таңдаңыз',
         submit:'Тапсырысты жіберу', gpsActive:'GPS белсенді', searching:'GPS іздеу...', choose:'Осы нүктені таңдау',
-        intercityName:'Қала аралық такси', intercityDesc:'қаладан қалаға', distanceLabel:'Қашықтық'
+        intercityName:'Қала аралық такси', intercityDesc:'қаладан қалаға', distanceLabel:'Қашықтық',
+        clickToPlace: '📍 Картада нүктені таңдау үшін басыңыз немесе жоғарыда іздеңіз'
       },
       ru: {
         from:'Откуда', to:'Куда', locating:'Определение местоположения...', selectDest:'Выберите адрес назначения',
         submit:'Отправить заказ', gpsActive:'GPS активен', searching:'Поиск GPS...', choose:'Выбрать эту точку',
-        intercityName:'Межгород такси', intercityDesc:'между городами', distanceLabel:'Дистанция'
+        intercityName:'Межгород такси', intercityDesc:'между городами', distanceLabel:'Дистанция',
+        clickToPlace: '📍 Нажмите на карту чтобы выбрать точку или ищите выше'
       }
     };
 
-
-    // ===== Yandex v3 globals =====
-    let map, pickerMap, userMarker, pickupMarker, dropoffMarker, routeLine;
-    let pickerCenter = null;
+    // Yandex Maps globals
+    let map, pickerMap, userMarker, pickupMarker, dropoffMarker, placedPinMarker;
     let geolocationWatchId = null;
     let pickerMapLoaded = false;
     let mapUpdateInterval = null;
@@ -956,8 +911,8 @@
     let currentUserLocation = null;
     let suggestionsTimeout = null;
 
-    // FIXED: Create HTML marker with proper positioning
-    function createDivMarker(html, className = '', size = [24, 24]) {
+    // Utility: Create HTML marker element
+    function createDivMarker(html, className = '', size = [20, 20]) {
       const el = document.createElement('div');
       el.className = className;
       el.style.width = size[0] + 'px';
@@ -966,28 +921,24 @@
       return el;
     }
 
-    // FIXED: Init main map with proper location handling
+    // Main map initialization
     async function initMap() {
       console.log('🗺️ Initializing map...');
       await ymaps3.ready;
-      
-      // Start location request immediately
       requestLocationPermission();
     }
 
-    // FIXED: Proper location permission request
+    // Location permission request
     function requestLocationPermission() {
       updateLocationStatus('searching', state.lang === 'kz' ? i18n.kz.searching : i18n.ru.searching);
       console.log('📍 Requesting location permission...');
       
       if (navigator.geolocation) {
-        // Get current position with high accuracy
         navigator.geolocation.getCurrentPosition(
           (position) => {
             console.log('✅ Location permission granted:', position);
             locationPermissionGranted = true;
             
-            // FIXED: Proper coordinate format [lat, lng]
             currentUserLocation = [position.coords.latitude, position.coords.longitude];
             state.userLoc = {
               lat: position.coords.latitude, 
@@ -997,19 +948,13 @@
             
             updateLocationStatus('active', `${state.lang === 'kz' ? i18n.kz.gpsActive : i18n.ru.gpsActive} ±${Math.round(position.coords.accuracy)}m`);
             
-            // Initialize map with user location
             initMapWithPosition(currentUserLocation);
-            
-            // FIXED: Set pickup location to user location by default
             setUserLocationAsPickup();
-            
-            // Start real-time tracking
             startRealtimeLocationTracking();
           },
           (error) => {
             console.error('❌ Location permission denied:', error);
             updateLocationStatus('error', 'GPS қатесі');
-            // Initialize with default location (Almaty)
             initMapWithPosition([43.238949, 76.889709]);
           },
           {
@@ -1024,7 +969,7 @@
       }
     }
 
-    // FIXED: Set user location as default pickup point
+    // Set user location as default pickup
     async function setUserLocationAsPickup() {
       if (!currentUserLocation) return;
       
@@ -1039,13 +984,10 @@
           address: addr 
         };
         
-        // Update UI
         document.getElementById('pickupAddr').textContent = addr;
         document.querySelectorAll('.address-card')[0].classList.add('filled');
         
-        // Add pickup marker
         await addMarker('pickup', currentUserLocation[0], currentUserLocation[1]);
-        
         validateCurrentStep();
         console.log('✅ User location set as pickup successfully');
         
@@ -1054,13 +996,13 @@
       }
     }
 
-    // FIXED: Real-time location tracking with better accuracy handling and 1s updates
+    // Real-time location tracking - OPTIMIZED
     function startRealtimeLocationTracking() {
       if (!navigator.geolocation || !locationPermissionGranted) return;
       
       console.log('🔄 Starting real-time location tracking...');
 
-      // Watch position for continuous updates
+      // Watch position with high frequency
       geolocationWatchId = navigator.geolocation.watchPosition(
         (position) => {
           const newCoords = [position.coords.latitude, position.coords.longitude];
@@ -1068,37 +1010,33 @@
           
           console.log('📍 GPS update:', newCoords, 'accuracy:', accuracy);
           
-          // FIXED: Remove strict accuracy gating - accept all updates
           currentUserLocation = newCoords;
           state.userLoc = {lat: newCoords[0], lng: newCoords[1], accuracy};
           
           updateUserMarker(newCoords[0], newCoords[1]);
           updateLocationStatus('active', `GPS белсенді ±${Math.round(accuracy)}m`);
           
-          // Update pickup if it matches user location closely
           if (state.pickup && isCloseToUserLocation(state.pickup)) {
             updatePickupToUserLocation();
           }
         },
         (error) => {
           console.error('Real-time location error:', error);
-          updateLocationStatus('error', 'GPS қатесі');
         },
         {
           enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 1000
+          timeout: 3000,
+          maximumAge: 0
         }
       );
 
-      // FIXED: High-accuracy updates every 1 second (not 3s)
+      // Additional polling every 1 second for aggressive tracking
       mapUpdateInterval = setInterval(() => {
         navigator.geolocation.getCurrentPosition(
           (position) => {
             const newCoords = [position.coords.latitude, position.coords.longitude];
             const accuracy = position.coords.accuracy;
             
-            // FIXED: Accept all accuracy readings, not just <= 50m
             currentUserLocation = newCoords;
             state.userLoc = {lat: newCoords[0], lng: newCoords[1], accuracy};
             
@@ -1106,25 +1044,25 @@
             updateLocationStatus('active', `GPS белсенді ±${Math.round(accuracy)}m`);
           },
           (error) => {
-            console.error('Interval location error:', error);
+            console.warn('Interval location error:', error);
           },
           {
             enableHighAccuracy: true,
             timeout: 2000,
-            maximumAge: 0 // FIXED: Always get fresh location
+            maximumAge: 0
           }
         );
-      }, 1000); // FIXED: 1 second interval as requested
+      }, 1000);
     }
 
-    // Check if pickup point is close to user location
+    // Check if pickup is close to user location
     function isCloseToUserLocation(pickup) {
       if (!currentUserLocation || !pickup) return false;
       const distance = calculateDistance(
         currentUserLocation[0], currentUserLocation[1],
         pickup.lat, pickup.lng
       );
-      return distance < 0.05; // 50 meters
+      return distance < 0.05;
     }
 
     // Update pickup to current user location
@@ -1141,7 +1079,6 @@
         
         document.getElementById('pickupAddr').textContent = addr;
         
-        // Update pickup marker
         if (pickupMarker && map) {
           pickupMarker.update({coordinates: [currentUserLocation[1], currentUserLocation[0]]});
         }
@@ -1164,7 +1101,7 @@
       }
     }
 
-    // FIXED: Initialize map with basic layers only (no controls to avoid import issues)
+    // Initialize map with position
     async function initMapWithPosition(center) {
       console.log('🗺️ Initializing map with position:', center);
       
@@ -1184,25 +1121,18 @@
           }
         });
 
-        // Add layers
         map.addChild(new YMapDefaultSchemeLayer({}));
         map.addChild(new YMapDefaultFeaturesLayer({}));
 
-        // FIXED: Skip zoom controls to avoid import issues
-        // TODO: Import controls package separately if needed
-
-        // Add listener for manual pan detection
         const mapListener = new YMapListener({
           layer: 'any',
           onUpdate: () => {
-            state.userHasPanned = true; // Stop auto-following after manual pan
+            state.userHasPanned = true;
           }
         });
         map.addChild(mapListener);
 
         console.log('✅ Map initialized successfully');
-
-        // Add user location marker
         await addUserLocationMarker(center);
 
       } catch (error) {
@@ -1210,7 +1140,7 @@
       }
     }
 
-    // FIXED: Add user location marker with proper styling and animation
+    // Add user location marker
     async function addUserLocationMarker(coords) {
       if (!map) return;
       
@@ -1223,7 +1153,7 @@
         const el = createDivMarker('', 'user-marker', [14, 14]);
 
         userMarker = new YMapMarker({
-          coordinates: [coords[1], coords[0]], // Yandex format: [lng, lat]
+          coordinates: [coords[1], coords[0]],
           draggable: false
         }, el);
 
@@ -1235,10 +1165,9 @@
       }
     }
 
-    // FIXED: Update user marker position with follow-me mode
+    // Update user marker position
     async function updateUserMarker(lat, lng) {
       try {
-        // FIXED: Ensure marker exists before updating
         if (!userMarker && map) {
           console.log('Creating user marker as it doesn\'t exist');
           await addUserLocationMarker([lat, lng]);
@@ -1248,10 +1177,10 @@
         if (!userMarker || !map) return;
         
         userMarker.update({
-          coordinates: [lng, lat] // Yandex format: [lng, lat]
+          coordinates: [lng, lat]
         });
         
-        // FIXED: Implement proper follow-me mode instead of random centering
+        // Auto-follow user ONLY if still on step 1 and hasn't manually panned
         if (state.currentStep === 1 && !state.userHasPanned) {
           map.update({ 
             location: { 
@@ -1264,90 +1193,128 @@
         
       } catch (error) {
         console.error('❌ Error updating user marker:', error);
-        // Try to recreate marker
         await addUserLocationMarker([lat, lng]);
       }
     }
 
-    // FIXED: Build picker map without problematic controls
+    // Build picker map - NO CENTER PIN, MANUAL CLICK PLACEMENT
     async function buildPickerMap(center) {
-  console.log('🗺️ Building picker map with center:', center);
+      console.log('🗺️ Building picker map with center:', center);
 
-  await ymaps3.ready;
-  pickerMapLoaded = false;
+      await ymaps3.ready;
+      pickerMapLoaded = false;
 
-  const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapListener } = ymaps3;
+      const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapListener } = ymaps3;
 
-  const el = document.getElementById('pickerMap');
-  if (!el) {
-    console.error('❌ Picker map element not found');
-    return;
-  }
-
-  // Clear previous map
-  if (pickerMap) {
-    try { pickerMap.destroy(); } catch (e) { console.log('Cleaning up old picker map:', e.message); }
-  }
-  pickerMap = null;
-  el.innerHTML = '';
-
-  await new Promise(resolve => requestAnimationFrame(resolve));
-
-  try {
-    pickerMap = new YMap(el, {
-      location: {
-        center, // [lng, lat]
-        zoom: 16
+      const el = document.getElementById('pickerMap');
+      if (!el) {
+        console.error('❌ Picker map element not found');
+        return;
       }
-    });
 
-    pickerMap.addChild(new YMapDefaultSchemeLayer({}));
-    pickerMap.addChild(new YMapDefaultFeaturesLayer({}));
+      if (pickerMap) {
+        try { pickerMap.destroy(); } catch (e) { console.log('Cleaning up old picker map:', e.message); }
+      }
+      pickerMap = null;
+      el.innerHTML = '';
 
-    pickerMapLoaded = true;
-    pickerCenter = center;            // <— keep our own center snapshot
-    console.log('✅ Picker map created successfully');
+      await new Promise(resolve => requestAnimationFrame(resolve));
 
-    // Initial address update
-    setTimeout(updatePickerAddress, 300);
+      try {
+        pickerMap = new YMap(el, {
+          location: {
+            center,
+            zoom: 16
+          }
+        });
 
-    // Keep pickerCenter updated on any camera move
-    let moveTimeout;
-    const pickerListener = new YMapListener({
-      onUpdate: (state) => {
-        if (Array.isArray(state?.location?.center)) {
-          pickerCenter = state.location.center; // [lng, lat]
-          clearTimeout(moveTimeout);
-          moveTimeout = setTimeout(updatePickerAddress, 250);
+        pickerMap.addChild(new YMapDefaultSchemeLayer({}));
+        pickerMap.addChild(new YMapDefaultFeaturesLayer({}));
+
+        // CLICK LISTENER FOR MANUAL PIN PLACEMENT
+        const clickListener = new YMapListener({
+          layer: 'any',
+          onClick: (object, event) => {
+            if (event.coordinates) {
+              placePinAtCoordinates(event.coordinates);
+            }
+          }
+        });
+        pickerMap.addChild(clickListener);
+
+        pickerMapLoaded = true;
+        console.log('✅ Picker map created successfully with click listener');
+
+        // Remove any existing placed pin marker
+        if (placedPinMarker) {
+          try { pickerMap.removeChild(placedPinMarker); } catch (e) {}
+          placedPinMarker = null;
         }
+
+        // Update instructions text
+        updatePickerInstructions();
+
+      } catch (error) {
+        console.error('❌ Error creating picker map:', error);
+        document.getElementById('pickerInstructions').textContent = 'Картаны жүктеу мүмкін болмады';
       }
-    });
-    pickerMap.addChild(pickerListener);
-
-  } catch (error) {
-    console.error('❌ Error creating picker map:', error);
-    document.getElementById('pickerAddress').textContent = 'Картаны жүктеу мүмкін болмады';
-  }
-}
-
-
-    // FIXED: Update picker address
-    async function updatePickerAddress() {
-    if (!pickerMap || !pickerMapLoaded) return;
-    if (!Array.isArray(pickerCenter) || pickerCenter.length !== 2) return;
-
-    try {
-      const [lng, lat] = pickerCenter; // [lng, lat]
-      const addr = await reverseGeocode(lat, lng);
-      document.getElementById('pickerAddress').textContent = addr;
-    } catch (error) {
-      console.error('❌ Address update error:', error);
-      document.getElementById('pickerAddress').textContent = 'Мекенжайды анықтау мүмкін болмады';
     }
-  }
 
+    // Place pin at coordinates (manual click)
+    async function placePinAtCoordinates(coordinates) {
+      if (!pickerMap || !pickerMapLoaded) return;
+      
+      console.log('📍 Placing pin at:', coordinates);
+      
+      await ymaps3.ready;
+      const { YMapMarker } = ymaps3;
 
-    // ===== FIXED: Markers with proper coordinate handling =====
+      try {
+        // Remove existing placed pin
+        if (placedPinMarker) {
+          try { pickerMap.removeChild(placedPinMarker); } catch (e) {}
+        }
+
+        // Create new thin black pin
+        const pinEl = createDivMarker('', 'placed-pin', [16, 16]);
+        
+        placedPinMarker = new YMapMarker({
+          coordinates: coordinates,
+          draggable: true
+        }, pinEl);
+
+        pickerMap.addChild(placedPinMarker);
+        
+        // Store coordinates for confirmation
+        state.manuallyPlacedPin = {
+          lat: coordinates[1],
+          lng: coordinates[0]
+        };
+        
+        // Update instructions to show pin is placed
+        document.getElementById('pickerInstructions').textContent = 
+          state.lang === 'kz' ? 
+          '✅ Нүкте таңдалды! "Таңдау" батырмасын басыңыз' : 
+          '✅ Точка выбрана! Нажмите "Выбрать"';
+
+        console.log('✅ Pin placed successfully at:', coordinates);
+        
+      } catch (error) {
+        console.error('❌ Error placing pin:', error);
+      }
+    }
+
+    // Update picker instructions based on language
+    function updatePickerInstructions() {
+      const instructions = document.getElementById('pickerInstructions');
+      if (instructions) {
+        instructions.textContent = state.lang === 'kz' ? 
+          i18n.kz.clickToPlace : 
+          i18n.ru.clickToPlace;
+      }
+    }
+
+    // Add marker to main map
     async function addMarker(type, lat, lng) {
       if (!map) return;
       
@@ -1357,9 +1324,9 @@
       const { YMapMarker } = ymaps3;
 
       try {
-        const el = createDivMarker(type === 'pickup' ? 'A' : 'B', `custom-marker ${type}`);
+        const el = createDivMarker(type === 'pickup' ? 'A' : 'B', `custom-marker ${type}`, [20, 20]);
         const marker = new YMapMarker({
-          coordinates: [lng, lat], // Yandex format: [lng, lat]
+          coordinates: [lng, lat],
           draggable: true
         }, el);
 
@@ -1378,12 +1345,65 @@
         map.addChild(marker);
         console.log(`✅ ${type} marker added successfully`);
         
+        // OPTIMIZED: Center view on both points when both exist
+        if (pickupMarker && dropoffMarker) {
+          setTimeout(() => fitBothPointsOnMap(), 300);
+        }
+        
       } catch (error) {
         console.error(`❌ Error adding ${type} marker:`, error);
       }
     }
 
-    // ===== FIXED: Geocoding =====
+    // OPTIMIZED: Fit both A and B points comfortably on map
+    function fitBothPointsOnMap() {
+      if (!map || !state.pickup || !state.dropoff) return;
+      
+      try {
+        const bounds = [
+          [Math.min(state.pickup.lng, state.dropoff.lng), Math.min(state.pickup.lat, state.dropoff.lat)],
+          [Math.max(state.pickup.lng, state.dropoff.lng), Math.max(state.pickup.lat, state.dropoff.lat)]
+        ];
+        
+        // Add padding for comfortable view
+        const padding = 0.01;
+        bounds[0][0] -= padding; // left
+        bounds[0][1] -= padding; // bottom
+        bounds[1][0] += padding; // right
+        bounds[1][1] += padding; // top
+        
+        map.update({
+          location: { bounds: bounds },
+          duration: 1500
+        });
+        
+        // Show distance info
+        showDistanceInfo();
+        
+        console.log('✅ Map fitted to show both points comfortably');
+        
+      } catch (error) {
+        console.error('❌ Error fitting points on map:', error);
+      }
+    }
+
+    // Show simple distance between two points
+    function showDistanceInfo() {
+      if (!state.pickup || !state.dropoff) return;
+      
+      const distance = calculateDistance(
+        state.pickup.lat, state.pickup.lng,
+        state.dropoff.lat, state.dropoff.lng
+      );
+      
+      document.getElementById('distanceInfo').innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:center;gap:12px;">
+          <span>📏 ${distance.toFixed(1)} км</span>
+        </div>`;
+      document.getElementById('distanceInfo').classList.add('active');
+    }
+
+    // Geocoding functions - OPTIMIZED (only called when needed)
     async function reverseGeocode(lat, lng) {
       try {
         const res = await fetch(
@@ -1441,18 +1461,19 @@
     }
 
     function selectSuggestion(lat, lng) {
-  if (pickerMap && pickerMapLoaded) {
-    const center = [lng, lat];
-    pickerCenter = center; // update immediately
-    pickerMap.update({ location: { center, zoom: 17 } });
-    updatePickerAddress();
-  }
-  document.getElementById('suggestions').classList.remove('active');
-  document.getElementById('searchBox').value = '';
-}
+      if (pickerMap && pickerMapLoaded) {
+        const center = [lng, lat];
+        pickerMap.update({ location: { center, zoom: 17 } });
+        
+        // Automatically place pin at searched location
+        setTimeout(() => {
+          placePinAtCoordinates([lng, lat]);
+        }, 500);
+      }
+      document.getElementById('suggestions').classList.remove('active');
+      document.getElementById('searchBox').value = '';
+    }
 
-
-    // FIXED: Hide suggestions with delay to allow clicks
     function hideSuggestionsDelayed() {
       clearTimeout(suggestionsTimeout);
       suggestionsTimeout = setTimeout(() => {
@@ -1460,135 +1481,9 @@
       }, 200);
     }
 
-    // ===== FIXED: Routing with proper YMapFeature access =====
-    async function drawRoute() {
-      if (!state.pickup || !state.dropoff) return;
-      
-      // Remove old route
-      if (routeLine && map) {
-        try { map.removeChild(routeLine); } catch (e) {}
-        routeLine = null;
-      }
-
-      try {
-        console.log('🛣️ Drawing route from', state.pickup, 'to', state.dropoff);
-        
-        const url = `https://api.routing.yandex.net/v2/route?apikey=${Y_KEY}&waypoints=${state.pickup.lng},${state.pickup.lat}|${state.dropoff.lng},${state.dropoff.lat}&mode=driving&format=json`;
-        const res = await fetch(url);
-        const data = await res.json();
-
-        const geometry = data?.route?.geometry;
-        const legs = data?.route?.legs;
-        
-        if (!geometry?.coordinates || !legs?.length) {
-          console.log('No route found, drawing straight line');
-          await drawStraightLine();
-          return;
-        }
-
-        await ymaps3.ready;
-        const { YMapFeature } = ymaps3;
-
-        routeLine = new YMapFeature({
-          geometry: { type: 'LineString', coordinates: geometry.coordinates },
-          style: { stroke: [{ color: '#10b981', width: 4 }] }
-        });
-        
-        map.addChild(routeLine);
-
-        const distance = legs[0]?.distance?.value || 0;
-        const duration = legs[0]?.duration?.value || 0;
-
-        // Fit bounds
-        const bounds = calculateRouteBounds([
-          [state.pickup.lng, state.pickup.lat],
-          [state.dropoff.lng, state.dropoff.lat]
-        ]);
-        
-        map.update({
-          location: { bounds: bounds },
-          duration: 1000
-        });
-
-        const km = (distance / 1000).toFixed(1);
-        const min = Math.round(duration / 60);
-        state.route = { distance, duration };
-        
-        document.getElementById('routeInfo').innerHTML = `
-          <div style="display:flex;align-items:center;justify-content:center;gap:12px;">
-            <span>🛣️ ${km} км</span>
-            <span>⏱️ ${min} мин</span>
-          </div>`;
-        document.getElementById('routeInfo').classList.add('active');
-        
-        console.log('✅ Route drawn successfully');
-        
-      } catch (error) {
-        console.error('❌ Route error:', error);
-        await drawStraightLine();
-      }
-    }
-
-    // FIXED: Guard YMapFeature access
-    async function drawStraightLine() {
-      if (!state.pickup || !state.dropoff || !map) return;
-      
-      try {
-        const coords = [
-          [state.pickup.lng, state.pickup.lat],
-          [state.dropoff.lng, state.dropoff.lat]
-        ];
-        
-        await ymaps3.ready; // FIXED: Ensure readiness before access
-        const { YMapFeature } = ymaps3;
-        
-        routeLine = new YMapFeature({
-          geometry: { type: 'LineString', coordinates: coords },
-          style: { stroke: [{ color: '#10b981', width: 4, opacity: 0.7 }] }
-        });
-        
-        map.addChild(routeLine);
-        
-        // Calculate and display straight-line distance
-        const distance = calculateDistance(
-          state.pickup.lat, state.pickup.lng,
-          state.dropoff.lat, state.dropoff.lng
-        );
-        
-        document.getElementById('routeInfo').innerHTML = `
-          <div style="display:flex;align-items:center;justify-content:center;gap:12px;">
-            <span>📏 ${distance.toFixed(1)} км</span>
-          </div>`;
-        document.getElementById('routeInfo').classList.add('active');
-        
-      } catch (error) {
-        console.error('❌ Error drawing straight line:', error);
-      }
-    }
-
-    function calculateRouteBounds(coordinates) {
-      let minLng = coordinates[0][0];
-      let maxLng = coordinates[0][0];
-      let minLat = coordinates[0][1];
-      let maxLat = coordinates[0][1];
-      
-      coordinates.forEach(coord => {
-        minLng = Math.min(minLng, coord[0]);
-        maxLng = Math.max(maxLng, coord[0]);
-        minLat = Math.min(minLat, coord[1]);
-        maxLat = Math.max(maxLat, coord[1]);
-      });
-      
-      const padding = 0.01;
-      return [
-        [minLng - padding, minLat - padding],
-        [maxLng + padding, maxLat + padding]
-      ];
-    }
-
     // Calculate distance using Haversine formula
     function calculateDistance(lat1, lng1, lat2, lng2) {
-      const R = 6371; // Earth's radius in kilometers
+      const R = 6371;
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLng = (lng2 - lng1) * Math.PI / 180;
       const a = 
@@ -1599,7 +1494,7 @@
       return R * c;
     }
 
-    // ===== Steps & Validation =====
+    // Step navigation and validation
     function goToStep(step) {
       document.querySelectorAll('.form-step').forEach((s) => s.classList.remove('active'));
       document.querySelectorAll('.step-dot').forEach((d) => d.classList.remove('active'));
@@ -1611,6 +1506,11 @@
 
       state.currentStep = step;
       validateCurrentStep();
+      
+      // Reset user panning flag when going to step 1
+      if (step === 1) {
+        state.userHasPanned = false;
+      }
     }
 
     function validateCurrentStep() {
@@ -1632,7 +1532,6 @@
       }
     }
 
-    // FIXED: selectTruck with explicit element parameter
     function selectTruck(type, element) {
       document.querySelectorAll('.truck-option').forEach((opt) => opt.classList.remove('selected'));
       element.classList.add('selected');
@@ -1640,7 +1539,7 @@
       validateCurrentStep();
     }
 
-    // ===== FIXED: Picker open/close/confirm =====
+    // Picker functions
     async function openPicker(type) {
       console.log('🗺️ Opening picker for:', type);
       state.pickingFor = type;
@@ -1648,21 +1547,18 @@
       const modal = document.getElementById('pickerModal');
       modal.classList.add('active');
 
-      // Choose center based on type
       let center;
       if (type === 'pickup' && state.pickup) {
-        center = [state.pickup.lng, state.pickup.lat]; // Yandex format
+        center = [state.pickup.lng, state.pickup.lat];
       } else if (type === 'dropoff' && state.dropoff) {
-        center = [state.dropoff.lng, state.dropoff.lat]; // Yandex format
+        center = [state.dropoff.lng, state.dropoff.lat];
       } else if (currentUserLocation) {
-        center = [currentUserLocation[1], currentUserLocation[0]]; // Convert to Yandex format
+        center = [currentUserLocation[1], currentUserLocation[0]];
       } else {
-        center = [76.889709, 43.238949]; // Default Almaty
+        center = [76.889709, 43.238949];
       }
 
       console.log('Using center for picker:', center);
-
-      document.getElementById('pickerAddress').textContent = 'Картаны жүктеу...';
 
       await new Promise(resolve => setTimeout(resolve, 100));
       await buildPickerMap(center);
@@ -1685,58 +1581,62 @@
       pickerMap = null;
       pickerMapLoaded = false;
       
+      // Clean up placed pin
+      if (placedPinMarker) {
+        placedPinMarker = null;
+      }
+      state.manuallyPlacedPin = null;
+      
       state.pickingFor = null;
     }
 
-    // FIXED: Confirm picker with fallback for when map isn't ready
+    // OPTIMIZED: Confirm picker selection using manually placed pin
     async function confirmPicker() {
-  console.log('✅ Confirming picker selection...');
+      console.log('✅ Confirming picker selection...');
 
-  if (!state.pickingFor) {
-    console.log('❌ No selection type specified');
-    return;
-  }
+      if (!state.pickingFor) {
+        console.log('❌ No selection type specified');
+        return;
+      }
 
-  if (!Array.isArray(pickerCenter) || pickerCenter.length !== 2) {
-    const msg = state.lang === 'kz'
-      ? 'Карта әлі жүктелуде. Қайта байқап көріңіз.'
-      : 'Карта еще загружается. Попробуйте снова.';
-    if (window.Telegram?.WebApp) Telegram.WebApp.showAlert(msg); else alert(msg);
-    return;
-  }
+      if (!state.manuallyPlacedPin) {
+        const msg = state.lang === 'kz'
+          ? 'Алдымен картада нүктені таңдаңыз'
+          : 'Сначала выберите точку на карте';
+        if (window.Telegram?.WebApp) Telegram.WebApp.showAlert(msg); else alert(msg);
+        return;
+      }
 
-  try {
-    const [lng, lat] = pickerCenter; // [lng, lat]
-    console.log('📍 Selected coordinates:', { lat, lng });
+      try {
+        const { lat, lng } = state.manuallyPlacedPin;
+        console.log('📍 Selected coordinates:', { lat, lng });
 
-    const addr = await reverseGeocode(lat, lng);
-    console.log('📍 Address:', addr);
+        // Only call geocoding API once when confirming
+        const addr = await reverseGeocode(lat, lng);
+        console.log('📍 Address:', addr);
 
-    if (state.pickingFor === 'pickup') {
-      state.pickup = { lat, lng, address: addr };
-      document.getElementById('pickupAddr').textContent = addr;
-      document.querySelectorAll('.address-card')[0].classList.add('filled');
-      await addMarker('pickup', lat, lng);
-    } else {
-      state.dropoff = { lat, lng, address: addr };
-      document.getElementById('dropoffAddr').textContent = addr;
-      document.querySelectorAll('.address-card')[1].classList.add('filled');
-      await addMarker('dropoff', lat, lng);
+        if (state.pickingFor === 'pickup') {
+          state.pickup = { lat, lng, address: addr };
+          document.getElementById('pickupAddr').textContent = addr;
+          document.querySelectorAll('.address-card')[0].classList.add('filled');
+          await addMarker('pickup', lat, lng);
+        } else {
+          state.dropoff = { lat, lng, address: addr };
+          document.getElementById('dropoffAddr').textContent = addr;
+          document.querySelectorAll('.address-card')[1].classList.add('filled');
+          await addMarker('dropoff', lat, lng);
+        }
+
+        closePicker();
+        validateCurrentStep();
+
+        console.log('✅ Picker confirmation successful');
+      } catch (error) {
+        console.error('❌ Confirm picker error:', error);
+      }
     }
 
-    closePicker();
-
-    if (state.pickup && state.dropoff) drawRoute();
-    validateCurrentStep();
-
-    console.log('✅ Picker confirmation successful');
-  } catch (error) {
-    console.error('❌ Confirm picker error:', error);
-  }
-}
-
-
-    // ===== Phone format =====
+    // Phone formatting
     function formatPhone(input) {
       let val = input.value.replace(/\D/g, '');
       if (!val) return;
@@ -1752,7 +1652,7 @@
       input.value = fmt;
     }
 
-    // ===== Submit order =====
+    // Submit order
     async function submitOrder() {
       const submitBtn = document.getElementById('submitBtn');
       const submitText = document.getElementById('submitText');
@@ -1785,10 +1685,11 @@
           formData.append('telegram_last_name', tg.initDataUnsafe.user.last_name || '');
         }
 
-        if (state.route) {
-          formData.append('distance', state.route.distance);
-          formData.append('duration', state.route.duration);
-        }
+        const distance = calculateDistance(
+          state.pickup.lat, state.pickup.lng,
+          state.dropoff.lat, state.dropoff.lng
+        );
+        formData.append('distance', distance);
 
         const res = await fetch('/api/delivery-request', { method: 'POST', body: formData });
         const json = await res.json().catch(() => ({ success: false }));
@@ -1833,7 +1734,6 @@
       window.location.href = `/driver-list?order=${orderData}`;
     }
 
-    // CLEANUP FUNCTION
     function stopRealtimeGeolocation() {
       if (geolocationWatchId) {
         navigator.geolocation.clearWatch(geolocationWatchId);
@@ -1845,7 +1745,6 @@
       }
     }
 
-    // FIXED: Lang with explicit element parameter
     function setLang(lang, element) {
       state.lang = lang;
       document.querySelectorAll('.lang-btn').forEach((btn) => btn.classList.remove('active'));
@@ -1855,6 +1754,9 @@
         const key = el.dataset.i18n;
         if (i18n[lang][key]) el.textContent = i18n[lang][key];
       });
+
+      // Update picker instructions if picker is open
+      updatePickerInstructions();
 
       if (lang === 'kz') {
         document.getElementById('gpsText').textContent = 'GPS белсенді';
@@ -1871,7 +1773,7 @@
       }
     }
 
-    // ===== Boot =====
+    // Initialize application
     document.addEventListener('DOMContentLoaded', async () => {
       console.log('🚀 DOM loaded, initializing app...');
       
@@ -1883,15 +1785,12 @@
       await initMap();
       console.log('✅ Map initialization started');
 
-      // Default date/time
       const now = new Date();
       document.getElementById('date').valueAsDate = now;
       document.getElementById('time').value = now.toTimeString().slice(0, 5);
 
-      // Default language
       setLang('kz', document.querySelector('.lang-btn.active'));
 
-      // Telegram WebApp setup
       if (window.Telegram?.WebApp) {
         const tg = Telegram.WebApp;
         tg.ready();
@@ -1901,19 +1800,18 @@
       }
     });
 
-    // Clean up on page unload
     window.addEventListener('beforeunload', () => {
       stopRealtimeGeolocation();
     });
 
-    // Reset user pan flag when going to step 1
+    // Reset panning flag when going to next step
     document.addEventListener('click', (e) => {
       if (e.target.textContent === 'Келесі' && state.currentStep === 2) {
-        state.userHasPanned = false; // Reset for new address selection
+        state.userHasPanned = false;
       }
     });
 
-    // Expose functions globally
+    // Global function exports
     window.setLang = setLang;
     window.openPicker = openPicker;
     window.closePicker = closePicker;
@@ -1926,6 +1824,7 @@
     window.submitOrder = submitOrder;
     window.goToDriverList = goToDriverList;
     window.hideSuggestionsDelayed = hideSuggestionsDelayed;
+    window.placePinAtCoordinates = placePinAtCoordinates;
   </script>
 </body>
 </html>
