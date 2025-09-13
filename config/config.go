@@ -52,7 +52,7 @@ type Config struct {
 func NewConfig() (*Config, error) {
 	cfg := &Config{
 		// Server defaults
-		Port:         ":8080",
+		Port:         ":8081",
 		Host:         "0.0.0.0",
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
@@ -60,7 +60,7 @@ func NewConfig() (*Config, error) {
 
 		// Telegram defaults
 		Token:      "7654139572:AAGpRqJa7d_bJNE9bYydJgcwASUbfHjP8Os",
-		BaseURL:    "https://098065613d9d.ngrok-free.app",
+		BaseURL:    "https://meily.kz",
 		AdminToken: "admin-secret-token-change-in-production",
 
 		// Database defaults
