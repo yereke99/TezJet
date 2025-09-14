@@ -2,53 +2,89 @@
 <html lang="kz">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Delivery</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#000000" />
+  <title>Delivery - Full Screen</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <!-- Yandex Maps v3 -->
   <script defer src="https://api-maps.yandex.ru/v3/?apikey=8a3e4da0-9ef2-4176-9203-e7014c1dba6f&lang=ru_RU"></script>
 
   <style>
+    /* CSS Custom Properties for Dynamic Heights */
+    :root {
+      --tg-viewport-height: 100vh;
+      --tg-viewport-stable-height: 100vh;
+      --tg-safe-area-inset-top: 0px;
+      --tg-safe-area-inset-bottom: 0px;
+      --tg-safe-area-inset-left: 0px;
+      --tg-safe-area-inset-right: 0px;
+      --tg-content-safe-area-inset-top: 0px;
+      --system-ui-height: 0px;
+    }
+
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
     }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+    html {
+      height: 100%;
       height: 100vh;
       height: 100dvh;
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      height: var(--tg-viewport-stable-height, 100vh);
+      height: var(--tg-viewport-stable-height, 100dvh);
       overflow: hidden;
       background: #f8f9fa;
       position: fixed;
       width: 100%;
+      top: 0;
+      left: 0;
+      /* Dynamic padding with safe areas */
+      padding-top: calc(var(--tg-safe-area-inset-top, env(safe-area-inset-top, 0px)) + var(--tg-content-safe-area-inset-top, 0px) + 15px);
+      padding-bottom: calc(var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 10px);
+      padding-left: calc(var(--tg-safe-area-inset-left, env(safe-area-inset-left, 0px)) + 0px);
+      padding-right: calc(var(--tg-safe-area-inset-right, env(safe-area-inset-right, 0px)) + 0px);
     }
+
+    /* Full screen maps */
     #map, #pickerMap {
-      height: 100vh;
-      height: 100dvh;
-      width: 100vw;
       position: fixed;
       top: 0;
       left: 0;
+      width: 100vw;
+      height: var(--tg-viewport-stable-height, 100vh);
+      height: var(--tg-viewport-stable-height, 100dvh);
       touch-action: none;
-      -ms-touch-action: none;
       -webkit-touch-action: none;
+      -ms-touch-action: none;
+      z-index: 1;
     }
 
-    /* Top Controls */
+    /* Top Controls - Fixed positioning with safe area */
     .top-bar {
       position: fixed;
-      top: env(safe-area-inset-top, 12px);
-      left: 12px;
-      right: 12px;
+      top: calc(var(--tg-safe-area-inset-top, env(safe-area-inset-top, 12px)) + var(--tg-content-safe-area-inset-top, 0px) + 8px);
+      left: calc(var(--tg-safe-area-inset-left, env(safe-area-inset-left, 12px)) + 8px);
+      right: calc(var(--tg-safe-area-inset-right, env(safe-area-inset-right, 12px)) + 8px);
       z-index: 1000;
       display: flex;
       justify-content: space-between;
       gap: 10px;
       pointer-events: none;
     }
+
     .gps-status, .lang-switch {
       pointer-events: auto;
     }
@@ -56,6 +92,7 @@
     .gps-status {
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       padding: 10px 14px;
       border-radius: 18px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
@@ -66,6 +103,7 @@
       gap: 6px;
       border: 1px solid rgba(0, 0, 0, 0.05);
     }
+
     .gps-dot {
       width: 6px;
       height: 6px;
@@ -76,6 +114,7 @@
     .gps-dot.error {
       background: #ef4444;
     }
+
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.5; transform: scale(1.2); }
@@ -84,12 +123,14 @@
     .lang-switch {
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border-radius: 18px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
       display: flex;
       padding: 2px;
       border: 1px solid rgba(0, 0, 0, 0.05);
     }
+
     .lang-btn {
       padding: 6px 12px;
       border: none;
@@ -107,23 +148,24 @@
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
-    /* Bottom sheet */
+    /* Bottom sheet - Dynamic height with safe area */
     .bottom-sheet {
       position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      bottom: calc(var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+      left: calc(var(--tg-safe-area-inset-left, env(safe-area-inset-left, 0px)));
+      right: calc(var(--tg-safe-area-inset-right, env(safe-area-inset-right, 0px)));
       background: white;
       border-radius: 24px 24px 0 0;
       box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.12);
       z-index: 1001;
       height: auto;
-      min-height: 45vh;
-      max-height: 85vh;
+      min-height: calc(var(--tg-viewport-stable-height, 100vh) * 0.45);
+      max-height: calc(var(--tg-viewport-stable-height, 100vh) * 0.85);
       transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       display: flex;
       flex-direction: column;
     }
+
     .sheet-handle {
       width: 36px;
       height: 4px;
@@ -132,9 +174,10 @@
       margin: 8px auto 6px;
       flex-shrink: 0;
     }
+
     .sheet-content {
       flex: 1;
-      padding: 0 16px 16px;
+      padding: 0 16px calc(var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 16px)) + 16px);
       display: flex;
       flex-direction: column;
       min-height: 0;
@@ -148,6 +191,7 @@
       padding: 0;
       flex-shrink: 0;
     }
+
     .step-dot {
       width: 6px;
       height: 6px;
@@ -164,6 +208,7 @@
       flex-shrink: 0;
       margin-bottom: 16px;
     }
+
     .address-card {
       display: flex;
       align-items: center;
@@ -214,6 +259,7 @@
     .marker.dropoff {
       background: linear-gradient(135deg, #ef4444, #dc2626) !important;
     }
+
     .address-text {
       flex: 1;
       min-width: 0;
@@ -221,6 +267,7 @@
       flex-direction: column;
       justify-content: center;
     }
+
     .address-label {
       font-size: 11px;
       color: #6b7280;
@@ -229,6 +276,7 @@
       letter-spacing: 0.3px;
       line-height: 1;
     }
+
     .address-value {
       font-size: 14px;
       font-weight: 600;
@@ -259,6 +307,7 @@
       display: block;
       animation: slideUp 0.4s ease;
     }
+
     @keyframes slideUp {
       from { opacity: 0; transform: translateY(16px); }
       to { opacity: 1; transform: translateY(0); }
@@ -271,6 +320,7 @@
       min-height: 0;
     }
     .form-step.active { display: flex; }
+
     .form-title {
       font-size: 16px;
       font-weight: 700;
@@ -278,11 +328,13 @@
       color: #111827;
       flex-shrink: 0;
     }
+
     .form-content {
       flex: 1;
       display: flex;
       flex-direction: column;
       min-height: 0;
+      overflow-y: auto;
     }
 
     .form-grid {
@@ -316,6 +368,7 @@
       align-items: center;
       gap: 4px;
     }
+
     .field-input {
       width: 100%;
       border: none;
@@ -326,6 +379,7 @@
       color: #111827;
     }
     .field-input::placeholder { color: #9ca3af; }
+
     textarea.field-input {
       min-height: 48px;
       resize: none;
@@ -337,6 +391,7 @@
       flex-shrink: 0;
       margin-bottom: 16px;
     }
+
     .truck-label {
       font-size: 10px;
       color: #6b7280;
@@ -347,6 +402,7 @@
       align-items: center;
       gap: 4px;
     }
+
     .truck-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -370,16 +426,19 @@
       box-shadow: 0 6px 20px rgba(16,185,129,.25);
       transform: translateY(-1px);
     }
+
     .truck-icon {
       font-size: 16px;
       margin-bottom: 4px;
     }
+
     .truck-name {
       font-size: 11px;
       font-weight: 600;
       color: #111827;
       margin-bottom: 2px;
     }
+
     .truck-desc {
       font-size: 9px;
       color: #6b7280;
@@ -401,6 +460,7 @@
       position: relative;
       overflow: hidden;
     }
+
     .btn-primary {
       background: linear-gradient(135deg, #000, #1f2937);
       color: white;
@@ -416,6 +476,7 @@
       transform: none;
       box-shadow: none;
     }
+
     .btn-secondary {
       background: #f3f4f6;
       color: #374151;
@@ -438,7 +499,10 @@
     /* Success Screen */
     .success-screen {
       position: fixed;
-      inset: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       background: linear-gradient(135deg, #10b981, #059669);
       color: white;
       z-index: 3000;
@@ -448,35 +512,43 @@
       flex-direction: column;
       text-align: center;
       padding: 20px;
+      padding-top: calc(var(--tg-safe-area-inset-top, env(safe-area-inset-top, 20px)) + 40px);
+      padding-bottom: calc(var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 20px)) + 20px);
     }
     .success-screen.active {
       display: flex;
       animation: successSlideIn 0.5s ease-out;
     }
+
     @keyframes successSlideIn {
       from { opacity: 0; transform: translateY(100%); }
       to { opacity: 1; transform: translateY(0); }
     }
+
     .success-icon {
       font-size: 72px;
       margin-bottom: 20px;
       animation: successPulse 2s infinite;
     }
+
     @keyframes successPulse {
       0%, 100% { transform: scale(1); }
       50% { transform: scale(1.1); }
     }
+
     .success-title {
       font-size: 24px;
       font-weight: 700;
       margin-bottom: 12px;
     }
+
     .success-message {
       font-size: 16px;
       opacity: 0.9;
       margin-bottom: 24px;
       line-height: 1.4;
     }
+
     .success-btn {
       background: rgba(255, 255, 255, 0.2);
       color: white;
@@ -493,10 +565,13 @@
       transform: scale(0.96);
     }
 
-    /* Picker Modal */
+    /* Picker Modal - Full screen */
     .picker-modal {
       position: fixed;
-      inset: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       background: white;
       z-index: 2000;
       display: none;
@@ -505,24 +580,28 @@
       display: block;
       animation: slideInUp 0.3s ease;
     }
+
     @keyframes slideInUp {
       from { transform: translateY(100%); }
       to { transform: translateY(0); }
     }
+
     .picker-header {
       position: fixed;
-      top: env(safe-area-inset-top, 12px);
-      left: 12px;
-      right: 12px;
+      top: calc(var(--tg-safe-area-inset-top, env(safe-area-inset-top, 12px)) + var(--tg-content-safe-area-inset-top, 0px) + 8px);
+      left: calc(var(--tg-safe-area-inset-left, env(safe-area-inset-left, 12px)) + 8px);
+      right: calc(var(--tg-safe-area-inset-right, env(safe-area-inset-right, 12px)) + 8px);
       z-index: 2001;
       display: flex;
       gap: 10px;
     }
+
     .back-btn {
       width: 40px;
       height: 40px;
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border: none;
       border-radius: 14px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
@@ -536,10 +615,12 @@
       font-weight: 600;
     }
     .back-btn:active { transform: scale(0.94); }
+
     .search-box {
       flex: 1;
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border: none;
       border-radius: 14px;
       padding: 10px 12px;
@@ -552,9 +633,9 @@
     /* Instructions for picker */
     .picker-instructions {
       position: fixed;
-      top: 68px;
-      left: 12px;
-      right: 12px;
+      top: calc(var(--tg-safe-area-inset-top, env(safe-area-inset-top, 68px)) + var(--tg-content-safe-area-inset-top, 0px) + 68px);
+      left: calc(var(--tg-safe-area-inset-left, env(safe-area-inset-left, 12px)) + 8px);
+      right: calc(var(--tg-safe-area-inset-right, env(safe-area-inset-right, 12px)) + 8px);
       background: rgba(0, 0, 0, 0.9);
       color: white;
       padding: 12px;
@@ -568,33 +649,34 @@
       text-align: center;
     }
 
-    /* Confirm button */
+    /* Confirm button - Full screen positioning */
     .confirm-btn {
       position: fixed;
-      bottom: env(safe-area-inset-bottom, 16px);
-      left: 50%;
-      transform: translateX(-50%);
-      width: calc(100vw - 24px);
-      max-width: 400px;
-      z-index: 2010;
+      bottom: calc(var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 16px)) + 16px);
+      left: calc(var(--tg-safe-area-inset-left, env(safe-area-inset-left, 16px)) + 8px);
+      right: calc(var(--tg-safe-area-inset-right, env(safe-area-inset-right, 16px)) + 8px);
+      z-index: 2020;
       pointer-events: auto;
+      max-width: none;
     }
 
     .suggestions {
       position: fixed;
-      top: 120px;
-      left: 12px;
-      right: 12px;
+      top: calc(var(--tg-safe-area-inset-top, env(safe-area-inset-top, 120px)) + var(--tg-content-safe-area-inset-top, 0px) + 120px);
+      left: calc(var(--tg-safe-area-inset-left, env(safe-area-inset-left, 12px)) + 8px);
+      right: calc(var(--tg-safe-area-inset-right, env(safe-area-inset-right, 12px)) + 8px);
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border-radius: 14px;
       box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
-      max-height: 40vh;
+      max-height: 35vh;
       overflow-y: auto;
       z-index: 2005;
       display: none;
     }
     .suggestions.active { display: block; }
+
     .suggestion-item {
       padding: 12px;
       border-bottom: 1px solid rgba(0, 0, 0, 0.04);
@@ -605,7 +687,7 @@
     .suggestion-item:active { background: rgba(0, 0, 0, 0.03); }
     .suggestion-item:last-child { border-bottom: none; }
 
-    /* Map markers - BLACK AND THIN */
+    /* Map markers - Optimized for full screen */
     .user-marker {
       width: 14px !important;
       height: 14px !important;
@@ -633,7 +715,6 @@
       50% { transform: scale(1.1); box-shadow: 0 2px 12px rgba(59, 130, 246, 0.6); }
     }
 
-    /* BLACK AND THIN MARKERS */
     .custom-marker {
       width: 20px !important;
       height: 20px !important;
@@ -656,7 +737,6 @@
       background: #000 !important;
     }
 
-    /* Placed pin marker - for manual placement */
     .placed-pin {
       width: 16px !important;
       height: 16px !important;
@@ -679,20 +759,75 @@
       100% { transform: scale(1); opacity: 1; }
     }
 
+    /* Media queries for different screen sizes and orientations */
     @media (max-height: 700px) {
-      .bottom-sheet { min-height: 48vh; max-height: 82vh; }
+      .bottom-sheet { 
+        min-height: calc(var(--tg-viewport-stable-height, 100vh) * 0.48); 
+        max-height: calc(var(--tg-viewport-stable-height, 100vh) * 0.82); 
+        /* Ensure no bottom gap */
+        bottom: 0;
+        padding-bottom: 0;
+      }
       .truck-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
       .truck-option { padding: 8px 4px; }
       .truck-name { font-size: 10px; }
       .truck-desc { font-size: 8px; }
+      .sheet-content {
+        padding-bottom: calc(var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 16px)) + 16px);
+      }
     }
+
     @media (max-height: 600px) {
-      .bottom-sheet { min-height: 52vh; max-height: 85vh; }
+      .bottom-sheet { 
+        min-height: calc(var(--tg-viewport-stable-height, 100vh) * 0.52); 
+        max-height: calc(var(--tg-viewport-stable-height, 100vh) * 0.85); 
+        /* Ensure no bottom gap */
+        bottom: 0;
+        padding-bottom: 0;
+      }
       .form-grid.two-col { grid-template-columns: 1fr; }
+      .sheet-content {
+        padding-bottom: calc(var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 12px)) + 12px);
+      }
     }
+
     @media (orientation: landscape) and (max-height: 500px) {
-      .bottom-sheet { min-height: 70vh; max-height: 90vh; }
+      .bottom-sheet { 
+        min-height: calc(var(--tg-viewport-stable-height, 100vh) * 0.70); 
+        max-height: calc(var(--tg-viewport-stable-height, 100vh) * 0.90); 
+        /* Ensure no bottom gap */
+        bottom: 0;
+        padding-bottom: 0;
+      }
       .truck-grid { grid-template-columns: repeat(4, 1fr); }
+      .top-bar {
+        top: calc(var(--tg-safe-area-inset-top, env(safe-area-inset-top, 8px)) + var(--tg-content-safe-area-inset-top, 0px) + 4px);
+      }
+      .sheet-content {
+        padding-bottom: calc(var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 8px)) + 8px);
+      }
+    }
+
+    /* Force bottom sheet to fill to bottom edge */
+    @media (max-width: 480px) {
+      .bottom-sheet {
+        bottom: 0 !important;
+        padding-bottom: 0 !important;
+        border-radius: 20px 20px 0 0;
+      }
+      .sheet-content {
+        padding-bottom: calc(var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 20px)) + 20px);
+      }
+    }
+
+    /* iPhone X and newer safe area support */
+    @supports (padding: max(0px)) {
+      body {
+        padding-top: max(calc(var(--tg-safe-area-inset-top, env(safe-area-inset-top, 0px)) + var(--tg-content-safe-area-inset-top, 0px) + 15px), 15px);
+        padding-bottom: max(calc(var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 10px), 10px);
+        padding-left: max(var(--tg-safe-area-inset-left, env(safe-area-inset-left, 0px)), 0px);
+        padding-right: max(var(--tg-safe-area-inset-right, env(safe-area-inset-right, 0px)), 0px);
+      }
     }
   </style>
 </head>
@@ -910,6 +1045,37 @@
     let locationPermissionGranted = false;
     let currentUserLocation = null;
     let suggestionsTimeout = null;
+    let lastUserPosition = null;
+
+    // Dynamic viewport height management
+    function updateViewportHeight() {
+      let vh = window.innerHeight;
+      
+      if (window.Telegram && Telegram.WebApp) {
+        vh = Telegram.WebApp.viewportHeight || vh;
+        const stableHeight = Telegram.WebApp.viewportStableHeight || vh;
+        const safeAreaTop = Telegram.WebApp.safeAreaInset?.top || 0;
+        const safeAreaBottom = Telegram.WebApp.safeAreaInset?.bottom || 0;
+        const safeAreaLeft = Telegram.WebApp.safeAreaInset?.left || 0;
+        const safeAreaRight = Telegram.WebApp.safeAreaInset?.right || 0;
+        const contentSafeAreaTop = Telegram.WebApp.contentSafeAreaInset?.top || 0;
+        
+        // Update CSS custom properties
+        document.documentElement.style.setProperty('--tg-viewport-height', `${vh}px`);
+        document.documentElement.style.setProperty('--tg-viewport-stable-height', `${stableHeight}px`);
+        document.documentElement.style.setProperty('--tg-safe-area-inset-top', `${safeAreaTop}px`);
+        document.documentElement.style.setProperty('--tg-safe-area-inset-bottom', `${safeAreaBottom}px`);
+        document.documentElement.style.setProperty('--tg-safe-area-inset-left', `${safeAreaLeft}px`);
+        document.documentElement.style.setProperty('--tg-safe-area-inset-right', `${safeAreaRight}px`);
+        document.documentElement.style.setProperty('--tg-content-safe-area-inset-top', `${contentSafeAreaTop}px`);
+        
+        console.log('🔧 Viewport updated:', { vh, stableHeight, safeAreaTop, safeAreaBottom });
+      } else {
+        // Fallback for non-Telegram environments
+        document.documentElement.style.setProperty('--tg-viewport-height', `${vh}px`);
+        document.documentElement.style.setProperty('--tg-viewport-stable-height', `${vh}px`);
+      }
+    }
 
     // Utility: Create HTML marker element
     function createDivMarker(html, className = '', size = [20, 20]) {
@@ -996,7 +1162,7 @@
       }
     }
 
-    // Real-time location tracking - OPTIMIZED
+    // OPTIMIZED: Real-time location tracking with fixed intervals
     function startRealtimeLocationTracking() {
       if (!navigator.geolocation || !locationPermissionGranted) return;
       
@@ -1010,14 +1176,17 @@
           
           console.log('📍 GPS update:', newCoords, 'accuracy:', accuracy);
           
-          currentUserLocation = newCoords;
-          state.userLoc = {lat: newCoords[0], lng: newCoords[1], accuracy};
-          
-          updateUserMarker(newCoords[0], newCoords[1]);
-          updateLocationStatus('active', `GPS белсенді ±${Math.round(accuracy)}m`);
-          
-          if (state.pickup && isCloseToUserLocation(state.pickup)) {
-            updatePickupToUserLocation();
+          // RELAXED: Accept broader accuracy range
+          if (accuracy <= 200) {
+            currentUserLocation = newCoords;
+            state.userLoc = {lat: newCoords[0], lng: newCoords[1], accuracy};
+            
+            updateUserMarker(newCoords[0], newCoords[1]);
+            updateLocationStatus('active', `GPS белсенді ±${Math.round(accuracy)}m`);
+            
+            if (state.pickup && isCloseToUserLocation(state.pickup)) {
+              updatePickupToUserLocation();
+            }
           }
         },
         (error) => {
@@ -1030,18 +1199,21 @@
         }
       );
 
-      // Additional polling every 1 second for aggressive tracking
+      // FIXED: Exactly 1 second interval polling
       mapUpdateInterval = setInterval(() => {
         navigator.geolocation.getCurrentPosition(
           (position) => {
             const newCoords = [position.coords.latitude, position.coords.longitude];
             const accuracy = position.coords.accuracy;
             
-            currentUserLocation = newCoords;
-            state.userLoc = {lat: newCoords[0], lng: newCoords[1], accuracy};
-            
-            updateUserMarker(newCoords[0], newCoords[1]);
-            updateLocationStatus('active', `GPS белсенді ±${Math.round(accuracy)}m`);
+            // RELAXED: Accept broader accuracy range
+            if (accuracy <= 200) {
+              currentUserLocation = newCoords;
+              state.userLoc = {lat: newCoords[0], lng: newCoords[1], accuracy};
+              
+              updateUserMarker(newCoords[0], newCoords[1]);
+              updateLocationStatus('active', `GPS белсенді ±${Math.round(accuracy)}m`);
+            }
           },
           (error) => {
             console.warn('Interval location error:', error);
@@ -1049,10 +1221,10 @@
           {
             enableHighAccuracy: true,
             timeout: 2000,
-            maximumAge: 0
+            maximumAge: 0 // FORCE fresh readings
           }
         );
-      }, 1000);
+      }, 1000); // EXACTLY 1 second
     }
 
     // Check if pickup is close to user location
@@ -1165,9 +1337,18 @@
       }
     }
 
-    // Update user marker position
+    // OPTIMIZED: Update user marker with micro-movement filtering
     async function updateUserMarker(lat, lng) {
       try {
+        // Skip micro-movements
+        if (lastUserPosition && 
+            Math.abs(lastUserPosition[0] - lat) < 0.00001 && 
+            Math.abs(lastUserPosition[1] - lng) < 0.00001) {
+          return;
+        }
+        
+        lastUserPosition = [lat, lng];
+        
         if (!userMarker && map) {
           console.log('Creating user marker as it doesn\'t exist');
           await addUserLocationMarker([lat, lng]);
@@ -1197,7 +1378,7 @@
       }
     }
 
-    // Build picker map - NO CENTER PIN, MANUAL CLICK PLACEMENT
+    // FIXED: Build picker map without problematic controls
     async function buildPickerMap(center) {
       console.log('🗺️ Building picker map with center:', center);
 
@@ -1242,6 +1423,7 @@
         });
         pickerMap.addChild(clickListener);
 
+        // FIXED: Set loaded flag AFTER all setup is complete
         pickerMapLoaded = true;
         console.log('✅ Picker map created successfully with click listener');
 
@@ -1403,7 +1585,18 @@
       document.getElementById('distanceInfo').classList.add('active');
     }
 
-    // Geocoding functions - OPTIMIZED (only called when needed)
+    // OPTIMIZED: Debounced geocoding to reduce API calls
+    let geocodeTimeout;
+    function debouncedReverseGeocode(lat, lng) {
+      return new Promise((resolve) => {
+        clearTimeout(geocodeTimeout);
+        geocodeTimeout = setTimeout(async () => {
+          resolve(await reverseGeocode(lat, lng));
+        }, 300);
+      });
+    }
+
+    // Geocoding functions
     async function reverseGeocode(lat, lng) {
       try {
         const res = await fetch(
@@ -1590,7 +1783,7 @@
       state.pickingFor = null;
     }
 
-    // OPTIMIZED: Confirm picker selection using manually placed pin
+    // FIXED: Confirm picker selection using manually placed pin
     async function confirmPicker() {
       console.log('✅ Confirming picker selection...');
 
@@ -1773,9 +1966,12 @@
       }
     }
 
-    // Initialize application
+    // Initialize application with full-screen support
     document.addEventListener('DOMContentLoaded', async () => {
-      console.log('🚀 DOM loaded, initializing app...');
+      console.log('🚀 DOM loaded, initializing full-screen app...');
+      
+      // Update viewport height immediately
+      updateViewportHeight();
       
       if (!window.ymaps3) {
         console.error('❌ Yandex Maps v3 failed to load');
@@ -1791,13 +1987,29 @@
 
       setLang('kz', document.querySelector('.lang-btn.active'));
 
+      // Initialize Telegram WebApp with full-screen support
       if (window.Telegram?.WebApp) {
         const tg = Telegram.WebApp;
         tg.ready();
         tg.expand();
         tg.disableVerticalSwipes();
-        console.log('✅ Telegram WebApp initialized');
+        
+        // Hide status bar for true full-screen experience
+        if (tg.setHeaderColor) {
+          tg.setHeaderColor('#000000');
+        }
+        
+        // Listen for viewport changes
+        tg.onEvent('viewportChanged', updateViewportHeight);
+        
+        console.log('✅ Telegram WebApp initialized with full-screen support');
       }
+    });
+
+    // Handle viewport changes
+    window.addEventListener('resize', updateViewportHeight);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(updateViewportHeight, 100);
     });
 
     window.addEventListener('beforeunload', () => {
@@ -1825,6 +2037,7 @@
     window.goToDriverList = goToDriverList;
     window.hideSuggestionsDelayed = hideSuggestionsDelayed;
     window.placePinAtCoordinates = placePinAtCoordinates;
+    window.updateViewportHeight = updateViewportHeight;
   </script>
 </body>
 </html>

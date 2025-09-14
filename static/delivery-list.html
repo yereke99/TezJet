@@ -12,24 +12,31 @@
       --tg-theme-bg-color: #ffffff;
       --tg-theme-text-color: #000000;
       --tg-theme-hint-color: #999999;
-      --tg-theme-link-color: #2481cc;
-      --tg-theme-button-color: #2481cc;
+      --tg-theme-link-color: #007AFF;
+      --tg-theme-button-color: #007AFF;
       --tg-theme-button-text-color: #ffffff;
-      --primary: #10b981;
-      --primary-dark: #059669;
-      --secondary: #3b82f6;
-      --danger: #ef4444;
-      --warning: #f59e0b;
-      --success: #22c55e;
-      --bg: #f8fafc;
+      
+      /* Uber-style minimal colors */
+      --primary: #000000;
+      --primary-light: #333333;
+      --secondary: #007AFF;
+      --accent: #1565C0;
+      --danger: #D32F2F;
+      --warning: #F57C00;
+      --success: #388E3C;
+      --bg: #ffffff;
+      --bg-secondary: #f8f9fa;
       --card: #ffffff;
-      --text: #0f172a;
-      --text-muted: #64748b;
-      --border: #e2e8f0;
-      --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
-      --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.2);
-      --gradient: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      --text: #000000;
+      --text-secondary: #666666;
+      --text-muted: #999999;
+      --border: #e0e0e0;
+      --border-light: #f0f0f0;
+      --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+      --shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.15);
+      --gradient: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      --secondary-gradient: linear-gradient(135deg, var(--secondary) 0%, var(--accent) 100%);
       
       /* Responsive breakpoints */
       --mobile-max: 767px;
@@ -58,6 +65,13 @@
       -webkit-user-select: none;
       font-size: clamp(14px, 2vw, 16px);
       line-height: 1.5;
+      
+      /* TELEGRAM WEBAPP OPTIMIZATION */
+      height: var(--tg-viewport-stable-height, 100vh);
+      padding-top: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px) + 15px);
+      padding-bottom: var(--tg-safe-area-inset-bottom, 0px);
+      padding-left: var(--tg-safe-area-inset-left, 0px);
+      padding-right: var(--tg-safe-area-inset-right, 0px);
     }
 
     /* Container for desktop layout */
@@ -65,31 +79,33 @@
       max-width: 100%;
       margin: 0 auto;
       position: relative;
+      height: 100%;
     }
 
-    /* Header - Responsive */
+    /* Header - Minimal Uber Style */
     .header {
       position: sticky;
       top: 0;
       z-index: 1000;
-      background: var(--tg-theme-bg-color, white);
-      border-bottom: 1px solid var(--border);
-      padding: clamp(12px, 3vw, 20px) clamp(12px, 4vw, 24px);
+      background: var(--tg-theme-bg-color, var(--bg));
+      border-bottom: 1px solid var(--border-light);
+      padding: clamp(16px, 4vw, 24px) clamp(16px, 4vw, 24px);
       display: flex;
       align-items: center;
       justify-content: space-between;
       backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
     }
 
     .header-left {
       display: flex;
       align-items: center;
-      gap: clamp(8px, 2vw, 16px);
+      gap: clamp(12px, 3vw, 16px);
     }
 
     .profile-btn {
-      width: clamp(36px, 8vw, 48px);
-      height: clamp(36px, 8vw, 48px);
+      width: clamp(40px, 8vw, 48px);
+      height: clamp(40px, 8vw, 48px);
       border: none;
       background: var(--gradient);
       border-radius: 50%;
@@ -97,7 +113,7 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       box-shadow: var(--shadow);
       overflow: hidden;
       position: relative;
@@ -112,46 +128,44 @@
     }
 
     .profile-btn:hover {
-      transform: scale(1.1);
+      transform: scale(1.05);
       box-shadow: var(--shadow-lg);
     }
 
     .profile-btn.no-photo {
       background: var(--gradient);
       color: white;
-      font-size: clamp(16px, 4vw, 20px);
+      font-size: clamp(18px, 4vw, 22px);
       font-weight: bold;
     }
 
     .header-title {
-      font-size: clamp(14px, 3vw, 18px);
-      font-weight: 700;
+      font-size: clamp(16px, 4vw, 20px);
+      font-weight: 600;
       color: var(--text);
       cursor: pointer;
-      padding: clamp(6px, 2vw, 10px) clamp(8px, 3vw, 14px);
-      border-radius: 8px;
-      transition: all 0.3s ease;
-      border: 1px solid var(--border);
-      background-color: #f8fafc;
+      padding: clamp(8px, 2vw, 12px) clamp(12px, 3vw, 16px);
+      border-radius: 12px;
+      transition: all 0.2s ease;
+      background: var(--bg-secondary);
       touch-action: manipulation;
     }
 
     .header-title:hover {
-      background: var(--gradient);
+      background: var(--primary);
       color: white;
       transform: translateY(-1px);
-      box-shadow: var(--shadow);
     }
 
     .header-right {
       display: flex;
       align-items: center;
-      gap: clamp(8px, 2vw, 16px);
+      gap: clamp(12px, 3vw, 16px);
     }
 
     .refresh-btn {
-      width: clamp(36px, 8vw, 48px);
-      height: clamp(36px, 8vw, 48px);
+      width: clamp(40px, 8vw, 48px);
+      height: clamp(40px, 8vw, 48px);
       border: none;
       background: var(--gradient);
       color: white;
@@ -160,13 +174,13 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      font-size: clamp(14px, 3vw, 18px);
-      transition: all 0.3s ease;
+      font-size: clamp(16px, 4vw, 20px);
+      transition: all 0.2s ease;
       touch-action: manipulation;
     }
 
     .refresh-btn:hover {
-      transform: rotate(180deg) scale(1.1);
+      transform: rotate(180deg) scale(1.05);
     }
 
     .refresh-btn.loading {
@@ -179,23 +193,24 @@
 
     .lang-switch {
       display: flex;
-      background: #f1f5f9;
-      border-radius: 20px;
+      background: var(--bg-secondary);
+      border-radius: 24px;
       padding: 2px;
+      border: 1px solid var(--border);
     }
 
     .lang-btn {
-      padding: clamp(4px, 1.5vw, 8px) clamp(8px, 2.5vw, 14px);
+      padding: clamp(6px, 2vw, 10px) clamp(12px, 3vw, 16px);
       border: none;
       background: transparent;
-      border-radius: 18px;
-      font-size: clamp(10px, 2.5vw, 13px);
+      border-radius: 20px;
+      font-size: clamp(12px, 3vw, 14px);
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       color: var(--text-muted);
       touch-action: manipulation;
-      min-width: 44px; /* Minimum touch target */
+      min-width: 48px;
     }
 
     .lang-btn.active {
@@ -203,43 +218,47 @@
       color: white;
     }
 
-    /* Stats Bar - Responsive */
+    /* Stats Bar - Minimal */
     .stats-bar {
-      padding: clamp(12px, 3vw, 20px);
-      background: var(--gradient);
-      color: white;
+      padding: clamp(16px, 4vw, 24px);
+      background: var(--bg-secondary);
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: clamp(8px, 2vw, 16px);
+      gap: clamp(12px, 3vw, 20px);
       text-align: center;
+      border-bottom: 1px solid var(--border-light);
     }
 
     .stat-item {
-      padding: clamp(8px, 2vw, 12px);
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.1);
+      padding: clamp(12px, 3vw, 16px);
+      border-radius: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
     }
 
     .stat-value {
-      font-size: clamp(16px, 4vw, 24px);
+      font-size: clamp(20px, 5vw, 28px);
       font-weight: 700;
       margin-bottom: 4px;
+      color: var(--text);
     }
 
     .stat-label {
-      font-size: clamp(9px, 2vw, 12px);
-      opacity: 0.9;
+      font-size: clamp(10px, 2.5vw, 12px);
+      color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      font-weight: 500;
     }
 
-    /* Filter Bar - Responsive */
+    /* Filter Bar - Minimal */
     .filter-bar {
-      padding: clamp(8px, 2vw, 16px);
+      padding: clamp(12px, 3vw, 20px);
       background: var(--card);
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--border-light);
       display: flex;
-      gap: clamp(6px, 1.5vw, 12px);
+      gap: clamp(8px, 2vw, 12px);
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
@@ -251,18 +270,18 @@
     }
 
     .filter-chip {
-      padding: clamp(6px, 1.5vw, 10px) clamp(10px, 2.5vw, 16px);
-      border-radius: 16px;
-      background: #f1f5f9;
-      color: var(--text-muted);
-      font-size: clamp(11px, 2.5vw, 14px);
+      padding: clamp(8px, 2vw, 12px) clamp(16px, 4vw, 20px);
+      border-radius: 24px;
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      font-size: clamp(12px, 3vw, 14px);
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       white-space: nowrap;
-      border: 2px solid transparent;
+      border: 1px solid var(--border);
       touch-action: manipulation;
-      min-height: 44px; /* Minimum touch target */
+      min-height: 48px;
       display: flex;
       align-items: center;
     }
@@ -270,23 +289,24 @@
     .filter-chip.active {
       background: var(--primary);
       color: white;
-      transform: scale(1.05);
+      border-color: var(--primary);
+      transform: scale(1.02);
     }
 
-    /* New order notification - Responsive */
+    /* New order notification */
     .new-order-notification {
       position: fixed;
-      top: clamp(100px, 15vh, 140px);
-      left: clamp(12px, 3vw, 20px);
-      right: clamp(12px, 3vw, 20px);
-      background: linear-gradient(135deg, #22c55e, #16a34a);
+      top: clamp(120px, 20vh, 160px);
+      left: clamp(16px, 4vw, 24px);
+      right: clamp(16px, 4vw, 24px);
+      background: var(--primary);
       color: white;
-      padding: clamp(12px, 3vw, 20px);
+      padding: clamp(16px, 4vw, 24px);
       border-radius: 16px;
-      box-shadow: 0 8px 25px rgba(34, 197, 94, 0.4);
+      box-shadow: var(--shadow-xl);
       z-index: 1001;
       display: none;
-      animation: slideInNotification 0.5s ease-out;
+      animation: slideInNotification 0.4s ease-out;
     }
 
     .new-order-notification.show {
@@ -307,11 +327,11 @@
     .notification-content {
       display: flex;
       align-items: center;
-      gap: clamp(8px, 2vw, 16px);
+      gap: clamp(12px, 3vw, 16px);
     }
 
     .notification-icon {
-      font-size: clamp(20px, 5vw, 28px);
+      font-size: clamp(24px, 6vw, 32px);
       animation: bounceIcon 0.6s ease-out;
     }
 
@@ -326,23 +346,23 @@
     }
 
     .notification-title {
-      font-size: clamp(14px, 3.5vw, 18px);
+      font-size: clamp(16px, 4vw, 18px);
       font-weight: 700;
       margin-bottom: 4px;
     }
 
     .notification-subtitle {
-      font-size: clamp(12px, 3vw, 15px);
+      font-size: clamp(13px, 3vw, 15px);
       opacity: 0.9;
     }
 
-    /* Order List - Responsive Grid Layout */
+    /* Order List - Minimal Cards */
     .order-list {
-      padding: clamp(8px, 2vw, 16px);
+      padding: clamp(12px, 3vw, 20px);
       display: grid;
       grid-template-columns: 1fr;
-      gap: clamp(8px, 2vw, 16px);
-      padding-bottom: clamp(80px, 15vh, 120px);
+      gap: clamp(12px, 3vw, 16px);
+      padding-bottom: clamp(100px, 20vh, 140px);
       min-height: 60vh;
     }
 
@@ -350,28 +370,23 @@
     @media (min-width: 1024px) {
       .app-container {
         max-width: 1200px;
-        padding: 0 20px;
+        padding: 0 24px;
       }
       
       .order-list {
-        grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-        gap: 20px;
-        padding: 20px;
-      }
-      
-      .header {
-        padding: 20px 24px;
-      }
-      
-      .stats-bar {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
         gap: 24px;
         padding: 24px;
       }
       
-      .filter-bar {
-        justify-content: center;
-        padding: 16px 24px;
+      .header {
+        padding: 24px 32px;
+      }
+      
+      .stats-bar {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 32px;
+        padding: 32px;
       }
     }
 
@@ -382,33 +397,34 @@
       }
       
       .order-list {
-        grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-        gap: 24px;
+        grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+        gap: 28px;
       }
     }
 
     /* Tablet Layout */
     @media (min-width: 768px) and (max-width: 1023px) {
       .order-list {
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        gap: 16px;
-        padding: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+        gap: 20px;
+        padding: 20px;
       }
       
       .stats-bar {
         grid-template-columns: repeat(3, 1fr);
-        gap: 16px;
+        gap: 20px;
       }
     }
 
+    /* UBER-STYLE Order Cards */
     .order-card {
       background: var(--card);
-      border-radius: clamp(12px, 3vw, 20px);
-      padding: clamp(12px, 3vw, 20px);
+      border-radius: 16px;
+      padding: clamp(16px, 4vw, 24px);
       box-shadow: var(--shadow);
       border: 1px solid var(--border);
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       position: relative;
       overflow: hidden;
       transform: translateY(0);
@@ -416,66 +432,48 @@
       touch-action: manipulation;
     }
 
-    .order-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 3px;
-      height: 100%;
-      background: var(--primary);
-      transition: all 0.3s ease;
-    }
-
     .order-card:hover {
       transform: translateY(-2px);
       box-shadow: var(--shadow-lg);
+      border-color: var(--primary);
     }
 
-    .order-card.new::before {
-      background: var(--warning);
+    .order-card.new {
+      border-left: 4px solid var(--warning);
     }
 
     .order-card.loading {
-      opacity: 0.7;
+      opacity: 0.6;
       pointer-events: none;
     }
 
     .order-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: clamp(8px, 2vw, 16px);
+      align-items: center;
+      margin-bottom: clamp(16px, 4vw, 20px);
       flex-wrap: wrap;
       gap: 8px;
     }
 
-    .order-id {
-      font-size: clamp(10px, 2.5vw, 12px);
-      color: var(--text-muted);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
     .order-time {
-      font-size: clamp(10px, 2.5vw, 12px);
+      font-size: clamp(12px, 3vw, 14px);
       color: var(--text-muted);
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
+      font-weight: 500;
     }
 
     .new-badge {
       background: var(--warning);
       color: white;
-      padding: 2px 6px;
-      border-radius: 8px;
-      font-size: clamp(8px, 2vw, 10px);
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: clamp(10px, 2.5vw, 11px);
       font-weight: 700;
       text-transform: uppercase;
-      margin-left: 6px;
-      animation: badgePulse 1s infinite;
+      animation: badgePulse 2s infinite;
     }
 
     @keyframes badgePulse {
@@ -484,14 +482,14 @@
     }
 
     .order-route {
-      margin-bottom: clamp(8px, 2vw, 16px);
+      margin-bottom: clamp(16px, 4vw, 20px);
     }
 
     .route-point {
       display: flex;
       align-items: flex-start;
-      gap: clamp(8px, 2vw, 12px);
-      margin-bottom: clamp(6px, 1.5vw, 10px);
+      gap: clamp(12px, 3vw, 16px);
+      margin-bottom: clamp(12px, 3vw, 16px);
       position: relative;
     }
 
@@ -502,10 +500,10 @@
     .route-point::after {
       content: '';
       position: absolute;
-      left: clamp(8px, 2vw, 12px);
-      top: clamp(18px, 4vw, 24px);
+      left: clamp(12px, 3vw, 16px);
+      top: clamp(28px, 6vw, 32px);
       width: 2px;
-      height: calc(100% + 4px);
+      height: calc(100% + 8px);
       background: var(--border);
       z-index: 1;
     }
@@ -515,27 +513,27 @@
     }
 
     .route-marker {
-      width: clamp(18px, 4vw, 24px);
-      height: clamp(18px, 4vw, 24px);
+      width: clamp(24px, 5vw, 32px);
+      height: clamp(24px, 5vw, 32px);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: clamp(9px, 2.5vw, 12px);
+      font-size: clamp(12px, 3vw, 14px);
       font-weight: bold;
       color: white;
       flex-shrink: 0;
       z-index: 2;
       position: relative;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      box-shadow: var(--shadow);
     }
 
     .route-marker.from {
-      background: var(--success);
+      background: var(--primary);
     }
 
     .route-marker.to {
-      background: var(--danger);
+      background: var(--secondary);
     }
 
     .route-info {
@@ -544,15 +542,16 @@
     }
 
     .route-label {
-      font-size: clamp(9px, 2vw, 11px);
+      font-size: clamp(10px, 2.5vw, 12px);
       color: var(--text-muted);
-      margin-bottom: 2px;
+      margin-bottom: 4px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      font-weight: 600;
     }
 
     .route-address {
-      font-size: clamp(12px, 3vw, 14px);
+      font-size: clamp(14px, 3.5vw, 16px);
       color: var(--text);
       font-weight: 500;
       line-height: 1.3;
@@ -566,19 +565,20 @@
     .order-details {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: clamp(6px, 1.5vw, 12px);
-      margin-bottom: clamp(6px, 1.5vw, 10px);
+      gap: clamp(8px, 2vw, 12px);
+      margin-bottom: clamp(8px, 2vw, 12px);
     }
 
     .detail-item {
       text-align: center;
-      padding: clamp(6px, 1.5vw, 10px);
-      background: #f8fafc;
-      border-radius: 8px;
+      padding: clamp(8px, 2vw, 12px);
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      border: 1px solid var(--border);
     }
 
     .detail-value {
-      font-size: clamp(12px, 3vw, 16px);
+      font-size: clamp(14px, 3.5vw, 18px);
       font-weight: 700;
       color: var(--text);
       margin-bottom: 2px;
@@ -586,28 +586,29 @@
 
     .detail-value.price {
       color: var(--primary);
-      font-size: clamp(14px, 3.5vw, 18px);
+      font-size: clamp(16px, 4vw, 20px);
     }
 
     .detail-label {
-      font-size: clamp(8px, 2vw, 10px);
+      font-size: clamp(9px, 2vw, 11px);
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      font-weight: 600;
     }
 
     .order-footer {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-top: clamp(6px, 1.5vw, 10px);
+      padding-top: clamp(8px, 2vw, 12px);
       flex-wrap: wrap;
       gap: 8px;
     }
 
     .order-comment {
       flex: 1;
-      font-size: clamp(11px, 2.5vw, 13px);
+      font-size: clamp(12px, 3vw, 14px);
       color: var(--text-muted);
       font-style: italic;
       margin-right: 8px;
@@ -619,24 +620,25 @@
     }
 
     .truck-type {
-      padding: 3px 6px;
-      background: #f1f5f9;
-      border-radius: 6px;
-      font-size: clamp(9px, 2vw, 11px);
+      padding: 4px 10px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      font-size: clamp(10px, 2.5vw, 12px);
       font-weight: 600;
-      color: var(--text-muted);
+      color: var(--text-secondary);
       white-space: nowrap;
+      border: 1px solid var(--border);
     }
 
     .distance-badge {
       position: absolute;
-      top: clamp(10px, 2.5vw, 15px);
-      right: clamp(10px, 2.5vw, 15px);
+      top: clamp(16px, 4vw, 20px);
+      right: clamp(16px, 4vw, 20px);
       background: var(--warning);
       color: white;
-      padding: 3px 6px;
-      border-radius: 8px;
-      font-size: clamp(8px, 2vw, 10px);
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: clamp(9px, 2vw, 11px);
       font-weight: 700;
     }
 
@@ -644,49 +646,49 @@
       background: var(--success);
     }
 
-    /* Empty State - Responsive */
+    /* Empty State */
     .empty-state {
       text-align: center;
-      padding: clamp(40px, 10vh, 80px) clamp(16px, 4vw, 24px);
+      padding: clamp(60px, 15vh, 100px) clamp(20px, 5vw, 32px);
     }
 
     .empty-icon {
-      font-size: clamp(36px, 8vw, 56px);
-      margin-bottom: clamp(12px, 3vw, 20px);
-      opacity: 0.5;
+      font-size: clamp(48px, 12vw, 64px);
+      margin-bottom: clamp(16px, 4vw, 24px);
+      opacity: 0.3;
     }
 
     .empty-title {
-      font-size: clamp(16px, 4vw, 22px);
+      font-size: clamp(18px, 4.5vw, 24px);
       font-weight: 700;
       color: var(--text);
-      margin-bottom: clamp(6px, 1.5vw, 10px);
+      margin-bottom: clamp(8px, 2vw, 12px);
     }
 
     .empty-message {
-      font-size: clamp(13px, 3vw, 16px);
+      font-size: clamp(14px, 3.5vw, 16px);
       color: var(--text-muted);
-      line-height: 1.4;
+      line-height: 1.5;
     }
 
-    /* Loading State - Responsive */
+    /* Loading State */
     .loading-state {
       text-align: center;
-      padding: clamp(30px, 8vh, 50px) clamp(16px, 4vw, 24px);
+      padding: clamp(40px, 10vh, 60px) clamp(20px, 5vw, 32px);
     }
 
     .loading-spinner {
-      width: clamp(28px, 6vw, 40px);
-      height: clamp(28px, 6vw, 40px);
+      width: clamp(32px, 8vw, 48px);
+      height: clamp(32px, 8vw, 48px);
       border: 3px solid var(--border);
       border-top: 3px solid var(--primary);
       border-radius: 50%;
       animation: spin 1s linear infinite;
-      margin: 0 auto clamp(12px, 3vw, 20px);
+      margin: 0 auto clamp(16px, 4vw, 24px);
     }
 
     .loading-text {
-      font-size: clamp(13px, 3vw, 16px);
+      font-size: clamp(14px, 3.5vw, 16px);
       color: var(--text-muted);
     }
 
@@ -706,12 +708,13 @@
       }
     }
 
-    /* UBER-STYLE Detail Modal - Responsive */
+    /* UBER-STYLE Detail Modal - BIGGER AND FRAMELESS */
     .detail-modal {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.8);
-      backdrop-filter: blur(10px);
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       z-index: 2000;
       display: none;
       align-items: flex-end;
@@ -731,11 +734,12 @@
       background: var(--card);
       border-radius: 20px 20px 0 0;
       width: 100%;
-      height: 95vh;
+      height: 98vh; /* BIGGER - Almost full screen */
       overflow: hidden;
       display: flex;
       flex-direction: column;
       animation: slideUp 0.3s ease;
+      position: relative;
     }
 
     @keyframes slideUp {
@@ -743,7 +747,7 @@
       to { transform: translateY(0); }
     }
 
-    /* Desktop Modal Adjustments */
+    /* Desktop Modal - FRAMELESS BIGGER */
     @media (min-width: 1024px) {
       .detail-modal {
         align-items: center;
@@ -751,17 +755,18 @@
       }
       
       .detail-sheet {
-        width: 90%;
-        max-width: 900px;
-        height: 85vh;
-        border-radius: 20px;
+        width: 95vw; /* BIGGER */
+        max-width: none; /* Remove max-width limit */
+        height: 95vh; /* BIGGER */
+        border-radius: 24px; /* More rounded */
         animation: scaleIn 0.3s ease;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25); /* Stronger shadow */
       }
       
       @keyframes scaleIn {
         from { 
           opacity: 0;
-          transform: scale(0.9);
+          transform: scale(0.95);
         }
         to { 
           opacity: 1;
@@ -770,48 +775,52 @@
       }
     }
 
-    /* Tablet Modal Adjustments */
+    /* Tablet Modal */
     @media (min-width: 768px) and (max-width: 1023px) {
       .detail-sheet {
-        height: 90vh;
-        border-radius: 20px 20px 0 0;
+        height: 96vh; /* BIGGER */
+        border-radius: 24px 24px 0 0;
       }
     }
 
+    /* MINIMAL Header for modal */
     .detail-header {
-      padding: clamp(12px, 3vw, 20px);
-      border-bottom: 1px solid var(--border);
+      padding: clamp(20px, 5vw, 32px);
+      border-bottom: 1px solid var(--border-light);
       display: flex;
       align-items: center;
       justify-content: space-between;
       background: white;
       z-index: 10;
+      position: relative;
     }
 
     .detail-title {
-      font-size: clamp(15px, 3.5vw, 20px);
+      font-size: clamp(18px, 4.5vw, 24px);
       font-weight: 700;
       color: var(--text);
     }
 
     .close-btn {
-      width: clamp(30px, 6vw, 40px);
-      height: clamp(30px, 6vw, 40px);
+      width: clamp(36px, 8vw, 48px);
+      height: clamp(36px, 8vw, 48px);
       border: none;
-      background: #f1f5f9;
+      background: var(--bg-secondary);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      font-size: clamp(14px, 3vw, 18px);
-      transition: all 0.3s ease;
+      font-size: clamp(18px, 4vw, 24px);
+      transition: all 0.2s ease;
       touch-action: manipulation;
+      color: var(--text-secondary);
     }
 
     .close-btn:hover {
-      background: #e2e8f0;
-      transform: scale(1.1);
+      background: var(--border);
+      transform: scale(1.05);
+      color: var(--text);
     }
 
     .detail-content {
@@ -821,13 +830,13 @@
       flex-direction: column;
     }
 
-    /* Responsive Map Layout */
+    /* Responsive Map Layout - BIGGER */
     .detail-map {
-      height: 50%;
+      height: 55%; /* BIGGER map area */
       position: relative;
       overflow: hidden;
       background: #ffffff;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid var(--border-light);
     }
 
     @media (min-width: 1024px) {
@@ -836,14 +845,14 @@
       }
       
       .detail-map {
-        width: 60%;
+        width: 65%; /* BIGGER map width */
         height: 100%;
         border-bottom: none;
-        border-right: 1px solid #f0f0f0;
+        border-right: 1px solid var(--border-light);
       }
       
       .detail-info {
-        width: 40%;
+        width: 35%; /* Smaller info panel */
         height: 100%;
       }
     }
@@ -855,38 +864,39 @@
 
     .map-overlay {
       position: absolute;
-      top: clamp(12px, 3vw, 24px);
-      left: clamp(12px, 3vw, 24px);
-      background: rgba(255, 255, 255, 0.98);
+      top: clamp(16px, 4vw, 32px);
+      left: clamp(16px, 4vw, 32px);
+      background: rgba(0, 0, 0, 0.85);
       backdrop-filter: blur(20px);
-      padding: clamp(8px, 2vw, 16px);
-      border-radius: 24px;
-      font-size: clamp(12px, 3vw, 16px);
+      -webkit-backdrop-filter: blur(20px);
+      color: white;
+      padding: clamp(12px, 3vw, 20px);
+      border-radius: 16px;
+      font-size: clamp(14px, 3.5vw, 18px);
       font-weight: 600;
-      color: var(--text);
       z-index: 1000;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.8);
-      min-width: clamp(120px, 25vw, 160px);
+      box-shadow: var(--shadow-lg);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      min-width: clamp(140px, 30vw, 200px);
     }
 
     .route-eta {
       display: flex;
       align-items: center;
-      gap: clamp(6px, 1.5vw, 10px);
-      color: var(--primary);
+      gap: clamp(8px, 2vw, 12px);
+      color: white;
       font-weight: 700;
     }
 
     .route-eta span:first-child {
-      font-size: clamp(14px, 3.5vw, 18px);
+      font-size: clamp(16px, 4vw, 20px);
     }
 
-    /* Order Info Panel - Responsive */
+    /* Order Info Panel - MINIMAL */
     .detail-info {
-      height: 50%;
+      height: 45%; /* Adjusted for bigger map */
       background: white;
-      padding: clamp(16px, 4vw, 24px);
+      padding: clamp(20px, 5vw, 32px);
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -894,35 +904,37 @@
 
     .price-highlight {
       text-align: center;
-      margin-bottom: clamp(16px, 4vw, 24px);
+      margin-bottom: clamp(20px, 5vw, 32px);
     }
 
     .price-amount {
-      font-size: clamp(24px, 6vw, 36px);
+      font-size: clamp(32px, 8vw, 48px);
       font-weight: 800;
       color: var(--primary);
-      margin-bottom: 4px;
+      margin-bottom: 8px;
     }
 
     .price-label {
-      font-size: clamp(10px, 2.5vw, 14px);
+      font-size: clamp(12px, 3vw, 16px);
       color: var(--text-muted);
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 1px;
+      font-weight: 600;
     }
 
     .route-details {
-      background: #f8fafc;
-      border-radius: 12px;
-      padding: clamp(12px, 3vw, 20px);
-      margin-bottom: clamp(12px, 3vw, 20px);
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      padding: clamp(16px, 4vw, 24px);
+      margin-bottom: clamp(16px, 4vw, 24px);
+      border: 1px solid var(--border);
     }
 
     .route-step {
       display: flex;
       align-items: center;
-      gap: clamp(10px, 2.5vw, 16px);
-      margin-bottom: clamp(10px, 2.5vw, 16px);
+      gap: clamp(16px, 4vw, 20px);
+      margin-bottom: clamp(16px, 4vw, 20px);
     }
 
     .route-step:last-child {
@@ -930,25 +942,25 @@
     }
 
     .step-marker {
-      width: clamp(24px, 5vw, 32px);
-      height: clamp(24px, 5vw, 32px);
+      width: clamp(32px, 7vw, 40px);
+      height: clamp(32px, 7vw, 40px);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: clamp(10px, 2.5vw, 14px);
+      font-size: clamp(14px, 3.5vw, 18px);
       font-weight: bold;
       color: white;
       flex-shrink: 0;
-      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+      box-shadow: var(--shadow);
     }
 
     .step-marker.pickup {
-      background: linear-gradient(135deg, #22c55e, #16a34a);
+      background: var(--primary);
     }
 
     .step-marker.dropoff {
-      background: linear-gradient(135deg, #ef4444, #dc2626);
+      background: var(--secondary);
     }
 
     .step-info {
@@ -957,67 +969,70 @@
     }
 
     .step-address {
-      font-size: clamp(13px, 3vw, 16px);
+      font-size: clamp(15px, 3.5vw, 18px);
       font-weight: 600;
       color: var(--text);
-      margin-bottom: 3px;
+      margin-bottom: 4px;
       line-height: 1.3;
       word-wrap: break-word;
     }
 
     .step-label {
-      font-size: clamp(9px, 2vw, 12px);
+      font-size: clamp(11px, 2.5vw, 14px);
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      font-weight: 600;
     }
 
     .order-meta {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: clamp(10px, 2.5vw, 16px);
-      margin-bottom: clamp(12px, 3vw, 20px);
+      gap: clamp(12px, 3vw, 20px);
+      margin-bottom: clamp(16px, 4vw, 24px);
     }
 
     .meta-item {
       text-align: center;
-      padding: clamp(8px, 2vw, 12px);
-      background: #f8fafc;
-      border-radius: 8px;
+      padding: clamp(12px, 3vw, 16px);
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      border: 1px solid var(--border);
     }
 
     .meta-value {
-      font-size: clamp(14px, 3.5vw, 18px);
+      font-size: clamp(16px, 4vw, 20px);
       font-weight: 700;
       color: var(--text);
-      margin-bottom: 3px;
+      margin-bottom: 4px;
     }
 
     .meta-label {
-      font-size: clamp(9px, 2vw, 12px);
+      font-size: clamp(10px, 2.5vw, 12px);
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      font-weight: 600;
     }
 
     .contact-section {
       background: var(--gradient);
       border-radius: 16px;
-      padding: clamp(12px, 3vw, 20px);
+      padding: clamp(16px, 4vw, 24px);
       color: white;
       text-align: center;
-      margin-bottom: clamp(12px, 3vw, 20px);
+      margin-bottom: clamp(16px, 4vw, 24px);
     }
 
     .contact-title {
-      font-size: clamp(13px, 3vw, 16px);
+      font-size: clamp(14px, 3.5vw, 18px);
       font-weight: 700;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
 
     .contact-phone {
-      font-size: clamp(14px, 3.5vw, 18px);
-      margin-bottom: clamp(10px, 2.5vw, 16px);
+      font-size: clamp(16px, 4vw, 20px);
+      margin-bottom: clamp(16px, 4vw, 20px);
       opacity: 0.95;
       font-weight: 600;
     }
@@ -1025,26 +1040,26 @@
     .contact-buttons {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: clamp(6px, 1.5vw, 10px);
+      gap: clamp(8px, 2vw, 12px);
     }
 
     .contact-btn {
-      padding: clamp(8px, 2vw, 12px);
+      padding: clamp(10px, 2.5vw, 16px);
       border: none;
-      border-radius: 8px;
+      border-radius: 12px;
       background: rgba(255, 255, 255, 0.2);
       color: white;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: clamp(4px, 1vw, 8px);
+      gap: clamp(6px, 1.5vw, 10px);
       text-decoration: none;
-      font-size: clamp(11px, 2.5vw, 14px);
+      font-size: clamp(12px, 3vw, 16px);
       touch-action: manipulation;
-      min-height: 44px; /* Minimum touch target */
+      min-height: 48px;
     }
 
     .contact-btn:hover {
@@ -1054,23 +1069,23 @@
 
     .accept-button {
       width: 100%;
-      padding: clamp(12px, 3vw, 18px);
+      padding: clamp(16px, 4vw, 24px);
       background: var(--gradient);
       color: white;
       border: none;
-      border-radius: 12px;
-      font-size: clamp(14px, 3.5vw, 18px);
+      border-radius: 16px;
+      font-size: clamp(16px, 4vw, 20px);
       font-weight: 700;
       cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-lg);
       touch-action: manipulation;
-      min-height: 48px; /* Minimum touch target */
+      min-height: 56px;
     }
 
     .accept-button:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 25px rgba(16, 185, 129, 0.4);
+      box-shadow: var(--shadow-xl);
     }
 
     /* Hide Leaflet controls */
@@ -1080,29 +1095,29 @@
       display: none !important;
     }
 
-    /* UBER-STYLE Custom Leaflet Markers - Responsive */
+    /* UBER-STYLE Custom Leaflet Markers */
     .uber-marker {
-      width: clamp(30px, 6vw, 42px);
-      height: clamp(30px, 6vw, 42px);
+      width: clamp(32px, 7vw, 48px);
+      height: clamp(32px, 7vw, 48px);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
       color: white;
-      font-size: clamp(12px, 3vw, 18px);
+      font-size: clamp(14px, 3.5vw, 20px);
       border: 4px solid white;
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
       position: relative;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
     }
 
     .uber-marker.pickup {
-      background: linear-gradient(135deg, #22c55e, #059669);
+      background: var(--primary);
     }
 
     .uber-marker.dropoff {
-      background: linear-gradient(135deg, #ef4444, #dc2626);
+      background: var(--secondary);
     }
 
     .uber-marker:hover {
@@ -1116,7 +1131,7 @@
     }
 
     .leaflet-tile {
-      filter: contrast(1.1) brightness(1.1) saturate(0.8) !important;
+      filter: contrast(1.05) brightness(1.05) saturate(0.95) !important;
     }
 
     /* Accessibility Improvements */
@@ -1130,22 +1145,6 @@
       }
     }
 
-    /* High contrast mode support */
-    @media (prefers-contrast: high) {
-      :root {
-        --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.4);
-      }
-      
-      .order-card {
-        border: 2px solid var(--border);
-      }
-      
-      .filter-chip {
-        border: 2px solid var(--text-muted);
-      }
-    }
-
     /* Focus indicators for keyboard navigation */
     .profile-btn:focus,
     .refresh-btn:focus,
@@ -1155,7 +1154,7 @@
     .close-btn:focus,
     .contact-btn:focus,
     .accept-button:focus {
-      outline: 2px solid var(--primary);
+      outline: 2px solid var(--secondary);
       outline-offset: 2px;
     }
 
@@ -1166,7 +1165,7 @@
     }
 
     .order-card:focus {
-      outline: 2px solid var(--primary);
+      outline: 2px solid var(--secondary);
       outline-offset: 2px;
     }
 
@@ -1183,13 +1182,13 @@
 
     .order-list::-webkit-scrollbar-thumb,
     .detail-info::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.2);
+      background: rgba(0, 0, 0, 0.15);
       border-radius: 3px;
     }
 
     .order-list::-webkit-scrollbar-thumb:hover,
     .detail-info::-webkit-scrollbar-thumb:hover {
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 0, 0, 0.25);
     }
   </style>
   
@@ -1266,7 +1265,7 @@
     </div>
   </div>
 
-  <!-- UBER-STYLE Order Detail Modal -->
+  <!-- UBER-STYLE Order Detail Modal - BIGGER AND FRAMELESS -->
   <div class="detail-modal" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
     <div class="detail-sheet">
       <div class="detail-header">
@@ -1355,7 +1354,7 @@
     let driverData = null;
     let currentOrder = null;
     
-    // FIXED: Always-enabled sound notification system
+    // Auto-sound notification system (always enabled)
     let audioContext = null;
     let previousOrderCount = 0;
     let lastOrderIds = new Set();
@@ -1364,7 +1363,7 @@
     class AutoSoundNotification {
       constructor() {
         this.audioContext = null;
-        this.enabled = true; // Always enabled
+        this.enabled = true;
         this.initAudioContext();
         console.log('🔊 Auto-sound notifications always enabled');
       }
@@ -1388,7 +1387,6 @@
             await this.audioContext.resume();
           }
 
-          // Enhanced notification sound with multiple tones
           const oscillator1 = this.audioContext.createOscillator();
           const oscillator2 = this.audioContext.createOscillator();
           const oscillator3 = this.audioContext.createOscillator();
@@ -1399,7 +1397,6 @@
           oscillator3.connect(gainNode);
           gainNode.connect(this.audioContext.destination);
 
-          // Three-tone notification like phone alerts
           oscillator1.frequency.setValueAtTime(800, this.audioContext.currentTime);
           oscillator2.frequency.setValueAtTime(1000, this.audioContext.currentTime);
           oscillator3.frequency.setValueAtTime(1200, this.audioContext.currentTime);
@@ -1423,11 +1420,10 @@
       }
 
       isEnabled() {
-        return this.enabled; // Always true
+        return this.enabled;
       }
     }
 
-    // Initialize auto-sound notification system
     const autoSoundNotification = new AutoSoundNotification();
 
     // Translations
@@ -1539,7 +1535,7 @@
       }
     }
 
-    // FIXED: Load driver profile with proper photo loading from ./ava directory
+    // Load driver profile with profile photo from ./ava directory
     async function loadDriverProfile() {
       try {
         const telegramId = window.telegramUserId;
@@ -1569,14 +1565,11 @@
           
           const profileBtn = document.getElementById('profileBtn');
           
-          // FIXED: Enhanced profile photo loading specifically from ./ava directory
           if (driverData.profile_photo && driverData.profile_photo.trim() !== '') {
             console.log('📸 Loading profile photo:', driverData.profile_photo);
             
-            // FIXED: Primary path for profile photos from ./ava directory
             const avatarPath = `./ava/${driverData.profile_photo}`;
             
-            // Create image element to test loading
             const img = new Image();
             
             img.onload = function() {
@@ -1589,7 +1582,6 @@
             img.onerror = function() {
               console.warn('❌ Failed to load profile photo from ./ava directory:', avatarPath);
               
-              // Fallback: Try alternative paths
               const fallbackPaths = [
                 `/ava/${driverData.profile_photo}`,
                 `/files/${driverData.profile_photo}`,
@@ -1615,7 +1607,6 @@
                 fallbackImg.src = path;
               });
               
-              // Final fallback to default icon after 3 seconds
               setTimeout(() => {
                 if (!loaded) {
                   console.log('👤 Using default profile icon - all photo paths failed');
@@ -1626,7 +1617,6 @@
               }, 3000);
             };
             
-            // Start loading the primary image from ./ava directory
             img.src = avatarPath;
             
           } else {
@@ -1638,21 +1628,19 @@
           
         } else {
           console.log('⚠️ Not a valid driver or no driver data');
-          // Keep default icon for non-drivers
           const profileBtn = document.getElementById('profileBtn');
           profileBtn.innerHTML = '👤';
           profileBtn.classList.add('no-photo');
         }
       } catch (error) {
         console.error('❌ Error loading driver profile:', error);
-        // Keep default icon on error
         const profileBtn = document.getElementById('profileBtn');
         profileBtn.innerHTML = '👤';
         profileBtn.classList.add('no-photo');
       }
     }
 
-    // FIXED: Open profile page with Telegram ID
+    // Open profile page
     function openProfile() {
       console.log('🔧 Profile button clicked - navigating to driver update page');
       
@@ -1663,7 +1651,6 @@
         return;
       }
 
-      // FIXED: Pass Telegram ID in URL parameter
       const updateUrl = `/driver-update?telegram_id=${telegramId}`;
       console.log('🔗 Navigating to:', updateUrl);
       
@@ -1717,7 +1704,7 @@
       return R * c;
     }
 
-    // FIXED: Check for new orders with auto-sound
+    // Check for new orders with auto-sound
     function checkForNewOrders(newOrders) {
       if (!newOrders || newOrders.length === 0) {
         return;
@@ -1732,7 +1719,6 @@
         const newOrderCount = newOrders.length - previousOrderCount;
         console.log('🆕 New orders detected:', newOrderCount);
         
-        // FIXED: Always play sound (no toggle needed)
         autoSoundNotification.playNotificationSound();
         
         showNewOrderVisualNotification(newOrderCount);
@@ -1762,10 +1748,10 @@
       }
     }
 
-    // OPTIMIZED: Load orders with better performance
+    // Load orders
     async function loadOrders() {
       try {
-        console.log('📦 Loading OPTIMIZED orders from API...');
+        console.log('📦 Loading orders from API...');
         
         if (!driverLocation) {
           await getDriverLocation();
@@ -1793,17 +1779,16 @@
         }
 
         const result = await response.json();
-        console.log('📊 OPTIMIZED Orders API response:', result);
+        console.log('📊 Orders API response:', result);
         
         if (result.success && result.data) {
           const newOrders = result.data.orders || [];
-          console.log('📦 Loaded OPTIMIZED orders count:', newOrders.length);
+          console.log('📦 Loaded orders count:', newOrders.length);
           
           checkForNewOrders(newOrders);
           
           orders = newOrders;
           
-          // OPTIMIZED: Calculate distances more efficiently
           if (driverLocation) {
             orders.forEach(order => {
               order.distance = calculateDistance(
@@ -1821,12 +1806,12 @@
           orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
           
           updateStats();
-          displayOrdersOptimized();
+          displayOrders();
         } else {
           throw new Error(result.message || 'Failed to load orders');
         }
       } catch (error) {
-        console.error('❌ Error loading OPTIMIZED orders:', error);
+        console.error('❌ Error loading orders:', error);
         showEmptyState();
       }
     }
@@ -1844,8 +1829,8 @@
       console.log('📊 Stats updated - Total:', orders.length, 'Nearby:', nearbyOrders, 'Avg price:', avgPrice);
     }
 
-    // OPTIMIZED: Display orders with better performance
-    function displayOrdersOptimized() {
+    // Display orders
+    function displayOrders() {
       const container = document.getElementById('orderList');
       
       let filteredOrders = [...orders];
@@ -1869,28 +1854,26 @@
         return;
       }
 
-      // OPTIMIZED: Use DocumentFragment for better performance
       const fragment = document.createDocumentFragment();
       
       filteredOrders.forEach((order, index) => {
-        const orderElement = createOrderCardOptimized(order, index);
+        const orderElement = createOrderCard(order, index);
         fragment.appendChild(orderElement);
       });
 
       container.innerHTML = '';
       container.appendChild(fragment);
       
-      // OPTIMIZED: Animate cards with staggered timing
       const cards = container.querySelectorAll('.order-card');
       cards.forEach((card, index) => {
         setTimeout(() => {
           card.classList.add('fade-in');
-        }, index * 50); // 50ms stagger
+        }, index * 50);
       });
     }
 
-    // OPTIMIZED: Create order card with better performance
-    function createOrderCardOptimized(order, index) {
+    // Create order card - NO ORDER ID DISPLAY FOR SECURITY
+    function createOrderCard(order, index) {
       const createdAt = new Date(order.created_at);
       const timeText = formatTime(createdAt);
       const distanceText = order.distance ? `${order.distance.toFixed(1)} ${translations[currentLang].km}` : '';
@@ -1901,9 +1884,8 @@
       cardElement.onclick = () => showOrderDetail(order.id);
       cardElement.setAttribute('tabindex', '0');
       cardElement.setAttribute('role', 'button');
-      cardElement.setAttribute('aria-label', `Заказ ${order.id}`);
+      cardElement.setAttribute('aria-label', `Заказ от ${timeText}`);
       
-      // Add keyboard support
       cardElement.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -1916,10 +1898,10 @@
           order.distance ? `<div class="distance-badge">${distanceText}</div>` : ''}
         
         <div class="order-header">
-          <div class="order-id">#${order.id}${order.isNew ? `<span class="new-badge">${translations[currentLang].new_order}</span>` : ''}</div>
           <div class="order-time">
             <span>⏰</span>
             <span>${timeText}</span>
+            ${order.isNew ? `<span class="new-badge">${translations[currentLang].new_order}</span>` : ''}
           </div>
         </div>
         
@@ -1969,12 +1951,12 @@
       return cardElement;
     }
 
-    // Show order detail with UBER-STYLE map
+    // Show order detail with bigger modal
     function showOrderDetail(orderId) {
       const order = orders.find(o => o.id === orderId);
       if (!order) return;
 
-      console.log('📋 Showing UBER-STYLE order detail for ID:', orderId);
+      console.log('📋 Showing order detail for ID:', orderId);
       currentOrder = order;
       
       document.getElementById('detailModal').classList.add('show');
@@ -1991,18 +1973,18 @@
       document.getElementById('whatsappBtn').href = `https://wa.me/${order.contact.replace(/\D/g, '')}`;
       
       setTimeout(() => {
-        initUberStyleDetailMap(order);
+        initDetailMap(order);
       }, 300);
     }
 
-    // UBER-STYLE: Initialize detail map
-    async function initUberStyleDetailMap(order) {
+    // Initialize detail map
+    async function initDetailMap(order) {
       if (detailMap) {
         detailMap.remove();
       }
 
       try {
-        console.log('🗺️ Initializing UBER-STYLE map for order:', order.id);
+        console.log('🗺️ Initializing map for order:', order.id);
         
         const centerLat = (order.from_lat + order.to_lat) / 2;
         const centerLon = (order.from_lon + order.to_lon) / 2;
@@ -2043,7 +2025,7 @@
         L.marker([order.from_lat, order.from_lon], { icon: pickupIcon }).addTo(detailMap);
         L.marker([order.to_lat, order.to_lon], { icon: dropoffIcon }).addTo(detailMap);
 
-        await drawUberStyleRoute(order);
+        await drawRoute(order);
 
         const bounds = L.latLngBounds([
           [order.from_lat, order.from_lon],
@@ -2056,14 +2038,14 @@
         });
 
       } catch (error) {
-        console.error('❌ Error initializing UBER-STYLE map:', error);
+        console.error('❌ Error initializing map:', error);
       }
     }
 
-    // UBER-STYLE: Draw route
-    async function drawUberStyleRoute(order) {
+    // Draw route
+    async function drawRoute(order) {
       try {
-        console.log('🛣️ Drawing UBER-STYLE route...');
+        console.log('🛣️ Drawing route...');
         
         document.getElementById('routeEta').innerHTML = `
           <span>🚗</span>
@@ -2115,14 +2097,14 @@
             <span>${distanceKm} ${translations[currentLang].km} • ${durationMin} ${translations[currentLang].min}</span>
           `;
           
-          console.log('✅ UBER-STYLE route drawn successfully');
+          console.log('✅ Route drawn successfully');
           
         } else {
           throw new Error('No route found');
         }
         
       } catch (error) {
-        console.error('❌ Error drawing UBER-STYLE route:', error);
+        console.error('❌ Error drawing route:', error);
         
         const straightLine = L.polyline([
           [order.from_lat, order.from_lon],
@@ -2171,7 +2153,7 @@
         
         if (result.success) {
           acceptBtn.innerHTML = '<span>✅ Заказ принят!</span>';
-          acceptBtn.style.background = '#22c55e';
+          acceptBtn.style.background = '#388E3C';
           
           setTimeout(() => {
             closeDetail();
@@ -2188,7 +2170,7 @@
         const acceptBtn = document.getElementById('acceptOrderBtn');
         acceptBtn.disabled = false;
         acceptBtn.innerHTML = `<span>❌ Ошибка! Попробуйте снова</span>`;
-        acceptBtn.style.background = '#ef4444';
+        acceptBtn.style.background = '#D32F2F';
         
         setTimeout(() => {
           acceptBtn.innerHTML = `<span>${translations[currentLang].acceptOrder}</span>`;
@@ -2260,7 +2242,7 @@
       });
       document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
       
-      displayOrdersOptimized();
+      displayOrders();
     }
 
     // Refresh orders
@@ -2290,15 +2272,15 @@
       });
 
       updateStats();
-      displayOrdersOptimized();
+      displayOrders();
     }
 
-    // OPTIMIZED: Auto-refresh with better performance
+    // Auto-refresh
     function startAutoRefresh() {
-      console.log('🔄 Starting OPTIMIZED auto-refresh (8 seconds interval)');
+      console.log('🔄 Starting auto-refresh (8 seconds interval)');
       refreshInterval = setInterval(() => {
         loadOrders();
-      }, 8000); // Slightly faster refresh
+      }, 8000);
     }
 
     function stopAutoRefresh() {
@@ -2311,7 +2293,7 @@
 
     // Initialize app
     document.addEventListener('DOMContentLoaded', () => {
-      console.log('🚀 OPTIMIZED Multi-Device Delivery List App initializing...');
+      console.log('🚀 Uber-Style Minimal Delivery List App initializing...');
       
       initTelegram();
       setLang('ru');
@@ -2320,7 +2302,7 @@
       loadOrders();
       startAutoRefresh();
       
-      console.log('✅ OPTIMIZED Multi-Device Delivery List App initialized with auto-sound and FIXED profile photo loading from ./ava');
+      console.log('✅ Uber-Style Minimal Delivery List App initialized with Telegram WebApp optimization');
     });
 
     // Handle page visibility changes
@@ -2367,7 +2349,7 @@
     window.closeDetail = closeDetail;
     window.acceptOrder = acceptOrder;
 
-    console.log('📋 OPTIMIZED Multi-Device Delivery List script loaded with FIXED profile photo loading from ./ava directory');
+    console.log('📋 Uber-Style Minimal Delivery List with Telegram WebApp optimization loaded successfully');
   </script>
 </body>
 </html>

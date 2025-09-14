@@ -2,28 +2,30 @@
 <html lang="kz">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>TezJet - Тез жеткізу қызметі</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
-      /* Uber-inspired color palette */
+      /* Uber-inspired minimal color palette */
       --bg-primary: #000000;
-      --bg-secondary: #1a1a1a;
-      --bg-tertiary: #2d2d2d;
-      --text-primary: #ffffff;
-      --text-secondary: #b3b3b3;
-      --text-muted: #666666;
-      --accent-primary: #00ff88;
-      --accent-secondary: #00d4ff;
-      --accent-gradient: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
-      --shadow-glow: 0 0 30px rgba(0, 255, 136, 0.3);
-      --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.3);
-      --shadow-strong: 0 8px 32px rgba(0, 0, 0, 0.5);
-      --radius-sm: 12px;
-      --radius-md: 16px;
-      --radius-lg: 24px;
-      --border-glow: 1px solid rgba(0, 255, 136, 0.3);
+      --bg-secondary: #ffffff;
+      --bg-card: #f8f9fa;
+      --text-primary: #000000;
+      --text-secondary: #666666;
+      --text-muted: #999999;
+      --text-white: #ffffff;
+      --accent-primary: #000000;
+      --accent-secondary: #007AFF;
+      --border: #e5e5e5;
+      --border-light: #f0f0f0;
+      --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.08);
+      --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.12);
+      --shadow-strong: 0 8px 32px rgba(0, 0, 0, 0.16);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
     }
 
     * {
@@ -38,57 +40,41 @@
       height: 100dvh;
       overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', 'Inter', sans-serif;
-      background: var(--bg-primary);
+      background: var(--bg-secondary);
       color: var(--text-primary);
       position: fixed;
       width: 100%;
       top: 0;
       left: 0;
+      
+      /* TELEGRAM WEBAPP OPTIMIZATION */
+      height: var(--tg-viewport-stable-height, 100vh);
+      padding-top: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px) + 15px);
+      padding-bottom: var(--tg-safe-area-inset-bottom, 0px);
+      padding-left: var(--tg-safe-area-inset-left, 0px);
+      padding-right: var(--tg-safe-area-inset-right, 0px);
     }
 
-    /* Animated background */
+    /* Minimal background with subtle texture */
     .background {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: radial-gradient(circle at 30% 20%, rgba(0, 255, 136, 0.1) 0%, transparent 50%),
-                  radial-gradient(circle at 80% 80%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
-                  radial-gradient(circle at 40% 70%, rgba(0, 255, 136, 0.05) 0%, transparent 50%);
-      animation: backgroundPulse 8s ease-in-out infinite;
+      background: var(--bg-secondary);
       z-index: -2;
     }
 
-    @keyframes backgroundPulse {
-      0%, 100% { 
-        transform: scale(1) rotate(0deg);
-        opacity: 1; 
-      }
-      50% { 
-        transform: scale(1.1) rotate(2deg);
-        opacity: 0.8; 
-      }
-    }
-
-    /* Grid overlay */
-    .grid-overlay {
-      position: fixed;
+    .background::before {
+      content: '';
+      position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background-image: 
-        linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
-      background-size: 20px 20px;
-      animation: gridMove 20s linear infinite;
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.02) 0%, transparent 50%);
       z-index: -1;
-    }
-
-    @keyframes gridMove {
-      0% { transform: translate(0, 0); }
-      100% { transform: translate(20px, 20px); }
     }
 
     /* Loading overlay */
@@ -98,14 +84,14 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: var(--bg-primary);
+      background: var(--bg-secondary);
       display: flex;
       align-items: center;
       justify-content: center;
       flex-direction: column;
-      gap: 20px;
+      gap: 24px;
       z-index: 9999;
-      transition: opacity 0.5s ease, visibility 0.5s ease;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
     }
 
     .loading-overlay.hidden {
@@ -114,19 +100,18 @@
     }
 
     .loading-spinner {
-      width: 50px;
-      height: 50px;
-      border: 3px solid rgba(0, 255, 136, 0.2);
-      border-top: 3px solid var(--accent-primary);
+      width: 32px;
+      height: 32px;
+      border: 2px solid var(--border-light);
+      border-top: 2px solid var(--accent-primary);
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
 
     .loading-text {
       font-size: 16px;
-      font-weight: 600;
+      font-weight: 500;
       color: var(--text-secondary);
-      animation: pulse 2s ease-in-out infinite;
       text-align: center;
     }
 
@@ -134,23 +119,17 @@
       to { transform: rotate(360deg); }
     }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
-    }
-
-    /* Language switch */
+    /* Language switch - Uber style */
     .lang-switch {
       position: absolute;
-      top: 20px;
+      top: max(20px, env(safe-area-inset-top, 20px));
       right: 20px;
       display: flex;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 25px;
+      background: var(--bg-card);
+      border-radius: 24px;
       padding: 4px;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-subtle);
       z-index: 100;
     }
 
@@ -163,20 +142,19 @@
       cursor: pointer;
       font-weight: 600;
       font-size: 14px;
-      transition: all 0.3s ease;
-      min-width: 50px;
+      transition: all 0.2s ease;
+      min-width: 48px;
     }
 
     .lang-btn.active {
-      background: var(--accent-gradient);
-      color: white;
-      box-shadow: var(--shadow-glow);
-      transform: scale(1.05);
+      background: var(--accent-primary);
+      color: var(--text-white);
+      transform: scale(1.02);
     }
 
     .lang-btn:hover:not(.active) {
       color: var(--text-primary);
-      background: rgba(255, 255, 255, 0.1);
+      background: var(--border-light);
     }
 
     /* Main container */
@@ -187,9 +165,10 @@
       flex-direction: column;
       position: relative;
       overflow: hidden;
+      padding: 0 20px;
     }
 
-    /* Header section */
+    /* Header section - Uber minimal style */
     .header-section {
       flex: 1;
       display: flex;
@@ -197,106 +176,77 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 40px 20px;
+      padding: 40px 0;
       position: relative;
+      max-width: 400px;
+      margin: 0 auto;
+      width: 100%;
     }
 
-    /* Logo animation */
+    /* Logo - minimal Uber style */
     .logo-container {
       position: relative;
-      margin-bottom: 40px;
+      margin-bottom: 48px;
     }
 
     .logo {
-      width: 120px;
-      height: 120px;
-      background: var(--accent-gradient);
-      border-radius: 30px;
+      width: 80px;
+      height: 80px;
+      background: var(--accent-primary);
+      border-radius: var(--radius-lg);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 48px;
-      font-weight: 900;
-      color: white;
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-white);
       margin: 0 auto;
       position: relative;
-      box-shadow: var(--shadow-glow);
-      animation: logoFloat 3s ease-in-out infinite;
-    }
-
-    .logo::before {
-      content: '';
-      position: absolute;
-      top: -4px;
-      left: -4px;
-      right: -4px;
-      bottom: -4px;
-      background: var(--accent-gradient);
-      border-radius: 34px;
-      z-index: -1;
-      opacity: 0.5;
-      animation: logoGlow 2s ease-in-out infinite alternate;
+      box-shadow: var(--shadow-medium);
+      animation: logoFloat 6s ease-in-out infinite;
     }
 
     @keyframes logoFloat {
-      0%, 100% { transform: translateY(0px) rotate(0deg); }
-      50% { transform: translateY(-10px) rotate(1deg); }
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
     }
 
-    @keyframes logoGlow {
-      0% { opacity: 0.3; transform: scale(1); }
-      100% { opacity: 0.6; transform: scale(1.1); }
-    }
-
-    /* Brand text */
+    /* Brand text - Uber typography */
     .brand-text {
-      margin-bottom: 16px;
+      margin-bottom: 32px;
     }
 
     .brand-name {
-      font-size: 48px;
-      font-weight: 900;
-      background: var(--accent-gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      letter-spacing: -2px;
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      animation: textShine 3s ease-in-out infinite;
-    }
-
-    @keyframes textShine {
-      0%, 100% { 
-        background-position: 0% 50%; 
-        transform: scale(1);
-      }
-      50% { 
-        background-position: 100% 50%; 
-        transform: scale(1.02);
-      }
+      font-size: 40px;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -1px;
+      margin-bottom: 12px;
+      text-transform: none;
+      opacity: 0;
+      animation: fadeInUp 0.6s ease-out 0.3s forwards;
     }
 
     .brand-slogan {
-      font-size: 20px;
-      font-weight: 600;
+      font-size: 18px;
+      font-weight: 500;
       color: var(--text-secondary);
-      letter-spacing: 0.5px;
+      letter-spacing: 0px;
       opacity: 0;
-      animation: slideInUp 1s ease-out 0.5s forwards;
+      animation: fadeInUp 0.6s ease-out 0.5s forwards;
+      margin-bottom: 8px;
     }
 
     .brand-description {
-      font-size: 16px;
+      font-size: 15px;
       color: var(--text-muted);
-      margin-top: 12px;
-      max-width: 280px;
-      line-height: 1.5;
+      max-width: 320px;
+      line-height: 1.4;
       opacity: 0;
-      animation: slideInUp 1s ease-out 1s forwards;
+      animation: fadeInUp 0.6s ease-out 0.7s forwards;
     }
 
-    @keyframes slideInUp {
+    @keyframes fadeInUp {
       from {
         opacity: 0;
         transform: translateY(20px);
@@ -307,127 +257,113 @@
       }
     }
 
-    /* Action buttons */
+    /* Action buttons - Uber style */
     .action-section {
-      padding: 20px;
-      padding-bottom: max(20px, env(safe-area-inset-bottom));
-      background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.8) 50%);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      padding: 20px 0;
+      padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
+      max-width: 400px;
+      margin: 0 auto;
+      width: 100%;
     }
 
     .action-buttons {
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      max-width: 400px;
-      margin: 0 auto;
+      gap: 12px;
     }
 
     .action-btn {
-      background: var(--bg-secondary);
-      border: var(--border-glow);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
       border-radius: var(--radius-md);
-      padding: 20px 24px;
+      padding: 20px 20px;
       cursor: pointer;
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: space-between;
       position: relative;
       overflow: hidden;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
       text-decoration: none;
       color: inherit;
-    }
-
-    .action-btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: var(--accent-gradient);
-      opacity: 0;
-      transition: all 0.4s ease;
-      z-index: -1;
-    }
-
-    .action-btn:hover::before {
-      left: 0;
-      opacity: 0.1;
+      box-shadow: var(--shadow-subtle);
     }
 
     .action-btn:hover {
-      transform: translateY(-4px) scale(1.02);
-      box-shadow: var(--shadow-glow);
-      border-color: var(--accent-primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-medium);
+      border-color: var(--text-muted);
     }
 
     .action-btn:active {
-      transform: translateY(-2px) scale(1.01);
+      transform: translateY(0);
+      transition-duration: 0.1s;
     }
 
     .action-btn-content {
       display: flex;
       align-items: center;
       gap: 16px;
+      flex: 1;
     }
 
     .action-btn-icon {
-      width: 50px;
-      height: 50px;
-      background: var(--accent-gradient);
-      border-radius: 12px;
+      width: 48px;
+      height: 48px;
+      background: var(--accent-primary);
+      border-radius: var(--radius-sm);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 24px;
-      box-shadow: var(--shadow-soft);
+      font-size: 20px;
+      color: var(--text-white);
+      flex-shrink: 0;
     }
 
     .action-btn-text {
       flex: 1;
+      text-align: left;
     }
 
     .action-btn-title {
-      font-size: 18px;
-      font-weight: 700;
+      font-size: 17px;
+      font-weight: 600;
       color: var(--text-primary);
       margin-bottom: 4px;
+      line-height: 1.2;
     }
 
     .action-btn-subtitle {
       font-size: 14px;
       color: var(--text-secondary);
-      line-height: 1.4;
+      line-height: 1.3;
     }
 
     .action-btn-arrow {
-      font-size: 20px;
-      color: var(--accent-primary);
-      transition: transform 0.3s ease;
+      font-size: 18px;
+      color: var(--text-muted);
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
     }
 
     .action-btn:hover .action-btn-arrow {
       transform: translateX(4px);
+      color: var(--text-secondary);
     }
 
-    /* Primary button special styling */
+    /* Primary button - Uber black style */
     .action-btn.primary {
-      background: var(--accent-gradient);
-      border: 1px solid transparent;
-      box-shadow: var(--shadow-glow);
+      background: var(--accent-primary);
+      border: 1px solid var(--accent-primary);
+      box-shadow: var(--shadow-medium);
     }
 
     .action-btn.primary .action-btn-icon {
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.15);
     }
 
     .action-btn.primary .action-btn-title {
-      color: white;
+      color: var(--text-white);
     }
 
     .action-btn.primary .action-btn-subtitle {
@@ -435,25 +371,30 @@
     }
 
     .action-btn.primary .action-btn-arrow {
-      color: white;
+      color: var(--text-white);
+    }
+
+    .action-btn.primary:hover {
+      background: #1a1a1a;
+      border-color: #1a1a1a;
     }
 
     /* Animations on load */
     .action-btn {
       opacity: 0;
-      transform: translateY(30px);
-      animation: slideInUpStagger 0.6s ease-out forwards;
+      transform: translateY(20px);
+      animation: slideInUp 0.4s ease-out forwards;
     }
 
     .action-btn:nth-child(1) {
-      animation-delay: 1.5s;
+      animation-delay: 0.9s;
     }
 
     .action-btn:nth-child(2) {
-      animation-delay: 1.7s;
+      animation-delay: 1.1s;
     }
 
-    @keyframes slideInUpStagger {
+    @keyframes slideInUp {
       to {
         opacity: 1;
         transform: translateY(0);
@@ -462,45 +403,54 @@
 
     /* Driver redirect message */
     .driver-redirect {
-      background: var(--accent-gradient);
-      color: white;
+      background: var(--accent-primary);
+      color: var(--text-white);
       padding: 20px;
       border-radius: var(--radius-md);
       text-align: center;
-      margin-bottom: 20px;
-      box-shadow: var(--shadow-glow);
-      animation: slideInUp 0.5s ease-out;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-medium);
+      animation: fadeInUp 0.4s ease-out;
     }
 
     .driver-redirect h3 {
-      font-size: 18px;
-      font-weight: 700;
+      font-size: 17px;
+      font-weight: 600;
       margin-bottom: 8px;
     }
 
     .driver-redirect p {
       font-size: 14px;
       opacity: 0.9;
+      line-height: 1.4;
     }
 
     /* Responsive design */
     @media (max-width: 480px) {
+      .main-container {
+        padding: 0 16px;
+      }
+
       .brand-name {
         font-size: 36px;
       }
 
       .brand-slogan {
-        font-size: 18px;
+        font-size: 16px;
+      }
+
+      .brand-description {
+        font-size: 14px;
       }
 
       .logo {
-        width: 100px;
-        height: 100px;
-        font-size: 40px;
+        width: 72px;
+        height: 72px;
+        font-size: 28px;
       }
 
       .action-btn {
-        padding: 18px 20px;
+        padding: 18px 16px;
       }
 
       .action-btn-title {
@@ -510,36 +460,40 @@
       .action-btn-subtitle {
         font-size: 13px;
       }
+
+      .action-btn-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+      }
     }
 
     @media (max-height: 700px) {
       .header-section {
-        padding: 20px;
+        padding: 20px 0;
       }
 
       .logo {
-        width: 90px;
-        height: 90px;
-        font-size: 36px;
+        width: 64px;
+        height: 64px;
+        font-size: 24px;
+      }
+
+      .logo-container {
+        margin-bottom: 32px;
       }
 
       .brand-name {
         font-size: 32px;
+        margin-bottom: 8px;
       }
 
       .brand-slogan {
         font-size: 16px;
       }
-    }
 
-    /* iOS safe area */
-    @supports (padding: max(0px)) {
-      .action-section {
-        padding-bottom: max(20px, env(safe-area-inset-bottom));
-      }
-
-      .lang-switch {
-        top: max(20px, env(safe-area-inset-top));
+      .brand-text {
+        margin-bottom: 24px;
       }
     }
 
@@ -556,28 +510,63 @@
     /* Enhanced focus states for accessibility */
     .action-btn:focus,
     .lang-btn:focus {
-      outline: 2px solid var(--accent-primary);
+      outline: 2px solid var(--accent-secondary);
       outline-offset: 2px;
     }
 
-    /* Special animations for welcome sequence */
+    /* Welcome sequence animation */
     .welcome-sequence {
-      animation: welcomeSequence 2s ease-out;
+      opacity: 0;
+      animation: welcomeSequence 0.8s ease-out 0.1s forwards;
     }
 
     @keyframes welcomeSequence {
       0% {
         opacity: 0;
-        transform: scale(0.9);
-      }
-      50% {
-        opacity: 0.7;
-        transform: scale(1.02);
+        transform: scale(0.98);
       }
       100% {
         opacity: 1;
         transform: scale(1);
       }
+    }
+
+    /* Smooth transitions for language changes */
+    .brand-text,
+    .action-buttons {
+      transition: transform 0.15s ease;
+    }
+
+    /* Clean loading state */
+    .loading-spinner {
+      border-width: 2px;
+    }
+
+    /* Better button touch targets */
+    .action-btn {
+      min-height: 80px;
+    }
+
+    .lang-btn {
+      min-height: 40px;
+    }
+
+    /* Improved contrast for better readability */
+    .action-btn-subtitle {
+      color: #666666;
+    }
+
+    .brand-description {
+      color: #888888;
+    }
+
+    /* Refined shadows for depth */
+    .action-btn.primary {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    .action-btn.primary:hover {
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
     }
   </style>
 </head>
@@ -588,9 +577,8 @@
     <div class="loading-text" data-kz="Жүктелуде..." data-ru="Загрузка...">Жүктелуде...</div>
   </div>
 
-  <!-- Animated Background -->
+  <!-- Minimal Background -->
   <div class="background"></div>
-  <div class="grid-overlay"></div>
 
   <!-- Language Switch -->
   <div class="lang-switch">
@@ -603,7 +591,7 @@
     <!-- Header Section -->
     <div class="header-section">
       <div class="logo-container">
-        <div class="logo">🚀</div>
+        <div class="logo">T</div>
       </div>
       
       <div class="brand-text">
@@ -650,8 +638,8 @@
   </div>
 
   <script>
-    // Global variables
-    let currentLang = 'kz'; // Default to Kazakh
+    // Global variables - Kazakh as default
+    let currentLang = 'kz'; // DEFAULT TO KAZAKH
     let isChecking = false;
     let isRedirecting = false;
 
@@ -691,14 +679,17 @@
 
     // Initialize app
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('🚀 TezJet Welcome Page loaded');
+      console.log('🚀 TezJet Uber-Style Welcome Page loaded');
       initializeTelegram();
       setupEventListeners();
+      
+      // Ensure Kazakh is active by default
+      setLang('kz');
       
       // Start user check after UI is ready
       setTimeout(() => {
         checkUserTypeAndRedirect();
-      }, 1000);
+      }, 800);
     });
 
     // Initialize Telegram WebApp
@@ -710,13 +701,9 @@
         Telegram.WebApp.expand();
         Telegram.WebApp.disableVerticalSwipes();
 
-        // Handle theme
+        // Handle theme (adjust for Uber-style)
         const theme = Telegram.WebApp.colorScheme;
-        if (theme === 'light') {
-          // Apply light theme adjustments if needed
-          document.documentElement.style.setProperty('--bg-primary', '#ffffff');
-          document.documentElement.style.setProperty('--text-primary', '#000000');
-        }
+        console.log('🎨 Telegram theme:', theme);
 
         console.log('✅ Telegram WebApp initialized');
       } else {
@@ -744,7 +731,7 @@
       });
     }
 
-    // FIXED: Enhanced user checking with proper redirect logic
+    // Enhanced user checking with proper redirect logic
     async function checkUserTypeAndRedirect() {
       const telegramId = getTelegramId();
       
@@ -778,7 +765,7 @@
         const result = await response.json();
         console.log('📊 API Response:', result);
 
-        // FIXED: Proper driver detection and redirect
+        // Proper driver detection and redirect
         if (result.success && result.data) {
           const userData = result.data;
           
@@ -802,10 +789,10 @@
             // Force redirect after 2 seconds
             setTimeout(() => {
               console.log('🔄 FORCED REDIRECT to /delivery-list');
-              window.location.replace('/delivery-list'); // Use replace to avoid back button issues
+              window.location.replace('/delivery-list');
             }, 2000);
             
-            return; // Exit function early
+            return;
           }
           
           // Check if user exists as client
@@ -823,10 +810,6 @@
         
       } catch (error) {
         console.error('❌ Error checking user type:', error);
-        console.error('🔍 Error details:', {
-          message: error.message,
-          stack: error.stack
-        });
         
         // Show error briefly, then show welcome page
         updateLoadingText('error');
@@ -848,17 +831,15 @@
       }
     }
 
-    // Enhanced logging version of getTelegramId
+    // Get Telegram ID with enhanced logging
     function getTelegramId() {
       // Try to get from Telegram WebApp
       if (window.Telegram && Telegram.WebApp) {
         console.log('📱 Telegram WebApp available');
-        console.log('🔍 InitDataUnsafe:', Telegram.WebApp.initDataUnsafe);
         
         if (Telegram.WebApp.initDataUnsafe?.user) {
           const id = Telegram.WebApp.initDataUnsafe.user.id;
           console.log('✅ Got Telegram ID from WebApp:', id);
-          console.log('👤 User info:', Telegram.WebApp.initDataUnsafe.user);
           return id;
         } else {
           console.log('⚠️ No user data in initDataUnsafe');
@@ -895,10 +876,10 @@
       // Start welcome animations
       setTimeout(() => {
         document.querySelector('.main-container').style.opacity = '1';
-      }, 300);
+      }, 200);
     }
 
-    // Language switching
+    // Language switching with Kazakh as default
     function setLang(lang) {
       if (isChecking || isRedirecting) {
         console.log('🛑 Language change prevented - checking/redirecting in progress');
@@ -922,17 +903,17 @@
         }
       });
 
-      // Add subtle animation to show language change
-      document.querySelector('.brand-text').style.transform = 'scale(0.98)';
-      document.querySelector('.action-buttons').style.transform = 'scale(0.98)';
+      // Smooth transition animation
+      document.querySelector('.brand-text').style.transform = 'scale(0.99)';
+      document.querySelector('.action-buttons').style.transform = 'scale(0.99)';
       
       setTimeout(() => {
         document.querySelector('.brand-text').style.transform = 'scale(1)';
         document.querySelector('.action-buttons').style.transform = 'scale(1)';
-      }, 150);
+      }, 100);
     }
 
-    // Enhanced navigation function with better error handling
+    // Navigation with transition
     function navigateWithTransition(url) {
       if (isChecking || isRedirecting) {
         console.log('🛑 Navigation prevented - checking/redirecting in progress');
@@ -949,7 +930,7 @@
       // Navigate after brief delay
       setTimeout(() => {
         window.location.href = url;
-      }, 300);
+      }, 200);
       
       return true;
     }
@@ -974,7 +955,7 @@
       }
     });
 
-    // Debug function to test the API endpoint directly
+    // Debug function
     async function debugCheckWho() {
       const telegramId = getTelegramId();
       
@@ -997,29 +978,15 @@
         });
 
         console.log('📡 Response status:', response.status);
-        console.log('📡 Response headers:', [...response.headers.entries()]);
-
         const result = await response.json();
         console.log('📊 Raw response:', result);
-        console.log('🔍 Response structure analysis:');
-        console.log('  - result.success:', result.success);
-        console.log('  - result.data:', result.data);
-        
-        if (result.data) {
-          console.log('  - result.data.exists:', result.data.exists);
-          console.log('  - result.data.user_type:', result.data.user_type);
-          console.log('  - result.data.telegram_id:', result.data.telegram_id);
-          if (result.data.driver_data) {
-            console.log('  - result.data.driver_data:', result.data.driver_data);
-          }
-        }
 
       } catch (error) {
         console.error('❌ Debug test failed:', error);
       }
     }
 
-    // Force redirect function for testing
+    // Force redirect for testing
     function forceRedirectToDeliveryList() {
       console.log('🔧 FORCE REDIRECT - Testing redirect to delivery list');
       isRedirecting = true;
@@ -1038,15 +1005,9 @@
     window.debugCheckWho = debugCheckWho;
     window.forceRedirectToDeliveryList = forceRedirectToDeliveryList;
 
-    // Add performance monitoring
+    // Performance monitoring
     window.addEventListener('load', function() {
-      console.log('⚡ Page fully loaded');
-      
-      // Performance metrics
-      if (window.performance) {
-        const loadTime = window.performance.timing.loadEventEnd - window.performance.timing.navigationStart;
-        console.log(`📊 Page load time: ${loadTime}ms`);
-      }
+      console.log('⚡ Uber-Style TezJet page fully loaded');
     });
 
     // Handle page visibility changes
@@ -1055,10 +1016,6 @@
         console.log('👁️ Page hidden');
       } else {
         console.log('👁️ Page visible');
-        // If we're not checking and not redirecting, restart animations
-        if (!isChecking && !isRedirecting) {
-          document.querySelector('.logo').style.animationPlayState = 'running';
-        }
       }
     });
 
@@ -1074,11 +1031,9 @@
           navigateWithTransition('/register');
           break;
         case 'd':
-          // Debug shortcut
           debugCheckWho();
           break;
         case 'f':
-          // Force redirect shortcut (for testing)
           forceRedirectToDeliveryList();
           break;
         case 'Escape':
@@ -1089,41 +1044,10 @@
       }
     });
 
-    // Touch gesture support
-    let touchStartY = 0;
-    let touchEndY = 0;
-
-    document.addEventListener('touchstart', function(e) {
-      touchStartY = e.changedTouches[0].screenY;
-    });
-
-    document.addEventListener('touchend', function(e) {
-      touchEndY = e.changedTouches[0].screenY;
-      handleSwipe();
-    });
-
-    function handleSwipe() {
-      if (isChecking || isRedirecting) return;
-      
-      const swipeThreshold = 50;
-      const diff = touchStartY - touchEndY;
-      
-      if (Math.abs(diff) > swipeThreshold) {
-        if (diff > 0) {
-          // Swipe up - could trigger some action
-          console.log('👆 Swipe up detected');
-        } else {
-          // Swipe down - could refresh or close
-          console.log('👇 Swipe down detected');
-        }
-      }
-    }
-
     // Error handling for network issues
     window.addEventListener('online', function() {
       console.log('🌐 Connection restored');
       if (!isChecking && !isRedirecting) {
-        // Retry user check if we're still on welcome page
         checkUserTypeAndRedirect();
       }
     });
@@ -1133,7 +1057,7 @@
       updateLoadingText('error');
     });
 
-    // Prevent context menu on long press (mobile)
+    // Prevent context menu
     document.addEventListener('contextmenu', function(e) {
       e.preventDefault();
     });
@@ -1150,48 +1074,8 @@
       btn.addEventListener('click', addHapticFeedback);
     });
 
-    // Additional safety check - prevent infinite loops
-    let redirectAttempts = 0;
-    const maxRedirectAttempts = 3;
-
-    function safeRedirect(url) {
-      redirectAttempts++;
-      
-      if (redirectAttempts > maxRedirectAttempts) {
-        console.error('🚫 Too many redirect attempts, stopping');
-        updateLoadingText('error');
-        setTimeout(() => {
-          hideLoading();
-        }, 2000);
-        return;
-      }
-      
-      console.log(`🔄 Safe redirect attempt ${redirectAttempts}/${maxRedirectAttempts} to:`, url);
-      
-      try {
-        window.location.replace(url);
-      } catch (error) {
-        console.error('❌ Redirect failed:', error);
-        setTimeout(() => {
-          window.location.href = url; // Fallback to href
-        }, 1000);
-      }
-    }
-
-    // Override the redirect in checkUserTypeAndRedirect
-    function performDriverRedirect() {
-      console.log('🚗 Performing driver redirect...');
-      showDriverRedirectMessage();
-      isRedirecting = true;
-      updateLoadingText('redirectingDriver');
-      
-      // Use safe redirect
-      setTimeout(() => {
-        safeRedirect('/delivery-list');
-      }, 2000);
-    }
-
-    console.log('🎉 TezJet Welcome Page initialized successfully');
+    console.log('🎉 Uber-Style TezJet Welcome Page initialized successfully');
+    console.log('🗣️ Default language: Kazakh (ҚАЗ)');
     console.log('🔧 Debug commands: debugCheckWho(), forceRedirectToDeliveryList()');
   </script>
 </body>
