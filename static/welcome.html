@@ -49,10 +49,10 @@
       
       /* TELEGRAM WEBAPP OPTIMIZATION */
       height: var(--tg-viewport-stable-height, 100vh);
-      padding-top: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px) + 15px);
-      padding-bottom: var(--tg-safe-area-inset-bottom, 0px);
-      padding-left: var(--tg-safe-area-inset-left, 0px);
-      padding-right: var(--tg-safe-area-inset-right, 0px);
+      padding-top: max(15px, env(safe-area-inset-top, 15px));
+      padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
+      padding-left: max(20px, env(safe-area-inset-left, 20px));
+      padding-right: max(20px, env(safe-area-inset-right, 20px));
     }
 
     /* Minimal background with subtle texture */
@@ -119,10 +119,10 @@
       to { transform: rotate(360deg); }
     }
 
-    /* Language switch - Uber style */
+    /* FIXED: Language switch - positioned lower on right to avoid Telegram system buttons */
     .lang-switch {
       position: absolute;
-      top: max(20px, env(safe-area-inset-top, 20px));
+      top: max(70px, calc(env(safe-area-inset-top, 20px) + 50px));
       right: 20px;
       display: flex;
       background: var(--bg-card);
@@ -130,7 +130,7 @@
       padding: 4px;
       border: 1px solid var(--border);
       box-shadow: var(--shadow-subtle);
-      z-index: 100;
+      z-index: 1000;
     }
 
     .lang-btn {
@@ -157,47 +157,56 @@
       background: var(--border-light);
     }
 
-    /* Main container */
+    /* FIXED: Main container with better layout for full screen */
     .main-container {
-      height: 100vh;
-      height: 100dvh;
+      height: calc(100vh - max(35px, env(safe-area-inset-top, 35px)) - max(20px, env(safe-area-inset-bottom, 20px)));
+      height: calc(100dvh - max(35px, env(safe-area-inset-top, 35px)) - max(20px, env(safe-area-inset-bottom, 20px)));
       display: flex;
       flex-direction: column;
       position: relative;
       overflow: hidden;
-      padding: 0 20px;
+      margin: 0 auto;
+      max-width: 400px;
+      width: 100%;
+      /* CRITICAL: Remove padding here since body has it */
+      padding: 0;
     }
 
-    /* Header section - Uber minimal style */
+    /* FIXED: Header section with constrained growth */
     .header-section {
-      flex: 1;
+      /* REMOVED: flex: 1 - this was causing the expansion issue */
+      flex-grow: 1;
+      flex-shrink: 1;
+      /* CRITICAL: Add max-height to prevent over-expansion */
+      max-height: calc(100vh - 200px); /* Reserve 200px for buttons */
+      max-height: calc(100dvh - 200px);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 40px 0;
+      padding: 20px 0;
       position: relative;
-      max-width: 400px;
-      margin: 0 auto;
-      width: 100%;
+      /* CRITICAL: Ensure minimum space for buttons */
+      min-height: 200px;
     }
 
     /* Logo - minimal Uber style */
     .logo-container {
       position: relative;
-      margin-bottom: 48px;
+      margin-bottom: 32px;
+      flex-shrink: 0;
     }
 
     .logo {
-      width: 80px;
-      height: 80px;
+      width: 72px;
+      height: 72px;
       background: var(--accent-primary);
       border-radius: var(--radius-lg);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 32px;
+      font-size: 28px;
       font-weight: 700;
       color: var(--text-white);
       margin: 0 auto;
@@ -208,37 +217,38 @@
 
     @keyframes logoFloat {
       0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-8px); }
+      50% { transform: translateY(-6px); }
     }
 
-    /* Brand text - Uber typography */
+    /* Brand text - Uber typography with better spacing */
     .brand-text {
-      margin-bottom: 32px;
+      margin-bottom: 20px;
+      flex-shrink: 0;
     }
 
     .brand-name {
-      font-size: 40px;
+      font-size: 36px;
       font-weight: 800;
       color: var(--text-primary);
       letter-spacing: -1px;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
       text-transform: none;
       opacity: 0;
       animation: fadeInUp 0.6s ease-out 0.3s forwards;
     }
 
     .brand-slogan {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 500;
       color: var(--text-secondary);
       letter-spacing: 0px;
       opacity: 0;
       animation: fadeInUp 0.6s ease-out 0.5s forwards;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .brand-description {
-      font-size: 15px;
+      font-size: 14px;
       color: var(--text-muted);
       max-width: 320px;
       line-height: 1.4;
@@ -257,13 +267,17 @@
       }
     }
 
-    /* Action buttons - Uber style */
+    /* FIXED: Action buttons section with guaranteed space */
     .action-section {
-      padding: 20px 0;
-      padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
-      max-width: 400px;
-      margin: 0 auto;
+      /* CRITICAL: Prevent shrinking and ensure visibility */
+      flex-shrink: 0;
+      flex-grow: 0;
+      padding: 16px 0 0 0;
       width: 100%;
+      /* CRITICAL: Reserve minimum space */
+      min-height: 180px;
+      /* CRITICAL: Ensure it's always at bottom */
+      margin-top: auto;
     }
 
     .action-buttons {
@@ -276,7 +290,7 @@
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
-      padding: 20px 20px;
+      padding: 16px 18px;
       cursor: pointer;
       transition: all 0.2s ease;
       display: flex;
@@ -287,6 +301,8 @@
       text-decoration: none;
       color: inherit;
       box-shadow: var(--shadow-subtle);
+      /* CRITICAL: Fixed height to prevent layout shifts */
+      min-height: 70px;
     }
 
     .action-btn:hover {
@@ -303,19 +319,19 @@
     .action-btn-content {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
       flex: 1;
     }
 
     .action-btn-icon {
-      width: 48px;
-      height: 48px;
+      width: 44px;
+      height: 44px;
       background: var(--accent-primary);
       border-radius: var(--radius-sm);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 20px;
+      font-size: 18px;
       color: var(--text-white);
       flex-shrink: 0;
     }
@@ -326,21 +342,21 @@
     }
 
     .action-btn-title {
-      font-size: 17px;
+      font-size: 16px;
       font-weight: 600;
       color: var(--text-primary);
-      margin-bottom: 4px;
+      margin-bottom: 3px;
       line-height: 1.2;
     }
 
     .action-btn-subtitle {
-      font-size: 14px;
+      font-size: 13px;
       color: var(--text-secondary);
       line-height: 1.3;
     }
 
     .action-btn-arrow {
-      font-size: 18px;
+      font-size: 16px;
       color: var(--text-muted);
       transition: transform 0.2s ease;
       flex-shrink: 0;
@@ -405,95 +421,196 @@
     .driver-redirect {
       background: var(--accent-primary);
       color: var(--text-white);
-      padding: 20px;
+      padding: 16px;
       border-radius: var(--radius-md);
       text-align: center;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       box-shadow: var(--shadow-medium);
       animation: fadeInUp 0.4s ease-out;
     }
 
     .driver-redirect h3 {
-      font-size: 17px;
+      font-size: 16px;
       font-weight: 600;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .driver-redirect p {
-      font-size: 14px;
+      font-size: 13px;
       opacity: 0.9;
       line-height: 1.4;
     }
 
-    /* Responsive design */
+    /* CRITICAL: Enhanced responsive design for full screen */
     @media (max-width: 480px) {
-      .main-container {
-        padding: 0 16px;
-      }
-
-      .brand-name {
-        font-size: 36px;
-      }
-
-      .brand-slogan {
-        font-size: 16px;
-      }
-
-      .brand-description {
-        font-size: 14px;
-      }
-
-      .logo {
-        width: 72px;
-        height: 72px;
-        font-size: 28px;
-      }
-
-      .action-btn {
-        padding: 18px 16px;
-      }
-
-      .action-btn-title {
-        font-size: 16px;
-      }
-
-      .action-btn-subtitle {
-        font-size: 13px;
-      }
-
-      .action-btn-icon {
-        width: 44px;
-        height: 44px;
-        font-size: 18px;
-      }
-    }
-
-    @media (max-height: 700px) {
-      .header-section {
-        padding: 20px 0;
-      }
-
-      .logo {
-        width: 64px;
-        height: 64px;
-        font-size: 24px;
-      }
-
-      .logo-container {
-        margin-bottom: 32px;
+      html, body {
+        padding-left: max(16px, env(safe-area-inset-left, 16px));
+        padding-right: max(16px, env(safe-area-inset-right, 16px));
       }
 
       .brand-name {
         font-size: 32px;
-        margin-bottom: 8px;
       }
 
       .brand-slogan {
-        font-size: 16px;
+        font-size: 15px;
+      }
+
+      .brand-description {
+        font-size: 13px;
+      }
+
+      .logo {
+        width: 68px;
+        height: 68px;
+        font-size: 26px;
+      }
+
+      .action-btn {
+        padding: 15px 16px;
+        min-height: 68px;
+      }
+
+      .action-btn-title {
+        font-size: 15px;
+      }
+
+      .action-btn-subtitle {
+        font-size: 12px;
+      }
+
+      .action-btn-icon {
+        width: 42px;
+        height: 42px;
+        font-size: 17px;
+      }
+    }
+
+    /* CRITICAL: Better height-based responsive design */
+    @media (max-height: 700px) {
+      .header-section {
+        padding: 15px 0;
+        max-height: calc(100vh - 160px);
+        max-height: calc(100dvh - 160px);
+        min-height: 150px;
+      }
+
+      .logo {
+        width: 60px;
+        height: 60px;
+        font-size: 22px;
+      }
+
+      .logo-container {
+        margin-bottom: 24px;
+      }
+
+      .brand-name {
+        font-size: 28px;
+        margin-bottom: 6px;
+      }
+
+      .brand-slogan {
+        font-size: 14px;
       }
 
       .brand-text {
-        margin-bottom: 24px;
+        margin-bottom: 16px;
+      }
+
+      .action-section {
+        min-height: 150px;
+      }
+
+      .action-btn {
+        min-height: 60px;
+        padding: 12px 16px;
+      }
+    }
+
+    /* CRITICAL: Very short screens (landscape phones) */
+    @media (max-height: 500px) {
+      .header-section {
+        padding: 10px 0;
+        max-height: calc(100vh - 140px);
+        max-height: calc(100dvh - 140px);
+        min-height: 120px;
+      }
+
+      .logo {
+        width: 50px;
+        height: 50px;
+        font-size: 18px;
+      }
+
+      .logo-container {
+        margin-bottom: 16px;
+      }
+
+      .brand-name {
+        font-size: 24px;
+        margin-bottom: 4px;
+      }
+
+      .brand-slogan {
+        font-size: 13px;
+      }
+
+      .brand-description {
+        font-size: 12px;
+      }
+
+      .brand-text {
+        margin-bottom: 12px;
+      }
+
+      .action-section {
+        min-height: 130px;
+      }
+
+      .action-btn {
+        min-height: 55px;
+        padding: 10px 14px;
+      }
+
+      .action-btn-title {
+        font-size: 14px;
+      }
+
+      .action-btn-subtitle {
+        font-size: 11px;
+      }
+
+      .action-btn-icon {
+        width: 38px;
+        height: 38px;
+        font-size: 16px;
+      }
+    }
+
+    /* CRITICAL: Ultra short screens */
+    @media (max-height: 400px) {
+      .main-container {
+        justify-content: space-between;
+      }
+
+      .header-section {
+        flex-grow: 0;
+        padding: 5px 0;
+        min-height: auto;
+        max-height: none;
+      }
+
+      .logo-container {
+        margin-bottom: 8px;
+      }
+
+      .brand-text {
+        margin-bottom: 8px;
+      }
+
+      .action-section {
+        min-height: 120px;
       }
     }
 
@@ -544,7 +661,7 @@
 
     /* Better button touch targets */
     .action-btn {
-      min-height: 80px;
+      min-height: 70px;
     }
 
     .lang-btn {
@@ -567,6 +684,27 @@
 
     .action-btn.primary:hover {
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    /* CRITICAL: Force GPU acceleration for smooth animations */
+    .main-container,
+    .action-btn,
+    .logo {
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      will-change: transform;
+    }
+
+    /* CRITICAL: Prevent overflow issues in full screen */
+    body {
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* CRITICAL: Ensure buttons are always visible */
+    .action-section {
+      position: relative;
+      z-index: 10;
     }
   </style>
 </head>
@@ -677,9 +815,43 @@
       }
     };
 
+    // ENHANCED: Dynamic viewport height management for full screen
+    function updateViewportHeight() {
+      console.log('📱 Updating viewport height for full screen optimization');
+      
+      let vh = window.innerHeight;
+      let vw = window.innerWidth;
+      
+      // Use Telegram WebApp viewport if available
+      if (window.Telegram && Telegram.WebApp) {
+        vh = Telegram.WebApp.viewportHeight || vh;
+        const stableHeight = Telegram.WebApp.viewportStableHeight || vh;
+        
+        console.log(`📐 Telegram viewport - Height: ${vh}px, Stable: ${stableHeight}px`);
+        
+        // Set CSS custom properties for Telegram
+        document.documentElement.style.setProperty('--tg-viewport-height', `${vh}px`);
+        document.documentElement.style.setProperty('--tg-viewport-stable-height', `${stableHeight}px`);
+      }
+      
+      // Set universal viewport custom properties
+      document.documentElement.style.setProperty('--actual-vh', `${vh}px`);
+      document.documentElement.style.setProperty('--actual-vw', `${vw}px`);
+      
+      // Ensure body height matches viewport
+      document.body.style.height = `${vh}px`;
+      document.documentElement.style.height = `${vh}px`;
+      
+      console.log(`📐 Updated viewport - Width: ${vw}px, Height: ${vh}px`);
+    }
+
     // Initialize app
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('🚀 TezJet Uber-Style Welcome Page loaded');
+      console.log('🚀 TezJet Uber-Style Welcome Page loaded - FULL SCREEN OPTIMIZED');
+      
+      // CRITICAL: Update viewport first for full screen
+      updateViewportHeight();
+      
       initializeTelegram();
       setupEventListeners();
       
@@ -692,10 +864,10 @@
       }, 800);
     });
 
-    // Initialize Telegram WebApp
+    // ENHANCED: Initialize Telegram WebApp with full screen handling
     function initializeTelegram() {
       if (window.Telegram && Telegram.WebApp) {
-        console.log('📱 Initializing Telegram WebApp');
+        console.log('📱 Initializing Telegram WebApp for full screen');
         
         Telegram.WebApp.ready();
         Telegram.WebApp.expand();
@@ -705,7 +877,13 @@
         const theme = Telegram.WebApp.colorScheme;
         console.log('🎨 Telegram theme:', theme);
 
-        console.log('✅ Telegram WebApp initialized');
+        // CRITICAL: Handle viewport changes for full screen
+        Telegram.WebApp.onEvent('viewportChanged', () => {
+          console.log('📱 Telegram viewport changed - updating...');
+          updateViewportHeight();
+        });
+
+        console.log('✅ Telegram WebApp initialized with full screen support');
       } else {
         console.log('⚠️ Telegram WebApp not available - running in browser mode');
       }
@@ -713,6 +891,27 @@
 
     // Setup event listeners
     function setupEventListeners() {
+      // ENHANCED: Handle window resize for full screen
+      window.addEventListener('resize', () => {
+        console.log('📐 Window resized - updating layout');
+        updateViewportHeight();
+      });
+
+      window.addEventListener('orientationchange', () => {
+        console.log('📱 Orientation changed - updating layout');
+        setTimeout(() => {
+          updateViewportHeight();
+        }, 100);
+      });
+
+      // ENHANCED: Handle fullscreen changes
+      document.addEventListener('fullscreenchange', () => {
+        console.log('🖥️ Fullscreen state changed');
+        setTimeout(() => {
+          updateViewportHeight();
+        }, 100);
+      });
+
       // Prevent double-clicks during checking
       document.getElementById('deliveryBtn').addEventListener('click', function(e) {
         if (isChecking || isRedirecting) {
@@ -1000,14 +1199,51 @@
       }, 2000);
     }
 
+    // ENHANCED: Debug layout info
+    function debugLayout() {
+      console.log('=== LAYOUT DEBUG INFO ===');
+      console.log('Window size:', window.innerWidth + 'x' + window.innerHeight);
+      console.log('Screen size:', screen.width + 'x' + screen.height);
+      console.log('Viewport units:', document.documentElement.style.getPropertyValue('--actual-vh'));
+      
+      const container = document.querySelector('.main-container');
+      const header = document.querySelector('.header-section');
+      const actions = document.querySelector('.action-section');
+      
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        console.log('Container:', rect.width + 'x' + rect.height);
+      }
+      
+      if (header) {
+        const rect = header.getBoundingClientRect();
+        console.log('Header:', rect.width + 'x' + rect.height);
+      }
+      
+      if (actions) {
+        const rect = actions.getBoundingClientRect();
+        console.log('Actions:', rect.width + 'x' + rect.height, 'top:', rect.top);
+      }
+      
+      console.log('Actions visible:', actions && actions.getBoundingClientRect().bottom <= window.innerHeight);
+      console.log('========================');
+    }
+
     // Make functions globally available
     window.setLang = setLang;
     window.debugCheckWho = debugCheckWho;
     window.forceRedirectToDeliveryList = forceRedirectToDeliveryList;
+    window.debugLayout = debugLayout;
+    window.updateViewportHeight = updateViewportHeight;
 
     // Performance monitoring
     window.addEventListener('load', function() {
-      console.log('⚡ Uber-Style TezJet page fully loaded');
+      console.log('⚡ Uber-Style TezJet page fully loaded - FULL SCREEN READY');
+      // Final layout update after everything is loaded
+      setTimeout(() => {
+        updateViewportHeight();
+        debugLayout();
+      }, 100);
     });
 
     // Handle page visibility changes
@@ -1016,6 +1252,8 @@
         console.log('👁️ Page hidden');
       } else {
         console.log('👁️ Page visible');
+        // Update layout when page becomes visible
+        setTimeout(updateViewportHeight, 100);
       }
     });
 
@@ -1035,6 +1273,12 @@
           break;
         case 'f':
           forceRedirectToDeliveryList();
+          break;
+        case 'l':
+          debugLayout();
+          break;
+        case 'v':
+          updateViewportHeight();
           break;
         case 'Escape':
           if (window.Telegram && Telegram.WebApp) {
@@ -1074,9 +1318,10 @@
       btn.addEventListener('click', addHapticFeedback);
     });
 
-    console.log('🎉 Uber-Style TezJet Welcome Page initialized successfully');
+    console.log('🎉 Uber-Style TezJet Welcome Page initialized successfully - FULL SCREEN OPTIMIZED');
     console.log('🗣️ Default language: Kazakh (ҚАЗ)');
-    console.log('🔧 Debug commands: debugCheckWho(), forceRedirectToDeliveryList()');
+    console.log('🔧 Debug commands: debugCheckWho(), forceRedirectToDeliveryList(), debugLayout(), updateViewportHeight()');
+    console.log('⌨️ Keyboard shortcuts: 1=delivery, 2=driver, d=debug, f=force, l=layout, v=viewport');
   </script>
 </body>
 </html>
