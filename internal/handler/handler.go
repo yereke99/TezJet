@@ -2216,27 +2216,29 @@ func (h *Handler) DefaultHandler(ctx context.Context, b *bot.Bot, update *models
 		InlineKeyboard: [][]models.InlineKeyboardButton{
 			{
 				{
-					Text:   "🚀 Ашу | Открыть TezJet",
+					Text:   "🚀 Ашу | Открыть QazLine",
 					WebApp: &models.WebAppInfo{URL: h.cfg.BaseURL + "/"},
 				},
-				{
-					Text:   "🚀 Driver",
-					WebApp: &models.WebAppInfo{URL: h.cfg.BaseURL + "/driver"},
-				},
-				{
-					Text:   "🚀 Orders",
-					WebApp: &models.WebAppInfo{URL: h.cfg.BaseURL + "/delivery-list"},
-				},
+				/*
+					{
+										Text:   "🚀 Driver",
+										WebApp: &models.WebAppInfo{URL: h.cfg.BaseURL + "/driver"},
+									},
+									{
+										Text:   "🚀 Orders",
+										WebApp: &models.WebAppInfo{URL: h.cfg.BaseURL + "/delivery-list"},
+									},
+				*/
 			},
 		},
 	}
 
 	// Bilingual welcome message
-	message := `🚀 *TezJet - Тез жеткізу қызметі*
+	message := `🚀 *QazLine - Тез жеткізу қызметі*
 
-🇰🇿 Сәлеметсіз бе! TezJet-ке қош келдіңіз - Алматыдағы ең тез жеткізу қызметі.
+🇰🇿 Сәлеметсіз бе! QazLine-ке қош келдіңіз - Қазақстандағы ең тез жеткізу қызметі.
 
-🇷🇺 Добро пожаловать в TezJet - самый быстрый сервис доставки в Алматы.
+🇷🇺 Добро пожаловать в QazLine - самый быстрый сервис доставки в Казахстане.
 
 📦 *Не істей аламыз | Что мы умеем:*
 • Тез жеткізу | Быстрая доставка

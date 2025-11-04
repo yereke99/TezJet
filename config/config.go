@@ -59,8 +59,8 @@ func NewConfig() (*Config, error) {
 		IdleTimeout:  120 * time.Second,
 
 		// Telegram defaults
-		Token:      "7654139572:AAGpRqJa7d_bJNE9bYydJgcwASUbfHjP8Os",
-		BaseURL:    "https://616d7ec610fd.ngrok-free.app",
+		Token:      "8511244047:AAFHI2ikGyCimPwLviZ9ufN4Iprdp5FAfnU",
+		BaseURL:    "https://d09531f05556.ngrok-free.app",
 		AdminToken: "admin-secret-token-change-in-production",
 
 		// Database defaults
