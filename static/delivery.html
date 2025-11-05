@@ -2,40 +2,38 @@
 <html lang="kz">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-visual" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="theme-color" content="#000000" />
-  <title>ZholDa Delivery</title>
+  <title>QazLine - Delivery</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script defer src="https://api-maps.yandex.ru/v3/?apikey=8a3e4da0-9ef2-4176-9203-e7014c1dba6f&lang=ru_RU"></script>
 
   <style>
+    /* Figma Transportation Design System */
     :root {
-      --safe-area-inset-top: env(safe-area-inset-top, 0px);
-      --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
-      --safe-area-inset-left: env(safe-area-inset-left, 0px);
-      --safe-area-inset-right: env(safe-area-inset-right, 0px);
-      --tg-viewport-stable-height: 100vh;
-      --tg-safe-area-inset-top: 0px;
-      --tg-content-safe-area-inset-top: 0px;
+      --primary: #4C6FFF;
+      --primary-dark: #3D5ACC;
+      --secondary: #00D9B9;
+      --success: #00D395;
+      --warning: #FFB800;
+      --danger: #FF5C5C;
+      --dark: #1A1D29;
+      --dark-light: #2A2F3F;
+      --grey: #6B7280;
+      --grey-light: #E5E7EB;
+      --white: #FFFFFF;
+      --bg: #F7F8FA;
       
-      /* Uber-style colors */
-      --uber-black: #000000;
-      --uber-dark: #0A0A0A;
-      --uber-gray: #F6F6F6;
-      --uber-gray-medium: #E2E2E2;
-      --uber-gray-dark: #9CA3AF;
-      --uber-white: #FFFFFF;
-      --uber-green: #00C853;
-      --uber-green-dark: #00A843;
-      --uber-blue: #1E88E5;
-      --uber-red: #FF4444;
-      --uber-shadow: rgba(0, 0, 0, 0.12);
-      --uber-shadow-md: rgba(0, 0, 0, 0.16);
-      --uber-shadow-lg: rgba(0, 0, 0, 0.24);
+      --radius: 16px;
+      --radius-lg: 24px;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.12);
+      
+      --tg-safe-top: env(safe-area-inset-top, 0px);
+      --tg-safe-bottom: env(safe-area-inset-bottom, 0px);
+      --tg-viewport-height: 100vh;
     }
 
     * {
@@ -47,479 +45,462 @@
 
     html, body {
       height: 100%;
-      width: 100%;
       overflow: hidden;
       position: fixed;
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-      background: var(--uber-white);
-      color: var(--uber-black);
+      width: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
     }
 
     body {
-      display: flex;
-      flex-direction: column;
-      height: var(--tg-viewport-stable-height, 100vh);
-      padding-top: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px));
+      height: var(--tg-viewport-height);
+      background: var(--bg);
     }
 
-    /* Map takes full space */
+    /* FULL SCREEN MAP - FIXED: touch-action for proper gestures */
     #map, #pickerMap {
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      z-index: 1;
       touch-action: none;
+      z-index: 1;
     }
 
-    /* Floating Top Bar */
-    .top-bar {
+    /* GEOLOCATION BUTTON - FIXED: Higher position, white with black icon */
+    .geo-btn {
       position: fixed;
-      top: calc(var(--safe-area-inset-top) + var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px) + 16px);
-      left: 16px;
+      bottom: calc(var(--tg-safe-bottom) + 240px);
       right: 16px;
-      z-index: 100;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      pointer-events: none;
-    }
-
-    .gps-status {
-      background: var(--uber-white);
-      padding: 10px 16px;
-      border-radius: 100px;
-      box-shadow: 0 2px 16px var(--uber-shadow);
-      font-size: 13px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      pointer-events: auto;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-
-    .gps-dot {
-      width: 8px;
-      height: 8px;
-      background: var(--uber-green);
-      border-radius: 50%;
-      animation: pulse 2s infinite;
-    }
-    .gps-dot.error { background: var(--uber-red); }
-    .gps-dot.searching { background: #FFA500; }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.6; transform: scale(1.3); }
-    }
-
-    .lang-switch {
-      background: var(--uber-white);
-      border-radius: 100px;
-      box-shadow: 0 2px 16px var(--uber-shadow);
-      display: flex;
-      padding: 4px;
-      pointer-events: auto;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-
-    .lang-btn {
-      padding: 6px 14px;
+      width: 56px;
+      height: 56px;
+      background: var(--white);
       border: none;
-      background: transparent;
-      border-radius: 100px;
-      font-size: 12px;
-      font-weight: 700;
+      border-radius: 50%;
+      box-shadow: var(--shadow-lg);
       cursor: pointer;
+      z-index: 1002;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      color: var(--uber-gray-dark);
-      letter-spacing: 0.5px;
     }
-    .lang-btn.active {
-      background: var(--uber-black);
-      color: var(--uber-white);
+    .geo-btn:active {
+      transform: scale(0.92);
+    }
+    .geo-btn svg {
+      width: 24px;
+      height: 24px;
+      fill: var(--dark);
     }
 
-    /* FIXED: Dynamic Bottom Sheet - changes size based on step */
+    /* ANIMATED BOTTOM SHEET - Figma Style */
     .bottom-sheet {
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
-      background: var(--uber-white);
-      border-radius: 20px 20px 0 0;
-      box-shadow: 0 -4px 24px var(--uber-shadow-lg);
-      z-index: 101;
-      max-height: 40vh;
+      background: var(--white);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      box-shadow: var(--shadow-lg);
+      z-index: 1001;
+      max-height: 88vh;
       display: flex;
       flex-direction: column;
-      padding-bottom: calc(var(--safe-area-inset-bottom) + 12px);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* Dynamic heights for different steps */
-    .bottom-sheet.step-1 { max-height: 40vh; }
-    .bottom-sheet.step-2 { max-height: 65vh; }
-    .bottom-sheet.step-3 { max-height: 55vh; }
+    .sheet-header {
+      padding: 12px 20px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+    }
 
     .sheet-handle {
-      width: 36px;
+      width: 40px;
       height: 4px;
-      background: var(--uber-gray-medium);
-      border-radius: 100px;
-      margin: 10px auto 6px;
-      flex-shrink: 0;
+      background: var(--grey-light);
+      border-radius: 2px;
+      margin-bottom: 16px;
     }
 
+    /* Step Progress */
+    .step-progress {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      max-width: 200px;
+    }
+
+    .step-bar {
+      flex: 1;
+      height: 3px;
+      background: var(--grey-light);
+      border-radius: 2px;
+      position: relative;
+      overflow: hidden;
+    }
+    .step-bar.active::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--primary);
+      animation: fillBar 0.4s ease;
+    }
+
+    @keyframes fillBar {
+      from { transform: translateX(-100%); }
+      to { transform: translateX(0); }
+    }
+
+    /* Sheet Content */
     .sheet-content {
       flex: 1;
-      padding: 0 16px 16px;
       overflow-y: auto;
+      overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-    }
-
-    /* Progress Dots */
-    .step-indicator {
-      display: flex;
-      justify-content: center;
-      gap: 6px;
-      margin-bottom: 16px;
-      flex-shrink: 0;
-    }
-
-    .step-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--uber-gray-medium);
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .step-dot.active {
-      background: var(--uber-black);
-      width: 20px;
-      border-radius: 3px;
-    }
-
-    /* Address Cards - Compact */
-    .address-section {
-      flex-shrink: 0;
-      margin-bottom: 14px;
-    }
-
-    .address-card {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 16px;
-      background: var(--uber-gray);
-      border-radius: 14px;
-      margin-bottom: 10px;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      border: 2px solid transparent;
-      position: relative;
-    }
-    .address-card:active {
-      transform: scale(0.98);
-      background: var(--uber-gray-medium);
-    }
-    .address-card.filled {
-      background: rgba(0, 200, 83, 0.08);
-      border-color: var(--uber-green);
-    }
-
-    .marker-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: var(--uber-black);
-      color: var(--uber-white);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 16px;
-      flex-shrink: 0;
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
-    }
-    .marker-icon.dropoff {
-      background: var(--uber-green);
-    }
-
-    .address-text {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .address-label {
-      font-size: 11px;
-      color: var(--uber-gray-dark);
-      margin-bottom: 3px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .address-value {
-      font-size: 14px;
-      font-weight: 600;
-      line-height: 1.3;
-      color: var(--uber-black);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    /* Distance Info */
-    .distance-info {
-      padding: 12px 16px;
-      background: linear-gradient(135deg, var(--uber-green), var(--uber-green-dark));
-      color: var(--uber-white);
-      border-radius: 14px;
-      margin: 10px 0;
-      text-align: center;
-      font-size: 14px;
-      font-weight: 700;
-      display: none;
-      box-shadow: 0 3px 12px rgba(0, 200, 83, 0.3);
-      letter-spacing: 0.3px;
-    }
-    .distance-info.active {
-      display: block;
-      animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
+      padding: 0 20px 32px;
     }
 
     /* Form Steps */
     .form-step {
       display: none;
-      flex: 1;
-      flex-direction: column;
-      min-height: 0;
+      animation: slideIn 0.4s ease;
     }
     .form-step.active {
+      display: block;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* Address Cards - Figma Design */
+    .address-card {
       display: flex;
-    }
-
-    .form-title {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 16px;
-      color: var(--uber-black);
-      flex-shrink: 0;
-      letter-spacing: -0.3px;
-    }
-
-    .form-content {
-      flex: 1;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      min-height: 0;
-    }
-
-    .form-grid {
-      display: grid;
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-    .form-grid.two-col {
-      grid-template-columns: 1fr 1fr;
-    }
-
-    .form-field {
-      background: var(--uber-gray);
-      border-radius: 12px;
-      padding: 12px 14px;
+      align-items: center;
+      gap: 16px;
+      padding: 20px 16px;
+      background: var(--bg);
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
       border: 2px solid transparent;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
     }
-    .form-field:focus-within {
-      border-color: var(--uber-black);
-      background: var(--uber-white);
-      box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+    .address-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: transparent;
+      transition: background 0.3s ease;
+    }
+    .address-card:active {
+      transform: scale(0.98);
+    }
+    .address-card.filled {
+      background: #F0F9FF;
+      border-color: var(--primary);
+    }
+    .address-card.filled::before {
+      background: var(--primary);
+    }
+
+    .location-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .location-icon.start {
+      background: linear-gradient(135deg, #1A1D29, #2A2F3F);
+      color: white;
+    }
+    .location-icon.end {
+      background: linear-gradient(135deg, #FF5C5C, #FF7A7A);
+      color: white;
+    }
+
+    .location-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .location-label {
+      font-size: 12px;
+      color: var(--grey);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .location-value {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--dark);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Distance Badge */
+    .distance-badge {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--success), #00E5A0);
+      color: white;
+      border-radius: var(--radius);
+      margin-bottom: 20px;
+      font-weight: 600;
+      box-shadow: 0 4px 16px rgba(0, 211, 149, 0.3);
+    }
+    .distance-badge.active {
+      display: flex;
+      animation: slideDown 0.4s ease;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Form Title */
+    .form-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 24px;
+    }
+
+    /* Form Fields - Figma Style */
+    .form-field {
+      margin-bottom: 16px;
     }
 
     .field-label {
-      font-size: 11px;
-      color: var(--uber-gray-dark);
-      margin-bottom: 6px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--grey);
+      margin-bottom: 8px;
+      display: block;
     }
 
     .field-input {
       width: 100%;
-      border: none;
-      background: transparent;
+      padding: 16px;
+      background: var(--bg);
+      border: 2px solid transparent;
+      border-radius: var(--radius);
       font-size: 15px;
-      font-weight: 600;
+      font-weight: 500;
+      color: var(--dark);
+      transition: all 0.3s ease;
+      font-family: inherit;
+    }
+    .field-input:focus {
       outline: none;
-      color: var(--uber-black);
+      background: white;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(76, 111, 255, 0.1);
     }
     .field-input::placeholder {
-      color: var(--uber-gray-dark);
-      font-weight: 500;
+      color: var(--grey);
+    }
+    .field-input.error {
+      border-color: var(--danger);
     }
 
     textarea.field-input {
-      min-height: 70px;
+      min-height: 100px;
       resize: none;
-      font-family: inherit;
-      line-height: 1.5;
     }
 
-    /* Truck Options */
-    .truck-section {
-      margin-bottom: 14px;
-    }
-
-    .truck-label {
-      font-size: 11px;
-      color: var(--uber-gray-dark);
-      margin-bottom: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-    }
-
+    /* Truck Grid - Updated with Tow Truck */
     .truck-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
+      gap: 12px;
+      margin-bottom: 20px;
     }
 
-    .truck-option {
-      padding: 12px 6px;
-      background: var(--uber-gray);
-      border-radius: 12px;
+    .truck-card {
+      padding: 16px 12px;
+      background: var(--bg);
       border: 2px solid transparent;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: var(--radius);
       text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
     }
-    .truck-option:active {
+    .truck-card:active {
       transform: scale(0.95);
     }
-    .truck-option.selected {
-      border-color: var(--uber-black);
-      background: var(--uber-white);
-      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
+    .truck-card.selected {
+      background: #F0F9FF;
+      border-color: var(--primary);
+      box-shadow: 0 4px 16px rgba(76, 111, 255, 0.2);
+    }
+    .truck-card.selected::after {
+      content: '✓';
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 20px;
+      height: 20px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
     }
 
     .truck-icon {
       font-size: 28px;
-      margin-bottom: 6px;
-      display: block;
+      margin-bottom: 8px;
     }
 
     .truck-name {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--uber-black);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--dark);
       margin-bottom: 2px;
-      letter-spacing: 0.2px;
     }
 
     .truck-desc {
-      font-size: 10px;
-      color: var(--uber-gray-dark);
-      font-weight: 600;
+      font-size: 11px;
+      color: var(--grey);
     }
 
-    /* Buttons */
-    .button-container {
-      padding: 12px 0 0;
-      flex-shrink: 0;
-      margin-top: auto;
-    }
-
-    .button-grid {
+    /* Date/Time Grid */
+    .datetime-grid {
       display: grid;
-      gap: 10px;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
     }
-    .button-grid.single {
+
+    /* Buttons - Figma Style */
+    .btn-group {
+      display: grid;
       grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 24px;
+      position: sticky;
+      bottom: 0;
+      background: white;
+      padding-top: 16px;
     }
-    .button-grid.double {
+    .btn-group.double {
       grid-template-columns: 1fr 1fr;
     }
 
     .btn {
-      padding: 14px;
+      padding: 18px 24px;
       border: none;
-      border-radius: 14px;
-      font-size: 15px;
-      font-weight: 700;
+      border-radius: var(--radius);
+      font-size: 16px;
+      font-weight: 600;
       cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
+      transition: all 0.3s ease;
       position: relative;
       overflow: hidden;
-      min-height: 48px;
-      letter-spacing: 0.3px;
+    }
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+    .btn:active::before {
+      width: 300px;
+      height: 300px;
     }
 
     .btn-primary {
-      background: var(--uber-black);
-      color: var(--uber-white);
-      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      box-shadow: 0 4px 16px rgba(76, 111, 255, 0.3);
     }
     .btn-primary:active {
-      transform: scale(0.98);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      transform: scale(0.96);
     }
     .btn-primary:disabled {
-      background: var(--uber-gray-medium);
-      color: var(--uber-gray-dark);
-      cursor: not-allowed;
+      background: var(--grey-light);
+      color: var(--grey);
       box-shadow: none;
-      transform: none;
+      cursor: not-allowed;
     }
 
     .btn-secondary {
-      background: var(--uber-gray);
-      color: var(--uber-black);
+      background: var(--bg);
+      color: var(--dark);
+      border: 2px solid var(--grey-light);
     }
     .btn-secondary:active {
-      background: var(--uber-gray-medium);
-      transform: scale(0.98);
+      background: var(--grey-light);
+      transform: scale(0.96);
     }
 
     /* Success Screen */
     .success-screen {
       position: fixed;
-      inset: 0;
-      background: linear-gradient(135deg, var(--uber-green), var(--uber-green-dark));
-      color: var(--uber-white);
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, var(--success), #00E5A0);
       z-index: 3000;
       display: none;
       align-items: center;
       justify-content: center;
       flex-direction: column;
+      padding: 40px;
       text-align: center;
-      padding: 40px 24px;
     }
     .success-screen.active {
       display: flex;
-      animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: fadeIn 0.5s ease;
     }
 
     @keyframes fadeIn {
@@ -528,172 +509,173 @@
     }
 
     .success-icon {
-      font-size: 80px;
-      margin-bottom: 28px;
-      animation: successBounce 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-      filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.2));
+      width: 120px;
+      height: 120px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 64px;
+      margin-bottom: 32px;
+      animation: scaleIn 0.6s ease;
     }
 
-    @keyframes successBounce {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.15); }
+    @keyframes scaleIn {
+      from {
+        transform: scale(0);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
     }
 
     .success-title {
       font-size: 28px;
-      font-weight: 800;
-      margin-bottom: 14px;
-      letter-spacing: -0.5px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 12px;
     }
 
     .success-message {
       font-size: 16px;
-      opacity: 0.95;
-      margin-bottom: 36px;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 32px;
       line-height: 1.6;
-      font-weight: 500;
     }
 
     .success-btn {
-      background: var(--uber-white);
-      color: var(--uber-green);
-      padding: 14px 36px;
-      border-radius: 100px;
-      font-size: 15px;
-      font-weight: 700;
+      padding: 16px 32px;
+      background: white;
+      color: var(--success);
       border: none;
+      border-radius: var(--radius);
+      font-size: 16px;
+      font-weight: 600;
       cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-      letter-spacing: 0.3px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     }
     .success-btn:active {
-      transform: scale(0.95);
+      transform: scale(0.96);
     }
 
-    /* Picker Modal */
+    /* PICKER MODAL */
     .picker-modal {
       position: fixed;
-      inset: 0;
-      background: var(--uber-white);
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: white;
       z-index: 2000;
       display: none;
     }
     .picker-modal.active {
       display: block;
-      animation: slideInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    @keyframes slideInUp {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
-    }
-
+    /* FIXED: Search Header with Safe Area */
     .picker-header {
       position: fixed;
-      top: calc(var(--safe-area-inset-top) + var(--tg-safe-area-inset-top, 0px) + 14px);
-      left: 14px;
-      right: 14px;
-      z-index: 2005;
+      top: calc(var(--tg-safe-top) + 12px);
+      left: 16px;
+      right: 16px;
+      z-index: 2010;
       display: flex;
-      gap: 10px;
+      gap: 12px;
     }
 
     .back-btn {
-      width: 44px;
-      height: 44px;
-      background: var(--uber-white);
+      width: 48px;
+      height: 48px;
+      background: white;
       border: none;
-      border-radius: 50%;
-      box-shadow: 0 2px 14px var(--uber-shadow-md);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       flex-shrink: 0;
-      font-size: 22px;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
     }
     .back-btn:active {
-      transform: scale(0.9);
+      transform: scale(0.94);
     }
 
     .search-box {
       flex: 1;
-      background: var(--uber-white);
+      background: white;
       border: none;
-      border-radius: 100px;
-      padding: 12px 20px;
-      box-shadow: 0 2px 14px var(--uber-shadow-md);
+      border-radius: 12px;
+      padding: 14px 16px;
+      box-shadow: var(--shadow);
       font-size: 15px;
-      outline: none;
-      font-weight: 600;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-    .search-box::placeholder {
-      color: var(--uber-gray-dark);
       font-weight: 500;
     }
+    .search-box:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(76, 111, 255, 0.1), var(--shadow);
+    }
 
+    /* Instructions */
     .picker-instructions {
       position: fixed;
-      top: calc(var(--safe-area-inset-top) + var(--tg-safe-area-inset-top, 0px) + 72px);
-      left: 14px;
-      right: 14px;
-      background: var(--uber-black);
-      color: var(--uber-white);
-      padding: 12px 18px;
-      border-radius: 14px;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(26, 29, 41, 0.9);
+      backdrop-filter: blur(10px);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 24px;
       font-size: 13px;
-      font-weight: 600;
-      z-index: 2005;
-      text-align: center;
-      box-shadow: 0 3px 14px var(--uber-shadow-lg);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      font-weight: 500;
+      z-index: 2001;
+      pointer-events: none;
+      white-space: nowrap;
+      opacity: 0.95;
+    }
+    .picker-instructions.hidden {
+      display: none;
     }
 
     .confirm-btn {
       position: fixed;
-      bottom: calc(var(--safe-area-inset-bottom) + 20px);
+      bottom: calc(var(--tg-safe-bottom) + 20px);
       left: 16px;
       right: 16px;
-      z-index: 2010;
-      min-height: 50px;
+      z-index: 2020;
     }
 
+    /* FIXED: Suggestions - moved lower, z-index below confirm button */
     .suggestions {
       position: fixed;
-      top: calc(var(--safe-area-inset-top) + var(--tg-safe-area-inset-top, 0px) + 140px);
-      left: 14px;
-      right: 14px;
-      background: var(--uber-white);
-      border-radius: 14px;
-      box-shadow: 0 4px 20px var(--uber-shadow-md);
-      max-height: 40vh;
+      top: calc(var(--tg-safe-top) + 84px);
+      left: 16px;
+      right: 16px;
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      max-height: 45vh;
       overflow-y: auto;
-      z-index: 2003;
+      z-index: 2005;
       display: none;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
     }
     .suggestions.active {
       display: block;
+      animation: slideDown 0.3s ease;
     }
 
     .suggestion-item {
-      padding: 14px 18px;
-      border-bottom: 1px solid var(--uber-gray);
+      padding: 16px;
+      border-bottom: 1px solid var(--grey-light);
       cursor: pointer;
-      font-size: 14px;
-      transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      font-weight: 500;
+      transition: background 0.2s;
     }
     .suggestion-item:active {
-      background: var(--uber-gray);
+      background: var(--bg);
     }
     .suggestion-item:last-child {
       border-bottom: none;
@@ -701,273 +683,267 @@
 
     /* Map Markers */
     .user-marker {
-      width: 14px !important;
-      height: 14px !important;
-      background: var(--uber-blue) !important;
-      border: 4px solid var(--uber-white) !important;
-      border-radius: 50% !important;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+      width: 16px;
+      height: 16px;
+      background: var(--primary);
+      border: 3px solid white;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(76, 111, 255, 0.5);
+      animation: pulse 2s infinite;
     }
 
+    @keyframes pulse {
+      0%, 100% {
+        box-shadow: 0 2px 8px rgba(76, 111, 255, 0.5);
+      }
+      50% {
+        box-shadow: 0 2px 16px rgba(76, 111, 255, 0.8);
+      }
+    }
+
+    /* FIXED: Custom markers with proper colors - A is black, B is red */
     .custom-marker {
-      width: 36px !important;
-      height: 36px !important;
-      border-radius: 50% !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      font-weight: 800 !important;
-      color: var(--uber-white) !important;
-      font-size: 16px !important;
-      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3) !important;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+      font-size: 18px;
+      border: 3px solid white;
+      box-shadow: var(--shadow);
     }
     .custom-marker.pickup {
-      background: var(--uber-black) !important;
+      background: linear-gradient(135deg, #1A1D29, #2A2F3F);
     }
     .custom-marker.dropoff {
-      background: var(--uber-green) !important;
+      background: linear-gradient(135deg, #FF5C5C, #FF7A7A);
     }
 
-    .picker-placed-pin {
-      width: 24px !important;
-      height: 24px !important;
-      background: var(--uber-black) !important;
-      border: 3px solid var(--uber-white) !important;
-      border-radius: 50% !important;
-      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4) !important;
-    }
-
-    /* Responsive adjustments */
-    @media (max-height: 700px) {
-      .bottom-sheet.step-1 { max-height: 38vh; }
-      .bottom-sheet.step-2 { max-height: 62vh; }
-      .bottom-sheet.step-3 { max-height: 52vh; }
-      .truck-grid { grid-template-columns: repeat(3, 1fr); }
-      .form-title { font-size: 17px; margin-bottom: 14px; }
-    }
-
-    @media (max-height: 600px) {
-      .form-grid.two-col { grid-template-columns: 1fr; }
-      .bottom-sheet.step-1 { max-height: 36vh; }
-      .bottom-sheet.step-2 { max-height: 60vh; }
-      .bottom-sheet.step-3 { max-height: 50vh; }
-      .truck-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-
-    @media (orientation: landscape) and (max-height: 500px) {
-      .bottom-sheet.step-1 { max-height: 85vh; }
-      .bottom-sheet.step-2 { max-height: 90vh; }
-      .bottom-sheet.step-3 { max-height: 88vh; }
-      .truck-grid { grid-template-columns: repeat(4, 1fr); }
-    }
-
-    /* Loading spinner */
-    .loading {
-      display: inline-block;
-      width: 18px;
-      height: 18px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-top-color: var(--uber-white);
+    .placed-pin {
+      width: 24px;
+      height: 24px;
+      background: var(--primary);
+      border: 3px solid white;
       border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+      box-shadow: var(--shadow-lg);
+      animation: pinDrop 0.5s ease;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    @keyframes pinDrop {
+      0% {
+        transform: translateY(-30px) scale(0);
+        opacity: 0;
+      }
+      60% {
+        transform: translateY(0) scale(1.2);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
     }
 
-    /* Smooth scrollbars */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+    /* Error Message */
+    .error-message {
+      font-size: 12px;
+      color: var(--danger);
+      margin-top: 4px;
+      display: none;
     }
-    ::-webkit-scrollbar-track {
-      background: transparent;
+    .error-message.show {
+      display: block;
     }
-    ::-webkit-scrollbar-thumb {
-      background: var(--uber-gray-medium);
-      border-radius: 3px;
+
+    /* Responsive */
+    @media (max-height: 700px) {
+      .bottom-sheet {
+        max-height: 85vh;
+      }
+      .truck-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+      .truck-card {
+        padding: 12px 8px;
+      }
     }
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--uber-gray-dark);
+
+    @media (max-width: 360px) {
+      .truck-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
   </style>
 </head>
 <body>
+  <!-- MAP -->
   <div id="map"></div>
 
-  <!-- Top Controls -->
-  <div class="top-bar">
-    <div class="gps-status">
-      <div class="gps-dot searching" id="gpsDot"></div>
-      <span id="gpsText">GPS іздеу...</span>
-    </div>
-    <div class="lang-switch">
-      <button class="lang-btn active" data-lang="kz">KZ</button>
-      <button class="lang-btn" data-lang="ru">RU</button>
-    </div>
-  </div>
+  <!-- GEOLOCATION BUTTON -->
+  <button class="geo-btn" onclick="centerOnUserLocation()" id="geoBtn">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+    </svg>
+  </button>
 
-  <!-- Success Screen -->
+  <!-- SUCCESS SCREEN -->
   <div class="success-screen" id="successScreen">
-    <div class="success-icon">✓</div>
-    <div class="success-title">Тапсырыс жіберілді!</div>
-    <div class="success-message">
-      Қол жетімді жүргізушілерді іздеп жатырмыз.<br />Бұл бірнеше секундқа созылады
+    <div class="success-icon">🎉</div>
+    <div class="success-title" data-i18n="successTitle">Тапсырыс жіберілді!</div>
+    <div class="success-message" data-i18n="successMsg">
+      Қол жетімді жүргізушілерді іздеп жатырмыз...<br/>Бұл бірнеше секундқа созылады
     </div>
-    <button class="success-btn" onclick="goToDriverList()">Жүргізушілерді көру</button>
+    <button class="success-btn" onclick="goToDriverList()" data-i18n="viewDrivers">Жүргізушілерді көру</button>
   </div>
 
-  <!-- Bottom Sheet -->
-  <div class="bottom-sheet step-1" id="bottomSheet">
-    <div class="sheet-handle"></div>
-    <div class="step-indicator">
-      <div class="step-dot active" id="step1"></div>
-      <div class="step-dot" id="step2"></div>
-      <div class="step-dot" id="step3"></div>
+  <!-- BOTTOM SHEET -->
+  <div class="bottom-sheet">
+    <div class="sheet-header">
+      <div class="sheet-handle"></div>
+      <div class="step-progress">
+        <div class="step-bar active" id="stepBar1"></div>
+        <div class="step-bar" id="stepBar2"></div>
+        <div class="step-bar" id="stepBar3"></div>
+      </div>
     </div>
 
     <div class="sheet-content">
-      <!-- Step 1: Address Selection -->
-      <div class="form-step active" id="stepAddresses">
-        <div class="address-section">
-          <div class="address-card" onclick="openPicker('pickup')">
-            <div class="marker-icon">A</div>
-            <div class="address-text">
-              <div class="address-label" data-i18n="from">ҚАЙДАН</div>
-              <div class="address-value" id="pickupAddr" data-i18n="locating">Орынды анықтау...</div>
-            </div>
-          </div>
-
-          <div class="address-card" onclick="openPicker('dropoff')">
-            <div class="marker-icon dropoff">B</div>
-            <div class="address-text">
-              <div class="address-label" data-i18n="to">ҚАЙДА</div>
-              <div class="address-value" id="dropoffAddr" data-i18n="selectDest">Баратын жерді таңдаңыз</div>
-            </div>
-          </div>
-
-          <div class="distance-info" id="distanceInfo"></div>
-        </div>
-
-        <div class="button-container">
-          <div class="button-grid single">
-            <button class="btn btn-primary" id="nextStep1" onclick="goToStep(2)" disabled>Келесі</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 2: Order Details -->
-      <div class="form-step" id="stepDetails">
-        <div class="form-title">Жеткізу мәліметтері</div>
-
-        <div class="form-content">
-          <div class="form-grid">
-            <div class="form-field">
-              <div class="field-label">💰 БАҒА (ТЕҢГЕ)</div>
-              <input type="number" class="field-input" id="price" placeholder="5000" min="2000" oninput="validateCurrentStep()"/>
-            </div>
-          </div>
-
-          <div class="truck-section">
-            <div class="truck-label">🚚 КӨЛІК ТҮРІ</div>
-            <div class="truck-grid">
-              <div class="truck-option" data-truck-type="intercity">
-                <div class="truck-icon">🚕</div>
-                <div class="truck-name">Такси</div>
-                <div class="truck-desc">Қала аралық</div>
-              </div>
-              <div class="truck-option" data-truck-type="small">
-                <div class="truck-icon">🚐</div>
-                <div class="truck-name">Кіші</div>
-                <div class="truck-desc">1.5т</div>
-              </div>
-              <div class="truck-option" data-truck-type="medium">
-                <div class="truck-icon">🚚</div>
-                <div class="truck-name">Орташа</div>
-                <div class="truck-desc">5т</div>
-              </div>
-              <div class="truck-option" data-truck-type="large">
-                <div class="truck-icon">🚛</div>
-                <div class="truck-name">Үлкен</div>
-                <div class="truck-desc">20т</div>
-              </div>
-              <div class="truck-option" data-truck-type="tow">
-                <div class="truck-icon">🚙💨</div>
-                <div class="truck-name">Эвакуатор</div>
-                <div class="truck-desc">Авто</div>
-              </div>
-              <div class="truck-option" data-truck-type="any">
-                <div class="truck-icon">✅</div>
-                <div class="truck-name">Кез келген</div>
-                <div class="truck-desc"></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-grid two-col">
-            <div class="form-field">
-              <div class="field-label">📅 КҮНІ</div>
-              <input type="date" class="field-input" id="date" oninput="validateCurrentStep()"/>
-            </div>
-            <div class="form-field">
-              <div class="field-label">⏰ УАҚЫТЫ</div>
-              <input type="time" class="field-input" id="time" oninput="validateCurrentStep()"/>
-            </div>
+      <!-- STEP 1: ADDRESSES -->
+      <div class="form-step active" id="step1">
+        <div class="address-card" onclick="openPicker('pickup')">
+          <div class="location-icon start">A</div>
+          <div class="location-text">
+            <div class="location-label" data-i18n="from">ҚАЙДАН</div>
+            <div class="location-value" id="pickupAddr" data-i18n="locating">Орынды анықтау...</div>
           </div>
         </div>
 
-        <div class="button-container">
-          <div class="button-grid double">
-            <button class="btn btn-secondary" onclick="goToStep(1)">Артқа</button>
-            <button class="btn btn-primary" id="nextStep2" onclick="goToStep(3)" disabled>Келесі</button>
+        <div class="address-card" onclick="openPicker('dropoff')">
+          <div class="location-icon end">B</div>
+          <div class="location-text">
+            <div class="location-label" data-i18n="to">ҚАЙДА</div>
+            <div class="location-value" id="dropoffAddr" data-i18n="selectDest">Баратын жерді таңдаңыз</div>
           </div>
+        </div>
+
+        <div class="distance-badge" id="distanceBadge">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+            <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
+          </svg>
+          <span id="distanceText"></span>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-primary" id="nextBtn1" onclick="goToStep(2)" disabled data-i18n="next">Келесі</button>
         </div>
       </div>
 
-      <!-- Step 3: Contact Info -->
-      <div class="form-step" id="stepContact">
-        <div class="form-title">Байланыс ақпараты</div>
+      <!-- STEP 2: DETAILS -->
+      <div class="form-step" id="step2">
+        <div class="form-title" data-i18n="deliveryDetails">Жеткізу мәліметтері</div>
 
-        <div class="form-content">
-          <div class="form-grid">
-            <div class="form-field">
-              <div class="field-label">📱 ТЕЛЕФОН</div>
-              <input type="tel" class="field-input" id="phone" placeholder="+7 (___) ___-__-__" oninput="formatPhone(this); validateCurrentStep()"/>
-            </div>
+        <div class="form-field">
+          <label class="field-label" data-i18n="priceLabel">💰 Баға (теңге)</label>
+          <input type="number" class="field-input" id="price" placeholder="5000" min="2000" oninput="validateStep2()" />
+          <div class="error-message" id="priceError">Минимум 2000 теңге</div>
+        </div>
 
-            <div class="form-field">
-              <div class="field-label">💬 ТҮСІНІКТЕМЕ</div>
-              <textarea class="field-input" id="comment" placeholder="Қосымша ақпарат..."></textarea>
+        <div class="form-field">
+          <label class="field-label" data-i18n="truckLabel">🚚 Көлік түрі</label>
+          <div class="truck-grid">
+            <div class="truck-card" data-truck="intercity" onclick="selectTruck(event, 'intercity')">
+              <div class="truck-icon">🚕</div>
+              <div class="truck-name" data-i18n="intercity">Қала аралық</div>
+              <div class="truck-desc" data-i18n="intercityDesc">такси</div>
             </div>
+            <div class="truck-card" data-truck="small" onclick="selectTruck(event, 'small')">
+              <div class="truck-icon">🚐</div>
+              <div class="truck-name" data-i18n="small">Кіші</div>
+              <div class="truck-desc" data-i18n="smallDesc">1.5т дейін</div>
+            </div>
+            <div class="truck-card" data-truck="medium" onclick="selectTruck(event, 'medium')">
+              <div class="truck-icon">🚚</div>
+              <div class="truck-name" data-i18n="medium">Орташа</div>
+              <div class="truck-desc" data-i18n="mediumDesc">5т дейін</div>
+            </div>
+            <div class="truck-card" data-truck="large" onclick="selectTruck(event, 'large')">
+              <div class="truck-icon">🚛</div>
+              <div class="truck-name" data-i18n="large">Үлкен</div>
+              <div class="truck-desc" data-i18n="largeDesc">20т дейін</div>
+            </div>
+            <div class="truck-card" data-truck="tow" onclick="selectTruck(event, 'tow')">
+              <div class="truck-icon">🚗</div>
+              <div class="truck-name" data-i18n="tow">Эвакуатор</div>
+              <div class="truck-desc" data-i18n="towDesc">эвакуация</div>
+            </div>
+            <div class="truck-card" data-truck="any" onclick="selectTruck(event, 'any')">
+              <div class="truck-icon">🚙</div>
+              <div class="truck-name" data-i18n="any">Кез келген</div>
+              <div class="truck-desc" data-i18n="anyDesc">жарайды</div>
+            </div>
+          </div>
+          <div class="error-message" id="truckError">Көлік түрін таңдаңыз</div>
+        </div>
+
+        <div class="datetime-grid">
+          <div class="form-field">
+            <label class="field-label" data-i18n="dateLabel">📅 Күні</label>
+            <input type="date" class="field-input" id="date" oninput="validateStep2()" />
+            <div class="error-message" id="dateError">Күнді таңдаңыз</div>
+          </div>
+          <div class="form-field">
+            <label class="field-label" data-i18n="timeLabel">⏰ Уақыты</label>
+            <input type="time" class="field-input" id="time" oninput="validateStep2()" />
+            <div class="error-message" id="timeError">Уақытты таңдаңыз</div>
           </div>
         </div>
 
-        <div class="button-container">
-          <div class="button-grid double">
-            <button class="btn btn-secondary" onclick="goToStep(2)">Артқа</button>
-            <button class="btn btn-primary" id="submitBtn" onclick="submitOrder()" disabled>
-              <span id="submitText">Жіберу</span>
-              <div class="loading" id="submitLoading" style="display: none;"></div>
-            </button>
-          </div>
+        <div class="btn-group double">
+          <button class="btn btn-secondary" onclick="goToStep(1)" data-i18n="back">Артқа</button>
+          <button class="btn btn-primary" id="nextBtn2" onclick="goToStep(3)" disabled data-i18n="next">Келесі</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: CONTACT -->
+      <div class="form-step" id="step3">
+        <div class="form-title" data-i18n="contactInfo">Байланыс ақпараты</div>
+
+        <div class="form-field">
+          <label class="field-label" data-i18n="phoneLabel">📱 Телефон</label>
+          <input type="tel" class="field-input" id="phone" placeholder="+7 (___) ___-__-__" 
+            oninput="formatPhone(this); validateStep3()" />
+          <div class="error-message" id="phoneError">Толық телефон нөмірін енгізіңіз</div>
+        </div>
+
+        <div class="form-field">
+          <label class="field-label" data-i18n="commentLabel">💬 Түсініктеме</label>
+          <textarea class="field-input" id="comment" placeholder="Қосымша ақпарат..." oninput="validateStep3()"></textarea>
+          <div class="error-message" id="commentError">Түсініктемені енгізіңіз</div>
+        </div>
+
+        <div class="btn-group double">
+          <button class="btn btn-secondary" onclick="goToStep(2)" data-i18n="back">Артқа</button>
+          <button class="btn btn-primary" id="submitBtn" onclick="submitOrder()" disabled data-i18n="submit">Жіберу</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Picker Modal -->
+  <!-- PICKER MODAL -->
   <div class="picker-modal" id="pickerModal">
     <div id="pickerMap"></div>
     <div class="picker-header">
       <button class="back-btn" onclick="closePicker()">←</button>
-      <input type="text" class="search-box" id="searchBox" placeholder="Мекенжай іздеу..." oninput="searchAddress(this.value)"/>
+      <input type="text" class="search-box" id="searchBox" placeholder="Мекенжай іздеу..."
+        oninput="searchAddress(this.value)"
+        onfocus="onSearchFocus()"
+        onblur="hideSuggestionsDelayed()" />
     </div>
-    
-    <div class="picker-instructions" id="pickerInstructions">
-      📍 Картада нүктені таңдау үшін басыңыз немесе жоғарыда іздеңіз
-    </div>
-    
+    <div class="picker-instructions" id="pickerInstructions">📍 Картаны басыңыз</div>
     <div class="suggestions" id="suggestions"></div>
     <button class="btn btn-primary confirm-btn" onclick="confirmPicker()">
       <span data-i18n="choose">Осы нүктені таңдау</span>
@@ -975,519 +951,239 @@
   </div>
 
   <script>
-    // Configuration
     const Y_KEY = '8a3e4da0-9ef2-4176-9203-e7014c1dba6f';
-    const YA_LANG = () => (state.lang === 'kz' ? 'kk_KZ' : 'ru_RU');
+    const urlParams = new URLSearchParams(window.location.search);
+    let currentLang = urlParams.get('lang') || localStorage.getItem('lang') || 'kz';
+    localStorage.setItem('lang', currentLang);
+    const YA_LANG = () => (currentLang === 'kz' ? 'kk_KZ' : 'ru_RU');
 
-    // Application State
-    let state = {
-      lang: 'kz',
-      userLoc: null,
-      pickup: null,
-      dropoff: null,
-      pickingFor: null,
-      currentStep: 1,
-      selectedTruck: null,
-      orderData: null,
-      followUserMode: true,
-      manuallyPlacedPin: null,
-      hasFirstGPSFix: false
-    };
-
-    // Internationalization
     const i18n = {
       kz: {
-        from:'ҚАЙДАН', to:'ҚАЙДА', locating:'Орынды анықтау...', selectDest:'Баратын жерді таңдаңыз',
-        submit:'Тапсырысты жіберу', gpsActive:'GPS белсенді', searching:'GPS іздеу...', choose:'Осы нүктені таңдау',
-        clickToPlace: '📍 Картада нүктені таңдау үшін басыңыз немесе жоғарыда іздеңіз'
+        from: 'ҚАЙДАН', to: 'ҚАЙДА', locating: 'Орынды анықтау...', selectDest: 'Баратын жерді таңдаңыз',
+        next: 'Келесі', back: 'Артқа', submit: 'Жіберу', choose: 'Осы нүктені таңдау',
+        deliveryDetails: 'Жеткізу мәліметтері', contactInfo: 'Байланыс ақпараты',
+        priceLabel: '💰 Баға (теңге)', truckLabel: '🚚 Көлік түрі', dateLabel: '📅 Күні', timeLabel: '⏰ Уақыты',
+        phoneLabel: '📱 Телефон', commentLabel: '💬 Түсініктеме',
+        intercity: 'Қала аралық', intercityDesc: 'такси', small: 'Кіші', smallDesc: '1.5т дейін',
+        medium: 'Орташа', mediumDesc: '5т дейін', large: 'Үлкен', largeDesc: '20т дейін',
+        tow: 'Эвакуатор', towDesc: 'эвакуация', any: 'Кез келген', anyDesc: 'жарайды',
+        successTitle: 'Тапсырыс жіберілді!', successMsg: 'Қол жетімді жүргізушілерді іздеп жатырмыз...\nБұл бірнеше секундқа созылады',
+        viewDrivers: 'Жүргізушілерді көру', clickMap: '📍 Картаны басыңыз', pinSelected: '✅ Нүкте таңдалды'
       },
       ru: {
-        from:'ОТКУДА', to:'КУДА', locating:'Определение местоположения...', selectDest:'Выберите адрес назначения',
-        submit:'Отправить заказ', gpsActive:'GPS активен', searching:'Поиск GPS...', choose:'Выбрать эту точку',
-        clickToPlace: '📍 Нажмите на карту чтобы выбрать точку или ищите выше'
+        from: 'ОТКУДА', to: 'КУДА', locating: 'Определение местоположения...', selectDest: 'Выберите адрес назначения',
+        next: 'Далее', back: 'Назад', submit: 'Отправить', choose: 'Выбрать эту точку',
+        deliveryDetails: 'Детали доставки', contactInfo: 'Контактная информация',
+        priceLabel: '💰 Цена (тенге)', truckLabel: '🚚 Тип транспорта', dateLabel: '📅 Дата', timeLabel: '⏰ Время',
+        phoneLabel: '📱 Телефон', commentLabel: '💬 Комментарий',
+        intercity: 'Межгород', intercityDesc: 'такси', small: 'Малый', smallDesc: 'до 1.5т',
+        medium: 'Средний', mediumDesc: 'до 5т', large: 'Большой', largeDesc: 'до 20т',
+        tow: 'Эвакуатор', towDesc: 'эвакуация', any: 'Любой', anyDesc: 'подойдет',
+        successTitle: 'Заказ отправлен!', successMsg: 'Ищем доступных водителей...\nЭто займет несколько секунд',
+        viewDrivers: 'Посмотреть водителей', clickMap: '📍 Нажмите на карту', pinSelected: '✅ Точка выбрана'
       }
     };
 
-    // Yandex Maps globals
-    let map, pickerMap, userMarker, pickupMarker, dropoffMarker, placedPinMarker;
-    let geolocationWatchId = null;
-    let pickerMapLoaded = false;
-    let mapUpdateInterval = null;
-    let locationPermissionGranted = false;
-    let currentUserLocation = null;
-    let suggestionsTimeout = null;
-    let lastUserPosition = null;
+    let state = {
+      userLoc: null, pickup: null, dropoff: null, pickingFor: null, currentStep: 1,
+      selectedTruck: null, orderData: null, isSearching: false, manuallyPlacedPin: null
+    };
 
-    // Main map initialization
-    async function initMap() {
-      console.log('🗺️ Initializing map...');
-      await ymaps3.ready;
-      requestLocationPermission();
+    let map, pickerMap, userMarker, pickupMarker, dropoffMarker, placedPinMarker;
+    let geolocationWatchId = null, mapUpdateInterval = null, pickerMapLoaded = false;
+    let currentUserLocation = null, suggestionsTimeout = null, lastUserPosition = null;
+
+    function updateViewportHeight() {
+      const vh = window.Telegram?.WebApp?.viewportStableHeight || window.innerHeight;
+      const safeTop = window.Telegram?.WebApp?.safeAreaInset?.top || 0;
+      const safeBottom = window.Telegram?.WebApp?.safeAreaInset?.bottom || 0;
+      document.documentElement.style.setProperty('--tg-viewport-height', `${vh}px`);
+      document.documentElement.style.setProperty('--tg-safe-top', `${safeTop}px`);
+      document.documentElement.style.setProperty('--tg-safe-bottom', `${safeBottom}px`);
     }
 
-    // Location permission request
-    function requestLocationPermission() {
-      updateLocationStatus('searching', state.lang === 'kz' ? i18n.kz.searching : i18n.ru.searching);
-      
+    function createDivMarker(html, className, size = [20, 20]) {
+      const el = document.createElement('div');
+      el.className = className;
+      el.style.width = size[0] + 'px';
+      el.style.height = size[1] + 'px';
+      if (html) el.innerHTML = html;
+      return el;
+    }
+
+    async function initMap() {
+      await ymaps3.ready;
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-          (position) => {
-            locationPermissionGranted = true;
-            currentUserLocation = [position.coords.latitude, position.coords.longitude];
-            state.userLoc = {
-              lat: position.coords.latitude, 
-              lng: position.coords.longitude, 
-              accuracy: position.coords.accuracy
-            };
-            state.hasFirstGPSFix = true;
-            
-            updateLocationStatus('active', `${state.lang === 'kz' ? i18n.kz.gpsActive : i18n.ru.gpsActive} ±${Math.round(position.coords.accuracy)}m`);
-            
+          (pos) => {
+            currentUserLocation = [pos.coords.latitude, pos.coords.longitude];
+            state.userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy };
             initMapWithPosition(currentUserLocation);
             setUserLocationAsPickup();
-            startRealtimeLocationTracking();
+            startRealtimeTracking();
           },
-          (error) => {
-            updateLocationStatus('error', 'GPS қатесі');
-            initMapWithPosition([43.238949, 76.889709]);
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-          }
+          () => initMapWithPosition([43.238949, 76.889709]),
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
       } else {
-        updateLocationStatus('error', 'GPS қол жетімді емес');
         initMapWithPosition([43.238949, 76.889709]);
       }
     }
 
-    // Set user location as default pickup
     async function setUserLocationAsPickup() {
       if (!currentUserLocation) return;
-      
-      try {
-        const addr = await reverseGeocode(currentUserLocation[0], currentUserLocation[1]);
-        
-        state.pickup = { 
-          lat: currentUserLocation[0], 
-          lng: currentUserLocation[1], 
-          address: addr 
-        };
-        
-        document.getElementById('pickupAddr').textContent = addr;
-        document.querySelectorAll('.address-card')[0].classList.add('filled');
-        
-        await addMarker('pickup', currentUserLocation[0], currentUserLocation[1]);
-        validateCurrentStep();
-        
-      } catch (error) {
-        console.error('Error setting user location as pickup:', error);
-      }
+      const addr = await reverseGeocode(currentUserLocation[0], currentUserLocation[1]);
+      state.pickup = { lat: currentUserLocation[0], lng: currentUserLocation[1], address: addr };
+      document.getElementById('pickupAddr').textContent = addr;
+      document.querySelectorAll('.address-card')[0].classList.add('filled');
+      await addMarker('pickup', currentUserLocation[0], currentUserLocation[1]);
+      validateStep1();
     }
 
-    // Real-time location tracking
-    function startRealtimeLocationTracking() {
-      if (!navigator.geolocation || !locationPermissionGranted) return;
-
+    // FIXED: Realtime tracking with relaxed accuracy and proper interval
+    function startRealtimeTracking() {
+      if (!navigator.geolocation) return;
+      
       geolocationWatchId = navigator.geolocation.watchPosition(
-        (position) => {
-          const newCoords = [position.coords.latitude, position.coords.longitude];
-          const accuracy = position.coords.accuracy;
-          
-          currentUserLocation = newCoords;
-          state.userLoc = {lat: newCoords[0], lng: newCoords[1], accuracy};
-          
-          if (!state.hasFirstGPSFix) {
-            state.hasFirstGPSFix = true;
-          }
-          
-          updateUserMarker(newCoords[0], newCoords[1]);
-          
-          if (state.hasFirstGPSFix) {
-            updateLocationStatus('active', `GPS белсенді ±${Math.round(accuracy)}m`);
+        (pos) => {
+          const coords = [pos.coords.latitude, pos.coords.longitude];
+          // FIXED: Relaxed accuracy filter (was 100/50, now 200)
+          if (pos.coords.accuracy <= 200) {
+            currentUserLocation = coords;
+            state.userLoc = { lat: coords[0], lng: coords[1], accuracy: pos.coords.accuracy };
+            updateUserMarker(coords[0], coords[1]);
           }
         },
-        (error) => {
-          console.error('Real-time location error:', error);
-          updateLocationStatus('error', 'GPS қатесі');
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 0
-        }
+        null,
+        { enableHighAccuracy: true, timeout: 3000, maximumAge: 0 }
       );
 
+      // FIXED: Set to 1000ms (1 second) as specified
       mapUpdateInterval = setInterval(() => {
         navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const newCoords = [position.coords.latitude, position.coords.longitude];
-            const accuracy = position.coords.accuracy;
-            
-            currentUserLocation = newCoords;
-            state.userLoc = {lat: newCoords[0], lng: newCoords[1], accuracy};
-            
-            if (!state.hasFirstGPSFix) {
-              state.hasFirstGPSFix = true;
-            }
-            
-            updateUserMarker(newCoords[0], newCoords[1]);
-            
-            if (state.hasFirstGPSFix) {
-              updateLocationStatus('active', `GPS белсенді ±${Math.round(accuracy)}m`);
+          (pos) => {
+            const coords = [pos.coords.latitude, pos.coords.longitude];
+            if (pos.coords.accuracy <= 200) {
+              currentUserLocation = coords;
+              state.userLoc = { lat: coords[0], lng: coords[1], accuracy: pos.coords.accuracy };
+              updateUserMarker(coords[0], coords[1]);
             }
           },
-          (error) => {
-            console.error('Interval location error:', error);
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 2000,
-            maximumAge: 0
-          }
+          null,
+          { enableHighAccuracy: true, timeout: 2000, maximumAge: 0 }
         );
       }, 1000);
     }
 
-    function updateLocationStatus(status, message) {
-      const gpsText = document.getElementById('gpsText');
-      const gpsDot = document.getElementById('gpsDot');
-      
-      if (gpsText) gpsText.textContent = message;
-      if (gpsDot) {
-        gpsDot.classList.remove('error', 'searching');
-        if (status === 'error') {
-          gpsDot.classList.add('error');
-        } else if (status === 'searching') {
-          gpsDot.classList.add('searching');
-        }
-      }
-    }
-
-    // Initialize map
     async function initMapWithPosition(center) {
       await ymaps3.ready;
-      const { 
-        YMap, 
-        YMapDefaultSchemeLayer, 
-        YMapDefaultFeaturesLayer, 
-        YMapListener
-      } = ymaps3;
-
-      try {
-        map = new YMap(document.getElementById('map'), {
-          location: {
-            center: [center[1], center[0]],
-            zoom: 16
-          },
-          theme: 'light'
-        });
-
-        map.addChild(new YMapDefaultSchemeLayer({ theme: 'light' }));
-        map.addChild(new YMapDefaultFeaturesLayer());
-
-        const mapListener = new YMapListener({
-          layer: 'any',
-          onUpdate: () => {
-            state.followUserMode = false;
-          }
-        });
-        map.addChild(mapListener);
-
-        await addUserLocationMarker(center);
-
-      } catch (error) {
-        console.error('Error initializing map:', error);
-      }
+      const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer } = ymaps3;
+      map = new YMap(document.getElementById('map'), {
+        location: { center: [center[1], center[0]], zoom: 15 }
+      });
+      map.addChild(new YMapDefaultSchemeLayer({}));
+      map.addChild(new YMapDefaultFeaturesLayer({}));
+      
+      // REMOVED: Broken controls code that caused crashes
+      
+      await addUserLocationMarker(center);
     }
 
-    // Add user location marker
     async function addUserLocationMarker(coords) {
       if (!map) return;
-      
       await ymaps3.ready;
       const { YMapMarker } = ymaps3;
-
-      try {
-        const el = document.createElement('div');
-        el.className = 'user-marker';
-
-        userMarker = new YMapMarker({
-          coordinates: [coords[1], coords[0]],
-          draggable: false
-        }, el);
-
-        map.addChild(userMarker);
-        
-      } catch (error) {
-        console.error('Error adding user marker:', error);
-      }
+      const el = createDivMarker('', 'user-marker', [16, 16]);
+      userMarker = new YMapMarker({ coordinates: [coords[1], coords[0]], draggable: false }, el);
+      map.addChild(userMarker);
     }
 
-    // Update user marker
+    // FIXED: Create marker if it doesn't exist
     async function updateUserMarker(lat, lng) {
-      try {
-        if (lastUserPosition && 
-            Math.abs(lastUserPosition[0] - lat) < 0.00001 && 
-            Math.abs(lastUserPosition[1] - lng) < 0.00001) {
-          return;
-        }
-        
-        lastUserPosition = [lat, lng];
-        
-        if (!userMarker && map) {
-          await addUserLocationMarker([lat, lng]);
-          return;
-        }
-        
-        if (!userMarker || !map) return;
-        
-        userMarker.update({
-          coordinates: [lng, lat]
-        });
-        
-        if (state.currentStep === 1 && state.followUserMode) {
-          map.update({ 
-            location: { 
-              center: [lng, lat], 
-              zoom: map.location?.zoom || 16,
-              duration: 500
-            }
-          });
-        }
-        
-      } catch (error) {
-        console.error('Error updating user marker:', error);
-        await addUserLocationMarker([lat, lng]);
-      }
-    }
-
-    // Build picker map
-    async function buildPickerMap(center) {
-      await ymaps3.ready;
-      pickerMapLoaded = false;
-
-      const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapListener } = ymaps3;
-
-      const el = document.getElementById('pickerMap');
-      if (!el) return;
-
-      if (pickerMap) {
-        try { pickerMap.destroy(); } catch (e) {}
-      }
-      pickerMap = null;
-      el.innerHTML = '';
-
-      await new Promise(resolve => requestAnimationFrame(resolve));
-
-      try {
-        pickerMap = new YMap(el, {
-          location: {
-            center,
-            zoom: 16
-          },
-          theme: 'light'
-        });
-
-        pickerMap.addChild(new YMapDefaultSchemeLayer({ theme: 'light' }));
-        pickerMap.addChild(new YMapDefaultFeaturesLayer());
-
-        const clickListener = new YMapListener({
-          layer: 'any',
-          onClick: (object, event) => {
-            if (event.coordinates) {
-              placePinAtCoordinates(event.coordinates);
-            }
-          }
-        });
-        pickerMap.addChild(clickListener);
-
-        pickerMapLoaded = true;
-
-        if (placedPinMarker) {
-          try { pickerMap.removeChild(placedPinMarker); } catch (e) {}
-          placedPinMarker = null;
-        }
-
-        updatePickerInstructions();
-
-      } catch (error) {
-        console.error('Error creating picker map:', error);
-        document.getElementById('pickerInstructions').textContent = 'Картаны жүктеу мүмкін болмады';
-      }
-    }
-
-    // Place pin at coordinates
-    async function placePinAtCoordinates(coordinates) {
-      if (!pickerMap || !pickerMapLoaded) return;
+      if (lastUserPosition && Math.abs(lastUserPosition[0] - lat) < 0.00001 && Math.abs(lastUserPosition[1] - lng) < 0.00001) return;
+      lastUserPosition = [lat, lng];
       
-      await ymaps3.ready;
-      const { YMapMarker } = ymaps3;
-
-      try {
-        if (placedPinMarker) {
-          try { pickerMap.removeChild(placedPinMarker); } catch (e) {}
-        }
-
-        const pinEl = document.createElement('div');
-        pinEl.className = 'picker-placed-pin';
-        
-        placedPinMarker = new YMapMarker({
-          coordinates: coordinates,
-          draggable: true
-        }, pinEl);
-
-        pickerMap.addChild(placedPinMarker);
-        
-        state.manuallyPlacedPin = {
-          lat: coordinates[1],
-          lng: coordinates[0]
-        };
-        
-        document.getElementById('pickerInstructions').textContent = 
-          state.lang === 'kz' ? 
-          '✅ Нүкте таңдалды! "Таңдау" батырмасын басыңыз' : 
-          '✅ Точка выбрана! Нажмите "Выбрать"';
-        
-      } catch (error) {
-        console.error('Error placing pin:', error);
+      // FIXED: Create marker if it doesn't exist yet
+      if (!userMarker && map) {
+        await addUserLocationMarker([lat, lng]);
+        return;
       }
+      if (!userMarker || !map) return;
+      userMarker.update({ coordinates: [lng, lat] });
     }
 
-    // Update picker instructions
-    function updatePickerInstructions() {
-      const instructions = document.getElementById('pickerInstructions');
-      if (instructions) {
-        instructions.textContent = state.lang === 'kz' ? 
-          i18n.kz.clickToPlace : 
-          i18n.ru.clickToPlace;
-      }
+    // CENTER ON USER LOCATION
+    function centerOnUserLocation() {
+      if (!currentUserLocation || !map) return;
+      map.update({
+        location: { center: [currentUserLocation[1], currentUserLocation[0]], zoom: 16 },
+        duration: 800
+      });
     }
 
-    // Add marker to main map
     async function addMarker(type, lat, lng) {
       if (!map) return;
-      
       await ymaps3.ready;
       const { YMapMarker } = ymaps3;
-
-      try {
-        const el = document.createElement('div');
-        el.className = `custom-marker ${type}`;
-        el.textContent = type === 'pickup' ? 'A' : 'B';
-        
-        const marker = new YMapMarker({
-          coordinates: [lng, lat],
-          draggable: false
-        }, el);
-
-        if (type === 'pickup') {
-          if (pickupMarker && map) {
-            try { map.removeChild(pickupMarker); } catch (e) {}
-          }
-          pickupMarker = marker;
-        } else {
-          if (dropoffMarker && map) {
-            try { map.removeChild(dropoffMarker); } catch (e) {}
-          }
-          dropoffMarker = marker;
-        }
-        
-        map.addChild(marker);
-        
-        // CRITICAL: Auto-fit both points when second marker is added
-        if (pickupMarker && dropoffMarker) {
-          setTimeout(() => fitBothPointsOnMap(), 400);
-        }
-        
-      } catch (error) {
-        console.error(`Error adding ${type} marker:`, error);
+      const el = createDivMarker(type === 'pickup' ? 'A' : 'B', `custom-marker ${type}`, [40, 40]);
+      const marker = new YMapMarker({ coordinates: [lng, lat], draggable: true }, el);
+      if (type === 'pickup') {
+        if (pickupMarker) try { map.removeChild(pickupMarker); } catch (e) {}
+        pickupMarker = marker;
+      } else {
+        if (dropoffMarker) try { map.removeChild(dropoffMarker); } catch (e) {}
+        dropoffMarker = marker;
+      }
+      map.addChild(marker);
+      
+      // AUTO ZOOM TO FIT BOTH POINTS
+      if (pickupMarker && dropoffMarker) {
+        setTimeout(() => autoZoomToBothPoints(), 300);
       }
     }
 
-    // FIXED: Perfect bounds calculation to center both A and B points
-    function fitBothPointsOnMap() {
+    // FIXED: Better auto zoom calculation to show both A and B
+    function autoZoomToBothPoints() {
       if (!map || !state.pickup || !state.dropoff) return;
       
-      try {
-        const lat1 = state.pickup.lat;
-        const lng1 = state.pickup.lng;
-        const lat2 = state.dropoff.lat;
-        const lng2 = state.dropoff.lng;
-        
-        // Calculate center point
-        const centerLat = (lat1 + lat2) / 2;
-        const centerLng = (lng1 + lng2) / 2;
-        
-        // Calculate distance between points
-        const latDiff = Math.abs(lat2 - lat1);
-        const lngDiff = Math.abs(lng2 - lng1);
-        
-        // Add generous padding (50% extra space)
-        const paddingFactor = 1.8;
-        const paddedLatDiff = latDiff * paddingFactor;
-        const paddedLngDiff = lngDiff * paddingFactor;
-        
-        // Add extra bottom padding for the bottom sheet (40vh height)
-        const bottomSheetPadding = paddedLatDiff * 0.4;
-        
-        // Create bounds
-        const bounds = [
-          [centerLng - paddedLngDiff / 2, centerLat - paddedLatDiff / 2 - bottomSheetPadding],
-          [centerLng + paddedLngDiff / 2, centerLat + paddedLatDiff / 2]
-        ];
-        
-        // Stop following mode
-        state.followUserMode = false;
-        
-        // Update map with smooth animation
-        map.update({
-          location: { bounds: bounds },
-          duration: 1000
-        });
-        
-        showDistanceInfo();
-        
-      } catch (error) {
-        console.error('Error fitting points on map:', error);
-      }
+      const padding = 0.02; // More padding for better view
+      const minLng = Math.min(state.pickup.lng, state.dropoff.lng) - padding;
+      const maxLng = Math.max(state.pickup.lng, state.dropoff.lng) + padding;
+      const minLat = Math.min(state.pickup.lat, state.dropoff.lat) - padding;
+      const maxLat = Math.max(state.pickup.lat, state.dropoff.lat) + padding;
+      
+      const bounds = [
+        [minLng, minLat],
+        [maxLng, maxLat]
+      ];
+      
+      map.update({ 
+        location: { bounds }, 
+        duration: 1000 
+      });
+      showDistance();
     }
 
-    // Show distance info
-    function showDistanceInfo() {
+    function showDistance() {
       if (!state.pickup || !state.dropoff) return;
-      
-      const distance = calculateDistance(
-        state.pickup.lat, state.pickup.lng,
-        state.dropoff.lat, state.dropoff.lng
-      );
-      
-      document.getElementById('distanceInfo').innerHTML = `📏 ${distance.toFixed(1)} км`;
-      document.getElementById('distanceInfo').classList.add('active');
+      const dist = calculateDistance(state.pickup.lat, state.pickup.lng, state.dropoff.lat, state.dropoff.lng);
+      document.getElementById('distanceText').textContent = `${dist.toFixed(1)} км`;
+      document.getElementById('distanceBadge').classList.add('active');
     }
 
-    // Geocoding functions
+    function calculateDistance(lat1, lng1, lat2, lng2) {
+      const R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
     async function reverseGeocode(lat, lng) {
       try {
-        const res = await fetch(
-          `https://geocode-maps.yandex.ru/1.x/?apikey=${Y_KEY}&geocode=${lng},${lat}&format=json&lang=${YA_LANG()}&results=1`
-        );
-        
-        if (!res.ok) throw new Error('Geocoding request failed');
-        
+        const res = await fetch(`https://geocode-maps.yandex.ru/1.x/?apikey=${Y_KEY}&geocode=${lng},${lat}&format=json&lang=${YA_LANG()}&results=1`);
         const data = await res.json();
-        const coll = data.response?.GeoObjectCollection;
-        const feature = coll?.featureMember?.[0]?.GeoObject;
-        const text =
-          feature?.metaDataProperty?.GeocoderMetaData?.Address?.formatted ||
-          feature?.metaDataProperty?.GeocoderMetaData?.text;
-          
-        return text || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-      } catch (error) {
-        return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-      }
+        const feature = data.response?.GeoObjectCollection?.featureMember?.[0]?.GeoObject;
+        return feature?.metaDataProperty?.GeocoderMetaData?.Address?.formatted || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      } catch { return `${lat.toFixed(6)}, ${lng.toFixed(6)}`; }
     }
 
     async function searchAddress(query) {
@@ -1495,197 +1191,146 @@
         document.getElementById('suggestions').classList.remove('active');
         return;
       }
-      
       try {
-        const res = await fetch(
-          `https://geocode-maps.yandex.ru/1.x/?apikey=${Y_KEY}&geocode=${encodeURIComponent(
-            query
-          )}&format=json&lang=${YA_LANG()}&results=10&ll=76.889709,43.238949&spn=5,5`
-        );
-        
+        const res = await fetch(`https://geocode-maps.yandex.ru/1.x/?apikey=${Y_KEY}&geocode=${encodeURIComponent(query)}&format=json&lang=${YA_LANG()}&results=10&ll=76.889709,43.238949&spn=5,5`);
         const data = await res.json();
         const items = data.response?.GeoObjectCollection?.featureMember || [];
-        
-        const html = items
-          .map(({ GeoObject }) => {
-            const [lng, lat] = GeoObject.Point.pos.split(' ').map(Number);
-            const md = GeoObject.metaDataProperty.GeocoderMetaData;
-            const text = md?.Address?.formatted || md?.text || `${lat}, ${lng}`;
-            return `<div class="suggestion-item" data-lat="${lat}" data-lng="${lng}">${text}</div>`;
-          })
-          .join('');
-          
-        const sug = document.getElementById('suggestions');
-        sug.innerHTML = html;
-        sug.classList.add('active');
-        
-        sug.querySelectorAll('.suggestion-item').forEach(item => {
-          item.addEventListener('click', function(e) {
-            e.preventDefault();
-            const lat = parseFloat(this.dataset.lat);
-            const lng = parseFloat(this.dataset.lng);
-            selectSuggestion(lat, lng);
-          });
-        });
-        
-      } catch (error) {
-        console.error('Search error:', error);
-      }
+        const html = items.map(({ GeoObject }) => {
+          const [lng, lat] = GeoObject.Point.pos.split(' ').map(Number);
+          const text = GeoObject.metaDataProperty.GeocoderMetaData?.Address?.formatted || `${lat}, ${lng}`;
+          return `<div class="suggestion-item" onmousedown="selectSuggestion(${lat}, ${lng})">${text}</div>`;
+        }).join('');
+        document.getElementById('suggestions').innerHTML = html;
+        document.getElementById('suggestions').classList.add('active');
+      } catch {}
     }
 
     function selectSuggestion(lat, lng) {
       if (pickerMap && pickerMapLoaded) {
-        const center = [lng, lat];
-        pickerMap.update({ location: { center, zoom: 17 }, duration: 500 });
-        
-        setTimeout(() => {
-          placePinAtCoordinates([lng, lat]);
-        }, 600);
+        pickerMap.update({ location: { center: [lng, lat], zoom: 17 } });
+        setTimeout(() => placePinAtCoordinates([lng, lat]), 500);
       }
       document.getElementById('suggestions').classList.remove('active');
       document.getElementById('searchBox').value = '';
+      state.isSearching = false;
+      updatePickerInstructions();
     }
 
-    // Calculate distance
-    function calculateDistance(lat1, lng1, lat2, lng2) {
-      const R = 6371;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLng = (lng2 - lng1) * Math.PI / 180;
-      const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-        Math.sin(dLng/2) * Math.sin(dLng/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c;
+    function hideSuggestionsDelayed() {
+      clearTimeout(suggestionsTimeout);
+      suggestionsTimeout = setTimeout(() => {
+        document.getElementById('suggestions').classList.remove('active');
+        state.isSearching = false;
+        updatePickerInstructions();
+      }, 200);
     }
 
-    // Step navigation with dynamic bottom sheet sizing
-    function goToStep(step) {
-      document.querySelectorAll('.form-step').forEach((s) => s.classList.remove('active'));
-      document.querySelectorAll('.step-dot').forEach((d) => d.classList.remove('active'));
-
-      document
-        .getElementById(`step${step === 1 ? 'Addresses' : step === 2 ? 'Details' : 'Contact'}`)
-        .classList.add('active');
-      document.getElementById(`step${step}`).classList.add('active');
-
-      // FIXED: Change bottom sheet class for dynamic sizing
-      const bottomSheet = document.getElementById('bottomSheet');
-      bottomSheet.classList.remove('step-1', 'step-2', 'step-3');
-      bottomSheet.classList.add(`step-${step}`);
-
-      state.currentStep = step;
-      validateCurrentStep();
-      
-      if (step === 1) {
-        state.followUserMode = true;
-        if (currentUserLocation && map) {
-          map.update({ 
-            location: { 
-              center: [currentUserLocation[1], currentUserLocation[0]], 
-              zoom: 16,
-              duration: 800
-            }
-          });
-        }
-      }
-    }
-
-    function validateCurrentStep() {
-      let isValid = false;
-
-      if (state.currentStep === 1) {
-        isValid = state.pickup && state.dropoff;
-        document.getElementById('nextStep1').disabled = !isValid;
-      } else if (state.currentStep === 2) {
-        const price = Number(document.getElementById('price').value);
-        const date = document.getElementById('date').value;
-        const time = document.getElementById('time').value;
-        isValid = price >= 2000 && date && time && state.selectedTruck;
-        document.getElementById('nextStep2').disabled = !isValid;
-      } else if (state.currentStep === 3) {
-        const phone = document.getElementById('phone').value;
-        isValid = phone.length >= 18;
-        document.getElementById('submitBtn').disabled = !isValid;
-      }
-    }
-
-    function selectTruck(element) {
-      const type = element.dataset.truckType;
-      document.querySelectorAll('.truck-option').forEach((opt) => opt.classList.remove('selected'));
-      element.classList.add('selected');
-      state.selectedTruck = type;
-      validateCurrentStep();
-    }
-
-    // Picker functions
     async function openPicker(type) {
       state.pickingFor = type;
-      
-      const modal = document.getElementById('pickerModal');
-      modal.classList.add('active');
-
-      let center;
-      if (type === 'pickup' && state.pickup) {
-        center = [state.pickup.lng, state.pickup.lat];
-      } else if (type === 'dropoff' && state.dropoff) {
-        center = [state.dropoff.lng, state.dropoff.lat];
-      } else if (currentUserLocation) {
-        center = [currentUserLocation[1], currentUserLocation[0]];
-      } else {
-        center = [76.889709, 43.238949];
-      }
-
+      state.isSearching = false;
+      document.getElementById('pickerModal').classList.add('active');
+      let center = type === 'pickup' && state.pickup ? [state.pickup.lng, state.pickup.lat] :
+                   type === 'dropoff' && state.dropoff ? [state.dropoff.lng, state.dropoff.lat] :
+                   currentUserLocation ? [currentUserLocation[1], currentUserLocation[0]] : [76.889709, 43.238949];
       await new Promise(resolve => setTimeout(resolve, 100));
       await buildPickerMap(center);
     }
 
     function closePicker() {
-      const modal = document.getElementById('pickerModal');
-      modal.classList.remove('active');
-      
+      document.getElementById('pickerModal').classList.remove('active');
       document.getElementById('suggestions').classList.remove('active');
       document.getElementById('searchBox').value = '';
-      
-      if (pickerMap) {
-        try { pickerMap.destroy(); } catch (e) {}
-      }
+      if (pickerMap) try { pickerMap.destroy(); } catch {}
       pickerMap = null;
       pickerMapLoaded = false;
-      
-      if (placedPinMarker) {
-        placedPinMarker = null;
-      }
+      placedPinMarker = null;
       state.manuallyPlacedPin = null;
-      
       state.pickingFor = null;
+      state.isSearching = false;
     }
 
+    async function buildPickerMap(center) {
+      await ymaps3.ready;
+      pickerMapLoaded = false;
+      const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapListener } = ymaps3;
+      const el = document.getElementById('pickerMap');
+      if (!el) return;
+      if (pickerMap) try { pickerMap.destroy(); } catch {}
+      pickerMap = null;
+      el.innerHTML = '';
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      try {
+        pickerMap = new YMap(el, { location: { center, zoom: 16 } });
+        pickerMap.addChild(new YMapDefaultSchemeLayer({}));
+        pickerMap.addChild(new YMapDefaultFeaturesLayer({}));
+        
+        // REMOVED: Broken controls code
+        
+        const clickListener = new YMapListener({
+          layer: 'any',
+          onClick: (object, event) => { if (event.coordinates) placePinAtCoordinates(event.coordinates); }
+        });
+        pickerMap.addChild(clickListener);
+        
+        // FIXED: Set pickerMapLoaded AFTER everything is added successfully
+        pickerMapLoaded = true;
+        
+        if (placedPinMarker) try { pickerMap.removeChild(placedPinMarker); } catch {}
+        placedPinMarker = null;
+        updatePickerInstructions();
+      } catch (e) {
+        console.error('Picker map creation failed:', e);
+      }
+    }
+
+    async function placePinAtCoordinates(coordinates) {
+      if (!pickerMap || !pickerMapLoaded) return;
+      await ymaps3.ready;
+      const { YMapMarker } = ymaps3;
+      try {
+        if (placedPinMarker) try { pickerMap.removeChild(placedPinMarker); } catch {}
+        const pinEl = createDivMarker('', 'placed-pin', [24, 24]);
+        placedPinMarker = new YMapMarker({ coordinates, draggable: true }, pinEl);
+        pickerMap.addChild(placedPinMarker);
+        state.manuallyPlacedPin = { lat: coordinates[1], lng: coordinates[0] };
+        document.getElementById('pickerInstructions').textContent = i18n[currentLang].pinSelected;
+        document.getElementById('pickerInstructions').classList.remove('hidden');
+      } catch {}
+    }
+
+    function updatePickerInstructions() {
+      const inst = document.getElementById('pickerInstructions');
+      if (inst && !state.isSearching) {
+        inst.textContent = i18n[currentLang].clickMap;
+        inst.classList.remove('hidden');
+      }
+    }
+
+    function onSearchFocus() {
+      state.isSearching = true;
+      document.getElementById('pickerInstructions').classList.add('hidden');
+    }
+
+    // FIXED: Better fallback for confirmPicker
     async function confirmPicker() {
       if (!state.pickingFor) return;
-
-      let lat, lng;
       
-      if (state.manuallyPlacedPin) {
-        lat = state.manuallyPlacedPin.lat;
-        lng = state.manuallyPlacedPin.lng;
-      } else if (pickerMap && pickerMap.location) {
-        lng = pickerMap.location.center[0];
-        lat = pickerMap.location.center[1];
-      } else if (currentUserLocation) {
-        lat = currentUserLocation[0];
-        lng = currentUserLocation[1];
-      } else {
-        const msg = state.lang === 'kz'
-          ? 'Алдымен картада нүктені таңдаңыз'
-          : 'Сначала выберите точку на карте';
-        if (window.Telegram?.WebApp) Telegram.WebApp.showAlert(msg); else alert(msg);
-        return;
+      // FIXED: Fallback to center if no pin placed
+      if (!state.manuallyPlacedPin) {
+        if (pickerMap && pickerMapLoaded) {
+          const center = pickerMap.location.center;
+          state.manuallyPlacedPin = { lat: center[1], lng: center[0] };
+        } else if (currentUserLocation) {
+          state.manuallyPlacedPin = { lat: currentUserLocation[0], lng: currentUserLocation[1] };
+        } else {
+          alert(i18n[currentLang].pinSelected);
+          return;
+        }
       }
-
+      
       try {
+        const { lat, lng } = state.manuallyPlacedPin;
         const addr = await reverseGeocode(lat, lng);
-
         if (state.pickingFor === 'pickup') {
           state.pickup = { lat, lng, address: addr };
           document.getElementById('pickupAddr').textContent = addr;
@@ -1697,42 +1342,97 @@
           document.querySelectorAll('.address-card')[1].classList.add('filled');
           await addMarker('dropoff', lat, lng);
         }
-
         closePicker();
-        validateCurrentStep();
-
-      } catch (error) {
-        console.error('Confirm picker error:', error);
+        validateStep1();
+      } catch (e) {
+        console.error('Confirm picker failed:', e);
       }
     }
 
-    // Phone formatting
+    function goToStep(step) {
+      document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.step-bar').forEach(s => s.classList.remove('active'));
+      document.getElementById(`step${step}`).classList.add('active');
+      for (let i = 1; i <= step; i++) {
+        document.getElementById(`stepBar${i}`).classList.add('active');
+      }
+      state.currentStep = step;
+      if (step === 1) validateStep1();
+      else if (step === 2) validateStep2();
+      else validateStep3();
+    }
+
+    function validateStep1() {
+      const valid = state.pickup && state.dropoff;
+      document.getElementById('nextBtn1').disabled = !valid;
+    }
+
+    function validateStep2() {
+      const price = Number(document.getElementById('price').value);
+      const date = document.getElementById('date').value;
+      const time = document.getElementById('time').value;
+      
+      const priceValid = price >= 2000;
+      const dateValid = !!date;
+      const timeValid = !!time;
+      const truckValid = !!state.selectedTruck;
+
+      document.getElementById('priceError').classList.toggle('show', !priceValid && price > 0);
+      document.getElementById('dateError').classList.toggle('show', !dateValid);
+      document.getElementById('timeError').classList.toggle('show', !timeValid);
+      document.getElementById('truckError').classList.toggle('show', !truckValid);
+
+      document.getElementById('price').classList.toggle('error', !priceValid && price > 0);
+      document.getElementById('date').classList.toggle('error', !dateValid);
+      document.getElementById('time').classList.toggle('error', !timeValid);
+
+      const valid = priceValid && dateValid && timeValid && truckValid;
+      document.getElementById('nextBtn2').disabled = !valid;
+    }
+
+    function validateStep3() {
+      const phone = document.getElementById('phone').value;
+      const comment = document.getElementById('comment').value;
+      
+      const phoneValid = phone.length >= 18;
+      const commentValid = comment.trim().length >= 5;
+
+      document.getElementById('phoneError').classList.toggle('show', !phoneValid && phone.length > 0);
+      document.getElementById('commentError').classList.toggle('show', !commentValid && comment.length > 0);
+
+      document.getElementById('phone').classList.toggle('error', !phoneValid && phone.length > 0);
+      document.getElementById('comment').classList.toggle('error', !commentValid && comment.length > 0);
+
+      const valid = phoneValid && commentValid;
+      document.getElementById('submitBtn').disabled = !valid;
+    }
+
+    // FIXED: Accept event parameter properly
+    function selectTruck(evt, type) {
+      evt.preventDefault();
+      document.querySelectorAll('.truck-card').forEach(c => c.classList.remove('selected'));
+      document.querySelector(`[data-truck="${type}"]`).classList.add('selected');
+      state.selectedTruck = type;
+      validateStep2();
+    }
+
     function formatPhone(input) {
       let val = input.value.replace(/\D/g, '');
       if (!val) return;
       if (val[0] !== '7') val = '7' + val;
-
       let fmt = '+7';
       if (val.length > 1) fmt += ` (${val.slice(1, 4)}`;
       if (val.length >= 4) fmt += ')';
       if (val.length > 4) fmt += ` ${val.slice(4, 7)}`;
       if (val.length > 7) fmt += `-${val.slice(7, 9)}`;
       if (val.length > 9) fmt += `-${val.slice(9, 11)}`;
-
       input.value = fmt;
     }
 
-    // Submit order
     async function submitOrder() {
-      const submitBtn = document.getElementById('submitBtn');
-      const submitText = document.getElementById('submitText');
-      const submitLoading = document.getElementById('submitLoading');
-      const tg = window.Telegram?.WebApp;
-
-      submitBtn.disabled = true;
-      submitText.style.display = 'none';
-      submitLoading.style.display = 'block';
-
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = '...';
       try {
         const formData = new FormData();
         formData.append('from_address', state.pickup.address);
@@ -1747,172 +1447,93 @@
         formData.append('time', document.getElementById('time').value);
         formData.append('contact', document.getElementById('phone').value);
         formData.append('comment', document.getElementById('comment').value);
-
+        const tg = window.Telegram?.WebApp;
         if (tg?.initDataUnsafe?.user) {
           formData.append('telegram_id', tg.initDataUnsafe.user.id);
+          formData.append('telegram_username', tg.initDataUnsafe.user.username || '');
+          formData.append('telegram_first_name', tg.initDataUnsafe.user.first_name || '');
+          formData.append('telegram_last_name', tg.initDataUnsafe.user.last_name || '');
         }
-
+        formData.append('distance', calculateDistance(state.pickup.lat, state.pickup.lng, state.dropoff.lat, state.dropoff.lng));
         const res = await fetch('/api/delivery-request', { method: 'POST', body: formData });
         const json = await res.json().catch(() => ({ success: false }));
-
         if (json?.success) {
           state.orderData = {
-            pickup: state.pickup,
-            dropoff: state.dropoff,
+            pickup: state.pickup, dropoff: state.dropoff,
             price: document.getElementById('price').value,
             truck_type: state.selectedTruck,
             contact: document.getElementById('phone').value,
+            comment: document.getElementById('comment').value,
             request_id: json.data?.request_id
           };
-          showSuccessScreen();
-          stopRealtimeGeolocation();
-        } else {
-          throw new Error(json?.message || 'Request failed');
-        }
-      } catch (error) {
-        const errorMsg = `Error: ${error.message}`;
-        const tg = window.Telegram?.WebApp;
-        if (tg) tg.showAlert(errorMsg);
-        else alert(errorMsg);
+          showSuccess();
+          stopTracking();
+        } else throw new Error(json?.message || 'Failed');
+      } catch (e) {
+        alert(`Error: ${e.message}`);
       } finally {
-        submitBtn.disabled = false;
-        submitText.style.display = 'block';
-        submitLoading.style.display = 'none';
-        validateCurrentStep();
+        btn.disabled = false;
+        btn.textContent = i18n[currentLang].submit;
       }
     }
 
-    function showSuccessScreen() {
+    function showSuccess() {
       document.getElementById('successScreen').classList.add('active');
-      setTimeout(() => {
-        goToDriverList();
-      }, 3000);
+      setTimeout(() => goToDriverList(), 3000);
     }
 
     function goToDriverList() {
-      const orderData = encodeURIComponent(JSON.stringify(state.orderData));
-      window.location.href = `/driver-list?order=${orderData}`;
+      const data = encodeURIComponent(JSON.stringify(state.orderData));
+      window.location.href = `/driver-list?order=${data}&lang=${currentLang}`;
     }
 
-    function stopRealtimeGeolocation() {
-      if (geolocationWatchId) {
-        navigator.geolocation.clearWatch(geolocationWatchId);
-        geolocationWatchId = null;
-      }
-      if (mapUpdateInterval) {
-        clearInterval(mapUpdateInterval);
-        mapUpdateInterval = null;
-      }
+    function stopTracking() {
+      if (geolocationWatchId) navigator.geolocation.clearWatch(geolocationWatchId);
+      if (mapUpdateInterval) clearInterval(mapUpdateInterval);
     }
 
-    function setLang(lang) {
-      state.lang = lang;
-      document.querySelectorAll('.lang-btn').forEach((btn) => {
-        btn.classList.toggle('active', btn.dataset.lang === lang);
-      });
-
-      document.querySelectorAll('[data-i18n]').forEach((el) => {
+    function applyTranslations() {
+      document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.dataset.i18n;
-        if (i18n[lang][key]) el.textContent = i18n[lang][key];
+        if (i18n[currentLang][key]) el.textContent = i18n[currentLang][key];
       });
-
-      updatePickerInstructions();
-
-      if (state.hasFirstGPSFix && state.userLoc) {
-        updateLocationStatus('active', `${lang === 'kz' ? i18n.kz.gpsActive : i18n.ru.gpsActive} ±${Math.round(state.userLoc.accuracy)}m`);
-      }
-
-      if (lang === 'kz') {
-        document.querySelector('.success-title').textContent = 'Тапсырыс жіберілді!';
-        document.querySelector('.success-message').textContent =
-          'Қол жетімді жүргізушілерді іздеп жатырмыз.\nБұл бірнеше секундқа созылады';
-        document.querySelector('.success-btn').textContent = 'Жүргізушілерді көру';
-      } else {
-        document.querySelector('.success-title').textContent = 'Заказ отправлен!';
-        document.querySelector('.success-message').textContent =
-          'Ищем доступных водителей.\nЭто займет несколько секунд';
-        document.querySelector('.success-btn').textContent = 'Посмотреть водителей';
-      }
     }
 
-    // Initialize application
     document.addEventListener('DOMContentLoaded', async () => {
-      
-      if (!window.ymaps3) {
-        console.error('Yandex Maps v3 failed to load');
-        return;
-      }
-      
+      updateViewportHeight();
+      applyTranslations();
+      if (!window.ymaps3) return;
+      await initMap();
+      const now = new Date();
+      document.getElementById('date').valueAsDate = now;
+      document.getElementById('time').value = now.toTimeString().slice(0, 5);
       if (window.Telegram?.WebApp) {
         const tg = Telegram.WebApp;
         tg.ready();
         tg.expand();
-        
-        if (tg.viewportStableHeight) {
-          document.documentElement.style.setProperty('--tg-viewport-stable-height', `${tg.viewportStableHeight}px`);
-        }
-        if (tg.safeAreaInset) {
-          document.documentElement.style.setProperty('--tg-safe-area-inset-top', `${tg.safeAreaInset.top}px`);
-        }
-        if (tg.contentSafeAreaInset) {
-          document.documentElement.style.setProperty('--tg-content-safe-area-inset-top', `${tg.contentSafeAreaInset.top}px`);
-        }
+        tg.disableVerticalSwipes();
+        tg.setHeaderColor('#000000');
+        tg.onEvent('viewportChanged', updateViewportHeight);
       }
-      
-      await initMap();
-
-      const now = new Date();
-      document.getElementById('date').valueAsDate = now;
-      document.getElementById('time').value = now.toTimeString().slice(0, 5);
-
-      document.querySelectorAll('.lang-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-          e.preventDefault();
-          setLang(this.dataset.lang);
-        });
-      });
-
-      document.querySelectorAll('.truck-option').forEach(opt => {
-        opt.addEventListener('click', function(e) {
-          e.preventDefault();
-          selectTruck(this);
-        });
-      });
-
-      const searchBox = document.getElementById('searchBox');
-      searchBox.addEventListener('blur', () => {
-        setTimeout(() => {
-          document.getElementById('suggestions').classList.remove('active');
-        }, 200);
-      });
-
-      searchBox.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          const firstSuggestion = document.querySelector('.suggestion-item');
-          if (firstSuggestion) {
-            const lat = parseFloat(firstSuggestion.dataset.lat);
-            const lng = parseFloat(firstSuggestion.dataset.lng);
-            selectSuggestion(lat, lng);
-          }
-        }
-      });
-
-      setLang('kz');
     });
 
-    window.addEventListener('beforeunload', () => {
-      stopRealtimeGeolocation();
-    });
+    window.addEventListener('resize', updateViewportHeight);
+    window.addEventListener('beforeunload', stopTracking);
 
     window.openPicker = openPicker;
     window.closePicker = closePicker;
     window.confirmPicker = confirmPicker;
     window.searchAddress = searchAddress;
+    window.selectSuggestion = selectSuggestion;
     window.goToStep = goToStep;
+    window.selectTruck = selectTruck;
     window.formatPhone = formatPhone;
     window.submitOrder = submitOrder;
     window.goToDriverList = goToDriverList;
-    window.placePinAtCoordinates = placePinAtCoordinates;
+    window.hideSuggestionsDelayed = hideSuggestionsDelayed;
+    window.updatePickerInstructions = updatePickerInstructions;
+    window.onSearchFocus = onSearchFocus;
+    window.centerOnUserLocation = centerOnUserLocation;
   </script>
 </body>
 </html>
