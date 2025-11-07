@@ -98,23 +98,23 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 			approved_by TEXT NULL
 		);`
 
-	// Driver trips table with UUID primary key and foreign key
+	// FIXED: Driver trips table with ALL required columns in CREATE TABLE (not ALTER TABLE)
 	driverTripsTable := `
 		CREATE TABLE IF NOT EXISTS driver_trips (
 			id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
 			driver_id TEXT NOT NULL,
-			telegram_id BIGINT NOT NULL,
-			from_address TEXT NOT NULL,
-			from_lat REAL NOT NULL,
-			from_lon REAL NOT NULL,
-			to_address TEXT NOT NULL,
-			to_lat REAL NOT NULL,
-			to_lon REAL NOT NULL,
+			telegram_id INTEGER NOT NULL,
+			from_address TEXT NOT NULL DEFAULT '',
+			from_lat REAL NOT NULL DEFAULT 0.0,
+			from_lon REAL NOT NULL DEFAULT 0.0,
+			to_address TEXT NOT NULL DEFAULT '',
+			to_lat REAL NOT NULL DEFAULT 0.0,
+			to_lon REAL NOT NULL DEFAULT 0.0,
 			distance_km REAL DEFAULT 0.0,
 			eta_min INTEGER DEFAULT 0,
-			price INTEGER NOT NULL CHECK (price >= 2000),
-			truck_type TEXT DEFAULT '',
-			start_time TEXT NOT NULL,
+			price INTEGER NOT NULL DEFAULT 2000 CHECK (price >= 2000),
+			truck_type TEXT DEFAULT 'any',
+			start_time TEXT NOT NULL DEFAULT '',
 			departure_time DATETIME DEFAULT CURRENT_TIMESTAMP,
 			comment TEXT DEFAULT '',
 			truck_photo TEXT DEFAULT '',
@@ -199,7 +199,6 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 
 				for _, col := range columnsToAdd {
 					if _, err := db.Exec(col.sql); err != nil {
-						// Column might already exist, that's okay
 						logger.Debug("Column might already exist",
 							zap.String("table", table.name),
 							zap.String("column", col.name),
@@ -212,7 +211,7 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 				}
 			}
 
-			// Add missing columns for driver_trips if needed
+			// FIXED: Add missing columns for driver_trips - only if they're really missing
 			if table.name == "driver_trips" {
 				columnsToAdd := []struct {
 					name string
@@ -223,7 +222,9 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 					{"has_whatsapp", "ALTER TABLE driver_trips ADD COLUMN has_whatsapp BOOLEAN DEFAULT FALSE;"},
 					{"has_telegram", "ALTER TABLE driver_trips ADD COLUMN has_telegram BOOLEAN DEFAULT FALSE;"},
 					{"telegram_username", "ALTER TABLE driver_trips ADD COLUMN telegram_username TEXT DEFAULT '';"},
-					{"truck_type", "ALTER TABLE driver_trips ADD COLUMN truck_type TEXT DEFAULT '';"},
+					{"truck_type", "ALTER TABLE driver_trips ADD COLUMN truck_type TEXT DEFAULT 'any';"},
+					{"start_time", "ALTER TABLE driver_trips ADD COLUMN start_time TEXT NOT NULL DEFAULT '';"},
+					{"status", "ALTER TABLE driver_trips ADD COLUMN status TEXT DEFAULT 'active';"},
 				}
 
 				for _, col := range columnsToAdd {
@@ -385,6 +386,6 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 		}
 	}
 
-	logger.Info("Database schema created successfully with UUID primary keys and driver_id column")
+	logger.Info("Database schema created successfully with UUID primary keys and all required columns")
 	return nil
 }

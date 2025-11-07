@@ -1,1644 +1,532 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="kk">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <title>Обновить профиль</title>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+  />
+  <title>Профильді жаңарту</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    :root {
-      --uber-black: #000000;
-      --uber-dark: #1a1a1a;
-      --uber-gray: #f6f6f6;
-      --uber-light-gray: #fafafa;
-      --uber-border: #e5e5e5;
-      --uber-green: #00d66f;
-      --uber-blue: #276ef1;
-      --uber-red: #ff6b6b;
-      --uber-orange: #ff9500;
-      --text-primary: #1a1a1a;
-      --text-secondary: #757575;
-      --text-muted: #a8a8a8;
-      --radius: 12px;
-      --shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
-      --shadow-hover: 0 4px 24px rgba(0, 0, 0, 0.12);
-    }
+    :root{
+      --bg:#f8fafc; --card:#fff; --text:#0f172a; --text-secondary:#475569; --text-muted:#94a3b8;
+      --accent:#10b981; --accent-dark:#059669; --border:#e2e8f0; --input-bg:#f8fafc;
+      --shadow:0 1px 3px rgba(0,0,0,.08); --shadow-lg:0 10px 25px rgba(0,0,0,.1);
 
-    [data-theme="dark"] {
-      --uber-black: #ffffff;
-      --uber-dark: #f0f0f0;
-      --uber-gray: #2d3748;
-      --uber-light-gray: #1a202c;
-      --uber-border: #4a5568;
-      --text-primary: #f7fafc;
-      --text-secondary: #e2e8f0;
-      --text-muted: #a0aec0;
-      --shadow: 0 2px 16px rgba(0, 0, 0, 0.4);
-      --shadow-hover: 0 4px 24px rgba(0, 0, 0, 0.6);
+      /* runtime */
+      --tg-viewport-stable-height:100vh;
+      --tg-safe-area-inset-top:0px;
+      --tg-safe-area-inset-bottom:0px;
+      --content-bottom-pad:120px;
+      --top-offset: 28px;
+      --content-bottom-pad: 140px;
     }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
+    [data-theme="dark"]{
+      --bg:#0b1220; --card:#121a2b; --text:#eef4ff; --text-secondary:#cbd5e1; --text-muted:#94a3b8;
+      --accent:#34d399; --accent-dark:#10b981; --border:#25324a; --input-bg:#121a2b;
+      --shadow:0 1px 3px rgba(0,0,0,.3); --shadow-lg:0 10px 25px rgba(0,0,0,.5);
     }
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%;overflow:hidden}
+    body{ padding-top: calc(var(--tg-safe-area-inset-top) + var(--top-offset)); }
+    .header{ top: calc(var(--tg-safe-area-inset-top) + var(--top-offset)); }
+    /* 56px — высота шапки между .header и .profile-header; можно подправить при желании */
+    .profile-header{ top: calc(var(--tg-safe-area-inset-top) + var(--top-offset) + 56px); }
 
-    html {
-      height: 100%;
-      overflow: hidden;
-    }
+    button{ -webkit-appearance:none; appearance:none; }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'UberMove', 'Helvetica Neue', sans-serif;
-      background: var(--uber-light-gray);
-      color: var(--text-primary);
-      height: 100vh;
-      height: 100dvh;
-      overflow: hidden;
+    /* Frameless header */
+   .header{
+    position: fixed;
+    /* Важно: только через переменную! */
+    top: calc(var(--tg-safe-area-inset-top) + var(--top-offset));
+    left: 0; right: 0; z-index: 1000;
+    padding: 12px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: transparent;
+  }
+      .back-btn{
+    width: 40px; height: 40px; border-radius: 999px; background: var(--card);
+    border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+    font-size: 20px; cursor: pointer; box-shadow: var(--shadow); transition: transform .15s;
+  }
+    .back-btn:active{ transform: scale(.96); }
+    .header-title{ font-size: 18px; font-weight: 700; }
+    .trip-btn{
+    background: linear-gradient(135deg,var(--accent),var(--accent-dark)); color: #fff;
+    border: 0; border-radius: 18px; padding: 10px 16px; font-size: 13px; font-weight: 700; box-shadow: var(--shadow);
+    display: flex; gap: 6px; align-items: center;
+  }
+
+
+    /* Profile bar (centered) */
+    .profile-header{
       position: fixed;
-      width: 100%;
-      -webkit-font-smoothing: antialiased;
-      font-feature-settings: 'kern' 1;
-    }
-
-    .app-container {
-      height: 100vh;
-      height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      position: relative;
-    }
-
-    /* Top Bar */
-    .top-bar {
-      background: var(--uber-light-gray);
-      padding: env(safe-area-inset-top, 20px) 20px 0 20px;
-      border-bottom: 1px solid var(--uber-border);
-      flex-shrink: 0;
-      z-index: 100;
-      position: sticky;
-      top: 0;
-    }
-
-    .top-content {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 56px;
-    }
-
-    .back-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: var(--uber-gray);
-      border: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-size: 18px;
-    }
-
-    .back-btn:hover {
-      background: var(--uber-border);
-      transform: scale(1.05);
-    }
-
-    .top-title {
-      font-size: 18px;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .top-actions {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-
-    .trip-btn {
-      background: var(--uber-green);
-      color: white;
-      border: none;
-      border-radius: 20px;
-      padding: 8px 16px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      box-shadow: var(--shadow);
-    }
-
-    .trip-btn:hover {
-      background: #059669;
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-hover);
-    }
-
-    .lang-switch {
-      display: flex;
-      background: var(--uber-gray);
-      border-radius: 20px;
-      padding: 2px;
-    }
-
-    .lang-btn {
-      padding: 6px 12px;
-      border: none;
-      background: transparent;
-      border-radius: 18px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      color: var(--text-secondary);
-    }
-
-    .lang-btn.active {
-      background: var(--uber-black);
-      color: white;
-    }
-
-    /* Profile Header */
-    .profile-header {
-      background: var(--uber-light-gray);
-      padding: 24px 20px;
-      text-align: center;
-      border-bottom: 1px solid var(--uber-border);
-      flex-shrink: 0;
-      position: relative;
-    }
-
-    .status-indicator {
-      position: absolute;
-      top: 16px;
-      right: 20px;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .status-indicator.pending {
-      background: var(--uber-orange);
-      color: white;
-    }
-
-    .status-indicator.approved {
-      background: var(--uber-green);
-      color: white;
-    }
-
-    .status-indicator.rejected {
-      background: var(--uber-red);
-      color: white;
-    }
-
-    .avatar-container {
-      position: relative;
-      display: inline-block;
-      margin-bottom: 16px;
-    }
-
-    .avatar {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: var(--uber-gray);
-      border: 3px solid white;
-      box-shadow: var(--shadow);
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 32px;
-      color: var(--text-muted);
-      overflow: hidden;
-      position: relative;
-    }
-
-    .avatar:hover {
-      transform: scale(1.05);
-      box-shadow: var(--shadow-hover);
-    }
-
-    .avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .avatar-edit {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      width: 28px;
-      height: 28px;
-      background: var(--uber-black);
-      border-radius: 50%;
-      border: 2px solid white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .avatar-edit:hover {
-      transform: scale(1.1);
-    }
-
-    .avatar-edit::before {
-      content: '📷';
-      font-size: 12px;
-    }
-
-    .profile-name {
-      font-size: 22px;
-      font-weight: 700;
-      margin-bottom: 4px;
-      color: var(--text-primary);
-    }
-
-    .profile-subtitle {
-      font-size: 14px;
-      color: var(--text-secondary);
-      margin-bottom: 8px;
-    }
-
-    .member-since {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    /* Content Area */
-    .content-area {
-      flex: 1;
-      overflow-y: auto;
-      overflow-x: hidden;
-      -webkit-overflow-scrolling: touch;
-      padding: 0 20px 120px 20px;
-      background: var(--uber-light-gray);
-    }
-
-    .content-area::-webkit-scrollbar {
-      display: none;
-    }
-
-    /* Form Sections - Dark mode fix */
-    .form-section {
-      background: white;
-      border-radius: var(--radius);
-      margin: 16px 0;
-      overflow: hidden;
-      box-shadow: var(--shadow);
-      transition: all 0.3s ease;
-    }
-
-    [data-theme="dark"] .form-section {
-      background: #2d3748;
-      border: 1px solid var(--uber-border);
-    }
-
-    .form-section:hover {
-      box-shadow: var(--shadow-hover);
-    }
-
-    .section-header {
-      padding: 20px 20px 16px 20px;
-      border-bottom: 1px solid var(--uber-border);
-    }
-
-    .section-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--text-primary);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .section-icon {
-      font-size: 18px;
-    }
-
-    .section-content {
-      padding: 20px;
-    }
-
-    /* Form Fields */
-    .field-group {
-      margin-bottom: 20px;
-    }
-
-    .field-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
-    .field-label {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .required-star {
-      color: var(--uber-red);
-      font-size: 12px;
-    }
-
-    .field-input {
-      width: 100%;
-      padding: 16px;
-      font-size: 16px;
-      border: 2px solid var(--uber-border);
-      border-radius: var(--radius);
-      background: var(--uber-light-gray);
-      color: var(--text-primary);
-      transition: all 0.2s ease;
-      font-weight: 500;
-      outline: none;
-    }
-
-    [data-theme="dark"] .field-input {
-      background: #1a202c;
-      color: #f7fafc;
-      border-color: #4a5568;
-    }
-
-    .field-input:focus {
-      border-color: var(--uber-black);
-      background: white;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    }
-
-    [data-theme="dark"] .field-input:focus {
-      background: #2d3748;
-      border-color: #e2e8f0;
-      color: #f7fafc;
-      box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
-    }
-
-    .field-input.success {
-      border-color: var(--uber-green);
-      background: rgba(0, 214, 111, 0.05);
-    }
-
-    .field-input.error {
-      border-color: var(--uber-red);
-      background: rgba(255, 107, 107, 0.05);
-    }
-
-    /* File Upload Cards - Dark mode fix */
-    .upload-card {
-      border: 2px dashed var(--uber-border);
-      border-radius: var(--radius);
-      padding: 24px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      background: var(--uber-light-gray);
-      position: relative;
-      min-height: 140px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-
-    [data-theme="dark"] .upload-card {
-      background: #1a202c;
-      border-color: #4a5568;
-    }
-
-    .upload-card:hover {
-      border-color: var(--uber-black);
-      background: white;
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-hover);
-    }
-
-    [data-theme="dark"] .upload-card:hover {
-      border-color: #e2e8f0;
-      background: #2d3748;
-    }
-
-    .upload-card.has-file {
-      border-style: solid;
-      border-color: var(--uber-green);
-      background: rgba(0, 214, 111, 0.05);
-    }
-
-    .upload-icon {
-      font-size: 40px;
-      margin-bottom: 12px;
-      color: var(--text-muted);
-    }
-
-    .upload-title {
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 4px;
-    }
-
-    .upload-subtitle {
-      font-size: 13px;
-      color: var(--text-secondary);
-    }
-
-    .file-preview {
-      max-width: 100%;
-      max-height: 100px;
-      border-radius: 8px;
-      object-fit: cover;
-      box-shadow: var(--shadow);
-    }
-
-    .existing-badge {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      background: var(--uber-green);
-      color: white;
-      padding: 4px 8px;
-      border-radius: 16px;
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-
-    /* Location Section */
-    .location-group {
-      display: flex;
-      gap: 12px;
-      align-items: end;
-    }
-
-    .location-input {
-      flex: 1;
-    }
-
-    .gps-button {
-      width: 56px;
-      height: 56px;
-      border: 2px solid var(--uber-border);
-      border-radius: var(--radius);
-      background: var(--uber-light-gray);
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      color: var(--text-primary);
-    }
-
-    .gps-button:hover {
-      border-color: var(--uber-black);
-      background: white;
-      transform: translateY(-1px);
-    }
-
-    .gps-button.loading {
-      background: var(--uber-orange);
-      border-color: var(--uber-orange);
-      color: white;
-      animation: pulse 1.5s infinite;
-    }
-
-    .gps-button.success {
-      background: var(--uber-green);
-      border-color: var(--uber-green);
-      color: white;
-    }
-
-    /* Messages */
-    .field-message {
-      margin-top: 8px;
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 500;
-      opacity: 0;
-      transform: translateY(-4px);
-      transition: all 0.2s ease;
-    }
-
-    .field-message.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .field-message.error {
-      background: rgba(255, 107, 107, 0.1);
-      color: var(--uber-red);
-      border: 1px solid rgba(255, 107, 107, 0.2);
-    }
-
-    .field-message.success {
-      background: rgba(0, 214, 111, 0.1);
-      color: var(--uber-green);
-      border: 1px solid rgba(0, 214, 111, 0.2);
-    }
-
-    /* Bottom Actions - Dark mode fix */
-    .bottom-actions {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: white;
-      border-top: 1px solid var(--uber-border);
-      padding: 20px;
-      padding-bottom: max(20px, env(safe-area-inset-bottom));
-      z-index: 100;
-      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
-    }
-
-    [data-theme="dark"] .bottom-actions {
-      background: #2d3748;
-      border-top-color: #4a5568;
-    }
-
-    .action-buttons {
-      display: flex;
-      gap: 12px;
-      max-width: 480px;
-      margin: 0 auto;
-    }
-
-    .action-btn {
-      flex: 1;
-      padding: 16px 24px;
-      border: none;
-      border-radius: var(--radius);
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      position: relative;
-      outline: none;
-    }
-
-    .btn-primary {
-      background: var(--uber-black);
-      color: white;
-      box-shadow: var(--shadow);
-    }
-
-    [data-theme="dark"] .btn-primary {
-      background: var(--uber-green);
-      color: white;
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-hover);
-    }
-
-    .btn-secondary {
-      background: var(--uber-gray);
-      color: var(--text-primary);
-      border: 2px solid var(--uber-border);
-    }
-
-    [data-theme="dark"] .btn-secondary {
-      background: var(--uber-gray);
-      color: var(--text-primary);
-      border-color: var(--uber-border);
-    }
-
-    .btn-secondary:hover {
-      background: var(--uber-border);
-      transform: translateY(-1px);
-    }
-
-    .action-btn:disabled {
-      background: var(--text-muted);
-      color: white;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-
-    .btn-loading {
-      position: relative;
-      pointer-events: none;
-    }
-
-    .btn-loading::after {
-      content: '';
-      position: absolute;
-      width: 20px;
-      height: 20px;
-      border: 2px solid transparent;
-      border-top: 2px solid currentColor;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    .btn-loading .btn-text {
-      opacity: 0;
-    }
-
-    /* Loading Overlay */
-    .loading-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.8);
-      backdrop-filter: blur(8px);
-      z-index: 9999;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .loading-overlay.show {
-      display: flex;
-    }
-
-    .loading-spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      border-top: 3px solid white;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    .loading-text {
-      color: white;
-      font-size: 16px;
-      font-weight: 600;
-    }
-
-    /* Toast */
-    .toast {
-      position: fixed;
-      top: 100px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10000;
-      max-width: 90%;
-      padding: 16px 24px;
-      border-radius: var(--radius);
-      font-weight: 600;
-      color: white;
-      box-shadow: var(--shadow-hover);
-      opacity: 0;
-      transform: translateX(-50%) translateY(-20px);
-      transition: all 0.3s ease;
-    }
-
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-
-    .toast.success {
-      background: var(--uber-green);
-    }
-
-    .toast.error {
-      background: var(--uber-red);
-    }
-
-    /* Hidden */
-    .hidden {
-      display: none !important;
-    }
-
-    input[type="file"] {
-      display: none;
-    }
-
-    /* Animations */
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.8; transform: scale(0.95); }
-    }
-
-    /* Responsive */
-    @media (max-width: 480px) {
-      .field-row {
-        grid-template-columns: 1fr;
-      }
-
-      .location-group {
-        flex-direction: column;
-        gap: 12px;
-      }
-
-      .gps-button {
-        width: 100%;
-      }
-
-      .action-buttons {
-        flex-direction: column;
-      }
-
-      .top-content {
-        padding: 0 16px;
-      }
-
-      .content-area {
-        padding: 0 16px 120px 16px;
-      }
-
-      .bottom-actions {
-        padding: 16px;
-        padding-bottom: max(16px, env(safe-area-inset-bottom));
-      }
+      /* Тоже только через переменную + фиксированный зазор 56px */
+      top: calc(var(--tg-safe-area-inset-top) + var(--top-offset) + 56px);
+      left: 0; right: 0; z-index: 900;
+      padding: 16px 20px 14px; background: var(--bg); text-align: center; border-bottom: 1px solid var(--border);
+    }
+    .status-badge{
+      display:inline-flex; gap:6px; align-items:center; padding:5px 12px; border-radius:16px;
+      background:rgba(245,158,11,.1); color:#f59e0b; font-size:11px; font-weight:800; letter-spacing:.3px; text-transform:uppercase;
+      margin-bottom:10px;
+    }
+    .avatar-container{display:inline-block; position:relative; margin-bottom:8px}
+    .avatar{
+      width:88px;height:88px;border-radius:999px; background:var(--card); border:3px solid var(--bg);
+      display:flex;align-items:center;justify-content:center; overflow:hidden; box-shadow:var(--shadow-lg); cursor:pointer;
+      font-size:32px;
+    }
+    .avatar img{width:100%;height:100%;object-fit:cover}
+    .avatar-edit{
+      position:absolute; right:0; bottom:0; width:26px;height:26px; border-radius:999px;
+      background:linear-gradient(135deg,var(--accent),var(--accent-dark)); border:2px solid var(--bg);
+      display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer;
+    }
+    .profile-name{font-size:22px;font-weight:800;margin-top:4px}
+    .profile-role{font-size:13px;color:var(--text-secondary);font-weight:600}
+
+    /* Content area (scrolls) */
+   .content{
+    position: fixed; left: 0; right: 0;
+    /* раньше было 210px — теперь считаем отступ динамически */
+    top: calc(var(--tg-safe-area-inset-top) + var(--top-offset) + 146px); /* 56 (зазор) + ~90 (высота блока с аватаром) */
+    bottom: var(--content-bottom-pad);
+    overflow: auto; -webkit-overflow-scrolling: touch;
+    padding: 0 16px 20px;
+   }
+
+    .content::-webkit-scrollbar{ display:none; }
+
+    .section{
+      background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:12px;
+    }
+    .section-title{font-size:15px;font-weight:800;margin-bottom:12px; display:flex; gap:8px; align-items:center}
+
+    .field{margin-bottom:16px}
+    .field-label{display:block; font-size:13px; font-weight:700; color:var(--text-secondary); margin-bottom:6px}
+    .field-input{
+      width:100%; padding:12px 14px; font-size:16px; font-weight:600;
+      background:var(--input-bg); color:var(--text);
+      border:1.5px solid var(--border); border-radius:12px; outline:none; transition:.15s border-color, .15s background;
+    }
+    .field-input:focus{ border-color:var(--accent); background:var(--card); }
+    .field-input:disabled{ opacity:.7; cursor:not-allowed; }
+
+    .field-row{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+
+    .truck-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+    .truck-card{
+      padding:12px 8px; border:1.5px solid var(--border); border-radius:12px; text-align:center; background:var(--input-bg);
+      cursor:pointer; transition:.15s border-color,.15s background;
+    }
+    .truck-card.selected{ border-color:var(--accent); background:rgba(16,185,129,.07); }
+    .truck-icon{font-size:28px; margin-bottom:4px}
+    .truck-label{font-size:11px; font-weight:800; color:var(--text-secondary)}
+
+    .upload-box{
+      border:1.5px dashed var(--border); border-radius:12px; padding:16px; text-align:center; cursor:pointer;
+      background:var(--input-bg); transition:.15s;
+    }
+    .upload-box.has-file{border-style:solid; border-color:var(--accent); background:rgba(16,185,129,.07)}
+    .upload-icon{font-size:32px; opacity:.5; margin-bottom:6px}
+    .upload-text{font-size:13px; font-weight:800}
+    .upload-hint{font-size:11px; color:var(--text-muted)}
+    .file-preview{max-width:100%; max-height:110px; border-radius:10px; object-fit:cover; margin-bottom:8px}
+
+    .location-row{display:flex; gap:8px; align-items:flex-end}
+    .location-input{flex:1}
+    .gps-btn{
+      width:52px; height:52px; border-radius:12px; border:1.5px solid var(--border);
+      background:var(--input-bg); font-size:20px; cursor:pointer; transition:.15s; flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .gps-btn.loading{ background:#f59e0b; border-color:#f59e0b; color:#fff; animation:pulse 1.5s infinite }
+    .gps-btn.success{ background:var(--accent); border-color:var(--accent); color:#fff }
+
+    /* Bottom bar (one large button) */
+    .bottom-bar{
+      position:fixed; left:0; right:0; bottom:0; z-index:1000; background:var(--card); border-top:1px solid var(--border);
+      padding:16px 16px calc(20px + var(--tg-safe-area-inset-bottom));
+      box-shadow:0 -2px 10px rgba(0,0,0,.05);
+    }
+    .btn{
+      width:100%; height:60px; border:0; border-radius:14px;
+      display:flex; align-items:center; justify-content:center; gap:8px;
+      font-size:16px; font-weight:900; line-height:1;
+    }
+    .btn-primary{ background:linear-gradient(135deg,var(--accent),var(--accent-dark)); color:#fff; box-shadow:var(--shadow); }
+    .btn-primary:active{ transform: translateY(1px); }
+    .btn-loading::after{
+      content:''; width:18px; height:18px; border:2px solid transparent; border-top:2px solid currentColor; border-radius:50%;
+      animation:spin 1s linear infinite; margin-left:8px;
+    }
+
+    /* Overlays / toast */
+    .loading-overlay{position:fixed; inset:0; background:rgba(0,0,0,.8); backdrop-filter:blur(8px); z-index:9999; display:none; align-items:center; justify-content:center; flex-direction:column; gap:16px}
+    .loading-overlay.show{display:flex}
+    .spinner{width:42px;height:42px;border:3px solid rgba(255,255,255,.25);border-top:3px solid #fff;border-radius:50%;animation:spin 1s linear infinite}
+    .loading-text{color:#fff;font-weight:800}
+    .toast{
+      position:fixed; top:calc(var(--tg-safe-area-inset-top) + 70px); left:50%; transform:translateX(-50%) translateY(-20px);
+      z-index:10000; max-width:90%; padding:14px 20px; border-radius:12px; color:#fff; font-weight:800;
+      box-shadow:var(--shadow-lg); opacity:0; transition:.25s;
+    }
+    .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+    .toast.success{background:linear-gradient(135deg,var(--accent),var(--accent-dark))}
+    .toast.error{background:linear-gradient(135deg,#ef4444,#dc2626)}
+
+    input[type="file"]{display:none}
+
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.8}}
+
+    @media (max-width:480px){
+      .field-row{grid-template-columns:1fr}
+      .truck-grid{grid-template-columns:repeat(2,1fr)}
     }
   </style>
 </head>
 <body>
-  <!-- Loading Overlay -->
+  <!-- Loading -->
   <div class="loading-overlay" id="loadingOverlay">
-    <div class="loading-spinner"></div>
-    <div class="loading-text" data-ru="Загрузка профиля..." data-kz="Профильді жүктеу...">Загрузка профиля...</div>
+    <div class="spinner"></div>
+    <div class="loading-text">Жүктелуде...</div>
   </div>
 
-  <div class="app-container">
-    <!-- Top Bar -->
-    <div class="top-bar">
-      <div class="top-content">
-        <button class="back-btn" onclick="goBack()">←</button>
-        <div class="top-title" data-ru="Профиль" data-kz="Профиль">Профиль</div>
-        <div class="top-actions">
-          <button class="trip-btn" onclick="openDriverTrip()">
-            🚚 <span data-ru="Поездка" data-kz="Сапар">Поездка</span>
-          </button>
-          <div class="lang-switch">
-            <button class="lang-btn active" onclick="setLang('ru')" id="lang-ru">RU</button>
-            <button class="lang-btn" onclick="setLang('kz')" id="lang-kz">KZ</button>
+  <!-- Header -->
+  <div class="header">
+    <button class="back-btn" onclick="goToDeliveryList()">←</button>
+    <div class="header-title">Профиль</div>
+    <button class="trip-btn" onclick="openDriverTrip()">🚚 Сапар</button>
+  </div>
+
+  <!-- Profile top -->
+  <div class="profile-header">
+    <div class="status-badge" id="statusBadge">⏳ Қарауда</div>
+    <div class="avatar-container">
+      <div class="avatar" id="profileAvatar" onclick="document.getElementById('profilePhoto').click()">👤</div>
+      <div class="avatar-edit" onclick="document.getElementById('profilePhoto').click()">📷</div>
+    </div>
+    <div class="profile-name" id="profileName">Аты-жөні</div>
+    <div class="profile-role">Жүргізуші</div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+    <form id="updateForm" enctype="multipart/form-data">
+      <div class="section">
+        <div class="section-title">👤 Жеке ақпарат</div>
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Аты</label>
+            <input class="field-input" id="firstName" name="firstName" type="text" required />
           </div>
+          <div class="field">
+            <label class="field-label">Тегі</label>
+            <input class="field-input" id="lastName" name="lastName" type="text" required />
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Туған күні</label>
+          <input class="field-input" id="birthday" name="birthday" type="date" required disabled />
+          <small style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px">Туған күнді өзгерту мүмкін емес</small>
+        </div>
+        <div class="field">
+          <label class="field-label">Телефон нөмірі</label>
+          <input class="field-input" id="contactNumber" name="contactNumber" type="tel" placeholder="+7 (___) ___-__-__" required />
         </div>
       </div>
-    </div>
 
-    <!-- Profile Header -->
-    <div class="profile-header">
-      <div class="status-indicator pending" id="statusIndicator" data-ru="На рассмотрении" data-kz="Қарауда">На рассмотрении</div>
-      
-      <div class="avatar-container">
-        <div class="avatar" id="profileAvatar" onclick="document.getElementById('profilePhoto').click()">
-          👤
+      <div class="section">
+        <div class="section-title">🚚 Көлік түрі</div>
+        <div class="truck-grid">
+          <div class="truck-card" data-type="small"><div class="truck-icon">🚐</div><div class="truck-label">Кіші</div></div>
+          <div class="truck-card" data-type="medium"><div class="truck-icon">🚚</div><div class="truck-label">Орта</div></div>
+          <div class="truck-card" data-type="large"><div class="truck-icon">🚛</div><div class="truck-label">Үлкен</div></div>
+          <div class="truck-card" data-type="refrigerator"><div class="truck-icon">❄️</div><div class="truck-label">Реф-тор</div></div>
+          <div class="truck-card" data-type="tow"><div class="truck-icon">🚗</div><div class="truck-label">Эвакуатор</div></div>
         </div>
-        <div class="avatar-edit" onclick="document.getElementById('profilePhoto').click()"></div>
+        <input type="hidden" id="truckType" name="truckType" required />
+        <small style="font-size:11px;color:var(--text-muted);display:block;margin-top:8px">Ағымдағы: <span id="currentTruckType">---</span></small>
       </div>
-      
-      <div class="profile-name" id="profileName">Имя Фамилия</div>
-      <div class="profile-subtitle" data-ru="Водитель" data-kz="Жүргізуші">Водитель</div>
-      <div class="member-since" data-ru="Участник с" data-kz="Мүше болған уақыт">Участник с <span id="memberYear">2024</span></div>
-    </div>
 
-    <!-- Content Area -->
-    <div class="content-area">
-      <form id="updateForm" enctype="multipart/form-data">
-        
-        <!-- Personal Information -->
-        <div class="form-section">
-          <div class="section-header">
-            <div class="section-title">
-              <span class="section-icon">👤</span>
-              <span data-ru="Личная информация" data-kz="Жеке ақпарат">Личная информация</span>
-            </div>
+      <div class="section">
+        <div class="section-title">📄 Құжаттар</div>
+        <div class="field">
+          <label class="field-label">Профиль фотосы</label>
+          <div class="upload-box" id="profilePhotoCard" onclick="document.getElementById('profilePhoto').click()">
+            <div class="upload-icon">📸</div>
+            <div class="upload-text">Фотоны жаңарту</div>
+            <div class="upload-hint">Өзгерту үшін басыңыз</div>
           </div>
-          <div class="section-content">
-            <div class="field-row">
-              <div class="field-group">
-                <div class="field-label">
-                  <span data-ru="Имя" data-kz="Аты">Имя</span>
-                  <span class="required-star">*</span>
-                </div>
-                <input type="text" class="field-input" id="firstName" name="firstName" required>
-                <div class="field-message" id="firstNameMessage"></div>
-              </div>
-              
-              <div class="field-group">
-                <div class="field-label">
-                  <span data-ru="Фамилия" data-kz="Тегі">Фамилия</span>
-                  <span class="required-star">*</span>
-                </div>
-                <input type="text" class="field-input" id="lastName" name="lastName" required>
-                <div class="field-message" id="lastNameMessage"></div>
-              </div>
-            </div>
-
-            <div class="field-group">
-              <div class="field-label">
-                <span data-ru="Дата рождения" data-kz="Туған күні">Дата рождения</span>
-                <span class="required-star">*</span>
-              </div>
-              <input type="date" class="field-input" id="birthday" name="birthday" required max="2006-01-01">
-              <div class="field-message" id="birthdayMessage"></div>
-            </div>
-
-            <div class="field-group">
-              <div class="field-label">
-                <span data-ru="Номер телефона" data-kz="Телефон нөмірі">Номер телефона</span>
-                <span class="required-star">*</span>
-              </div>
-              <input type="tel" class="field-input" id="contactNumber" name="contactNumber" required placeholder="+7 (___) ___-__-__">
-              <div class="field-message" id="contactNumberMessage"></div>
-            </div>
-          </div>
+          <input id="profilePhoto" name="profilePhoto" type="file" accept="image/*" />
         </div>
 
-        <!-- Documents -->
-        <div class="form-section">
-          <div class="section-header">
-            <div class="section-title">
-              <span class="section-icon">📄</span>
-              <span data-ru="Документы" data-kz="Құжаттар">Документы</span>
-            </div>
+        <div class="field">
+          <label class="field-label">Куәлік (алдыңғы)</label>
+          <div class="upload-box" id="licenseFrontCard" onclick="document.getElementById('licenseFront').click()">
+            <div class="upload-icon">🆔</div>
+            <div class="upload-text">Құжатты жаңарту</div>
+            <div class="upload-hint">Алдыңғы жағы</div>
           </div>
-          <div class="section-content">
-            
-            <!-- Profile Photo -->
-            <div class="field-group">
-              <div class="field-label">
-                <span data-ru="Фото профиля" data-kz="Профиль фотосы">Фото профиля</span>
-                <span class="required-star">*</span>
-              </div>
-              <div class="upload-card" id="profilePhotoCard" onclick="document.getElementById('profilePhoto').click()">
-                <div class="upload-icon">📸</div>
-                <div class="upload-title" data-ru="Обновить фото" data-kz="Фотоны жаңарту">Обновить фото</div>
-                <div class="upload-subtitle" data-ru="Нажмите для изменения" data-kz="Өзгерту үшін басыңыз">Нажмите для изменения</div>
-              </div>
-              <input type="file" id="profilePhoto" name="profilePhoto" accept="image/*">
-              <div class="field-message" id="profilePhotoMessage"></div>
-            </div>
-
-            <!-- License Front -->
-            <div class="field-group">
-              <div class="field-label">
-                <span data-ru="Лицевая сторона удостоверения" data-kz="Куәліктің алдыңғы жағы">Лицевая сторона удостоверения</span>
-                <span class="required-star">*</span>
-              </div>
-              <div class="upload-card" id="licenseFrontCard" onclick="document.getElementById('licenseFront').click()">
-                <div class="upload-icon">🆔</div>
-                <div class="upload-title" data-ru="Обновить документ" data-kz="Құжатты жаңарту">Обновить документ</div>
-                <div class="upload-subtitle" data-ru="Лицевая сторона" data-kz="Алдыңғы жағы">Лицевая сторона</div>
-              </div>
-              <input type="file" id="licenseFront" name="licenseFront" accept="image/*,.pdf">
-              <div class="field-message" id="licenseFrontMessage"></div>
-            </div>
-
-            <!-- License Back -->
-            <div class="field-group">
-              <div class="field-label">
-                <span data-ru="Обратная сторона удостоверения" data-kz="Куәліктің артқы жағы">Обратная сторона удостоверения</span>
-                <span class="required-star">*</span>
-              </div>
-              <div class="upload-card" id="licenseBackCard" onclick="document.getElementById('licenseBack').click()">
-                <div class="upload-icon">🆔</div>
-                <div class="upload-title" data-ru="Обновить документ" data-kz="Құжатты жаңарту">Обновить документ</div>
-                <div class="upload-subtitle" data-ru="Обратная сторона" data-kz="Артқы жағы">Обратная сторона</div>
-              </div>
-              <input type="file" id="licenseBack" name="licenseBack" accept="image/*,.pdf">
-              <div class="field-message" id="licenseBackMessage"></div>
-            </div>
-
-          </div>
+          <input id="licenseFront" name="licenseFront" type="file" accept="image/*,.pdf" />
         </div>
 
-        <!-- Location -->
-        <div class="form-section">
-          <div class="section-header">
-            <div class="section-title">
-              <span class="section-icon">📍</span>
-              <span data-ru="Местоположение" data-kz="Орналасқан жер">Местоположение</span>
-            </div>
+        <div class="field">
+          <label class="field-label">Куәлік (артқы)</label>
+          <div class="upload-box" id="licenseBackCard" onclick="document.getElementById('licenseBack').click()">
+            <div class="upload-icon">🆔</div>
+            <div class="upload-text">Құжатты жаңарту</div>
+            <div class="upload-hint">Артқы жағы</div>
           </div>
-          <div class="section-content">
-            <div class="field-group">
-              <div class="field-label">
-                <span data-ru="Город работы" data-kz="Жұмыс қаласы">Город работы</span>
-                <span class="required-star">*</span>
-              </div>
-              <div class="location-group">
-                <div class="location-input">
-                  <input type="text" class="field-input" id="startCity" name="startCity" required placeholder="Алматы">
-                </div>
-                <button type="button" class="gps-button" id="gpsButton" onclick="getCurrentLocation()">📍</button>
-              </div>
-              <input type="hidden" id="latitude" name="latitude">
-              <input type="hidden" id="longitude" name="longitude">
-              <div class="field-message" id="locationMessage"></div>
-            </div>
-          </div>
+          <input id="licenseBack" name="licenseBack" type="file" accept="image/*,.pdf" />
         </div>
-
-        <!-- Hidden fields -->
-        <input type="hidden" id="telegramId" name="telegramId">
-      </form>
-    </div>
-
-    <!-- Bottom Actions -->
-    <div class="bottom-actions">
-      <div class="action-buttons">
-        <button type="button" class="action-btn btn-secondary" onclick="resetForm()">
-          <span class="btn-text" data-ru="Сбросить" data-kz="Тазарту">Сбросить</span>
-        </button>
-        <button type="button" class="action-btn btn-primary" id="updateBtn" onclick="updateProfile()">
-          <span class="btn-text" data-ru="Обновить профиль" data-kz="Профильді жаңарту">Обновить профиль</span>
-        </button>
       </div>
-    </div>
+
+      <div class="section">
+        <div class="section-title">📍 Орналасқан жер</div>
+        <div class="field">
+          <label class="field-label">Жұмыс қаласы</label>
+          <div class="location-row">
+            <div class="location-input">
+              <input class="field-input" id="startCity" name="startCity" type="text" placeholder="Алматы" required />
+            </div>
+            <button type="button" class="gps-btn" id="gpsButton" onclick="getCurrentLocation()">📍</button>
+          </div>
+          <input type="hidden" id="latitude" name="latitude" />
+          <input type="hidden" id="longitude" name="longitude" />
+        </div>
+      </div>
+
+      <input type="hidden" id="telegramId" name="telegramId" />
+    </form>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="bottom-bar" id="bottomBar">
+    <button class="btn btn-primary" type="button" id="updateBtn" onclick="updateProfile()">✅ Жаңарту</button>
   </div>
 
   <script>
-    // Global variables
-    let currentLang = 'ru';
-    let currentLocation = null;
-    let originalData = {};
-
-    // Translations
+    // --------- I18N ---------
     const translations = {
-      ru: {
-        loading: 'Загрузка...',
-        error: 'Ошибка',
-        success: 'Успешно',
-        required: 'Обязательное поле',
-        invalidPhone: 'Неверный формат телефона',
-        invalidAge: 'Возраст должен быть от 18 лет',
-        locationError: 'Ошибка определения местоположения',
-        locationSuccess: 'Местоположение определено',
-        updating: 'Обновление профиля...',
-        updateSuccess: 'Профиль успешно обновлен',
-        updateError: 'Ошибка обновления профиля',
-        pending: 'На рассмотрении',
-        approved: 'Одобрен',
-        rejected: 'Отклонен',
-        fillRequired: 'Заполните все обязательные поля',
-        gettingLocation: 'Определение местоположения...',
-        fileTooBig: 'Файл слишком большой (максимум 5МБ)',
-        existing: 'Загружено'
-      },
-      kz: {
-        loading: 'Жүктелуде...',
-        error: 'Қате',
-        success: 'Сәтті',
-        required: 'Міндетті өріс',
-        invalidPhone: 'Телефон форматы дұрыс емес',
-        invalidAge: 'Жасы 18-ден кем болмауы керек',
-        locationError: 'Орынды анықтауда қате',
-        locationSuccess: 'Орналасқан жер анықталды',
-        updating: 'Профильді жаңарту...',
-        updateSuccess: 'Профиль сәтті жаңартылды',
-        updateError: 'Профільді жаңартуда қате',
-        pending: 'Қарауда',
-        approved: 'Мақұлданған',
-        rejected: 'Қабылданбаған',
-        fillRequired: 'Барлық міндетті өрістерді толтырыңыз',
-        gettingLocation: 'Орынды анықтау...',
-        fileTooBig: 'Файл тым үлкен (максимум 5МБ)',
-        existing: 'Жүктелген'
-      }
+      loading:'Жүктелуде...', success:'Сәтті', error:'Қате',
+      updateSuccess:'Профиль сәтті жаңартылды', updateError:'Жаңартуда қате',
+      locationSuccess:'Орналасқан жер анықталды', locationError:'Орынды анықтауда қате',
+      fileTooBig:'Файл тым үлкен (макс. 5МБ)', fillRequired:'Барлық өрістерді толтырыңыз'
     };
 
-    // Initialize app
-    document.addEventListener('DOMContentLoaded', function() {
-      initializeTelegram();
-      loadDriverProfile();
-      setupEventListeners();
+    let currentLocation=null, originalData={};
+
+    // --------- INIT ---------
+    document.addEventListener('DOMContentLoaded', () => {
+      initTelegram();
+      setupTruckTypes();
       setupFileUploads();
-      detectSystemTheme();
+      setupEvents();
+      // Slight delay so Telegram sets insets, then load profile
+      setTimeout(loadDriverProfile, 50);
     });
 
-    // Initialize Telegram WebApp
-    function initializeTelegram() {
-      if (window.Telegram && Telegram.WebApp) {
-        Telegram.WebApp.ready();
-        Telegram.WebApp.expand();
-        Telegram.WebApp.disableVerticalSwipes();
-        
-        const user = Telegram.WebApp.initDataUnsafe?.user;
-        if (user) {
-          document.getElementById('telegramId').value = user.id;
-        }
+    function initTelegram(){
+      const tg = window.Telegram?.WebApp;
+      if(!tg){ recalcBottomPad(); return; }
 
-        // Theme
-        if (Telegram.WebApp.colorScheme === 'dark') {
-          document.documentElement.setAttribute('data-theme', 'dark');
-        }
+      tg.ready(); tg.expand(); tg.disableVerticalSwipes?.();
+      if(tg.colorScheme==='dark') document.documentElement.setAttribute('data-theme','dark');
+      tg.onEvent?.('themeChanged', ()=>document.documentElement.setAttribute('data-theme', tg.colorScheme));
 
-        Telegram.WebApp.onEvent('themeChanged', function() {
-          document.documentElement.setAttribute('data-theme', Telegram.WebApp.colorScheme);
-        });
-
-        // Back button
-        Telegram.WebApp.BackButton.show();
-        Telegram.WebApp.onEvent('backButtonClicked', goBack);
-      }
-    }
-
-    // Detect system theme
-    function detectSystemTheme() {
-      if (!window.Telegram || !Telegram.WebApp) {
-        const hour = new Date().getHours();
-        if (hour >= 20 || hour < 6) {
-          document.documentElement.setAttribute('data-theme', 'dark');
-        }
-      }
-    }
-
-    // Go back
-    function goBack() {
-      if (window.Telegram && Telegram.WebApp) {
-        Telegram.WebApp.close();
-      } else {
-        window.history.back();
-      }
-    }
-
-    // Set language
-    function setLang(lang) {
-      currentLang = lang;
-      
-      // Update buttons
-      document.querySelectorAll('.lang-btn').forEach(btn => {
-        btn.classList.remove('active');
-      });
-      document.getElementById('lang-' + lang).classList.add('active');
-      
-      // Update text content
-      document.querySelectorAll('[data-ru]').forEach(el => {
-        const text = el.getAttribute('data-' + lang);
-        if (text) {
-          el.textContent = text;
-        }
-      });
-
-      updatePlaceholders();
-    }
-
-    // Update placeholders based on language
-    function updatePlaceholders() {
-      const placeholders = {
-        ru: {
-          firstName: 'Введите имя',
-          lastName: 'Введите фамилию',
-          contactNumber: '+7 (___) ___-__-__',
-          startCity: 'Алматы'
-        },
-        kz: {
-          firstName: 'Атын енгізіңіз',
-          lastName: 'Тегін енгізіңіз',
-          contactNumber: '+7 (___) ___-__-__',
-          startCity: 'Алматы'
-        }
+      const applyVH = () => {
+        const stable = tg.viewportStableHeight || window.visualViewport?.height || window.innerHeight;
+        document.documentElement.style.setProperty('--tg-viewport-stable-height', stable + 'px');
+        document.documentElement.style.setProperty('--tg-safe-area-inset-top',  (tg.safeAreaInset?.top||0) + 'px');
+        document.documentElement.style.setProperty('--tg-safe-area-inset-bottom',(tg.safeAreaInset?.bottom||0) + 'px');
+        recalcBottomPad();
       };
+      applyVH();
+      tg.onEvent?.('viewportChanged', applyVH);
+      window.addEventListener('resize', applyVH);
+      window.addEventListener('orientationchange', applyVH);
 
-      Object.keys(placeholders[currentLang]).forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-          element.placeholder = placeholders[currentLang][id];
-        }
+      const user = tg.initDataUnsafe?.user;
+      if(user) document.getElementById('telegramId').value = user.id;
+      tg.BackButton?.hide?.();
+    }
+
+    // ensure bottom content never hides behind home indicator
+    function recalcBottomPad(){
+      const bar = document.getElementById('bottomBar');
+      const barH = bar ? bar.getBoundingClientRect().height : 100;
+      const inset = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tg-safe-area-inset-bottom')) || 0;
+      const pad = Math.max(barH + 8, 90) + inset; // 8px spacer
+      document.documentElement.style.setProperty('--content-bottom-pad', pad + 'px');
+    }
+
+    // --------- NAV ---------
+    function goToDeliveryList(){ location.href='/delivery-list'; }
+    function openDriverTrip(){ location.href='/driver'; }
+
+    // --------- TRUCK SELECT ---------
+    function setupTruckTypes(){
+      document.querySelectorAll('.truck-card').forEach(card=>{
+        card.addEventListener('click', function(){
+          document.querySelectorAll('.truck-card').forEach(c=>c.classList.remove('selected'));
+          this.classList.add('selected');
+          const t=this.dataset.type;
+          document.getElementById('truckType').value=t;
+          const names={small:'Кіші', medium:'Орта', large:'Үлкен', refrigerator:'Рефрижератор', tow:'Эвакуатор'};
+          document.getElementById('currentTruckType').textContent=names[t]||t;
+          window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+        });
       });
     }
 
-    // Setup event listeners
-    function setupEventListeners() {
-      // Phone number formatting
-      document.getElementById('contactNumber').addEventListener('input', formatPhoneNumber);
-
-      // Real-time validation
-      document.querySelectorAll('input[required]').forEach(input => {
-        input.addEventListener('input', validateField);
-        input.addEventListener('blur', validateField);
-      });
-
-      // Prevent zoom on input focus
-      document.querySelectorAll('input').forEach(input => {
-        input.addEventListener('focus', function() {
-          if (window.innerWidth < 768) {
-            document.querySelector('meta[name=viewport]').setAttribute('content', 'width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0');
-          }
-        });
-        
-        input.addEventListener('blur', function() {
-          if (window.innerWidth < 768) {
-            document.querySelector('meta[name=viewport]').setAttribute('content', 'width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover');
-          }
-        });
+    // --------- FILES ---------
+    function setupFileUploads(){
+      ['profilePhoto','licenseFront','licenseBack'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(!el) return;
+        el.addEventListener('change',e=>handleFileUpload(e,id));
       });
     }
-
-    // Setup file uploads
-    function setupFileUploads() {
-      const fileInputs = ['profilePhoto', 'licenseFront', 'licenseBack'];
-      
-      fileInputs.forEach(inputId => {
-        const input = document.getElementById(inputId);
-        if (input) {
-          input.addEventListener('change', function(e) {
-            handleFileUpload(e, inputId);
-          });
-        }
-      });
+    function handleFileUpload(e,id){
+      const file=e.target.files?.[0]; const card=document.getElementById(id+'Card'); if(!file||!card) return;
+      if(file.size>5*1024*1024){ showToast('error',translations.fileTooBig); e.target.value=''; return; }
+      card.classList.add('has-file');
+      if(file.type.startsWith('image/')){
+        const r=new FileReader(); r.onload=ev=>{
+          card.innerHTML=`<img src="${ev.target.result}" class="file-preview" alt="Preview">
+                           <div class="upload-text">${file.name}</div>
+                           <div class="upload-hint">${(file.size/1024/1024).toFixed(1)} MB</div>`;
+          if(id==='profilePhoto'){ document.getElementById('profileAvatar').innerHTML=`<img src="${ev.target.result}" alt="Profile">`; }
+        }; r.readAsDataURL(file);
+      }else{
+        card.innerHTML=`<div class="upload-icon">📄</div>
+                        <div class="upload-text">${file.name}</div>
+                        <div class="upload-hint">${(file.size/1024/1024).toFixed(1)} MB</div>`;
+      }
+      window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('success');
     }
 
-    // Handle file upload
-    function handleFileUpload(event, inputId) {
-      const file = event.target.files[0];
-      const card = document.getElementById(inputId + 'Card');
-      const message = document.getElementById(inputId + 'Message');
-      
-      if (file) {
-        // Validate file size (5MB limit)
-        if (file.size > 5 * 1024 * 1024) {
-          showFieldMessage(message, 'error', translations[currentLang].fileTooBig);
-          event.target.value = '';
-          return;
-        }
+    // --------- INPUTS ---------
+    function setupEvents(){
+      const phone=document.getElementById('contactNumber');
+      phone?.addEventListener('input', formatPhoneNumber);
+      new ResizeObserver(recalcBottomPad).observe(document.getElementById('bottomBar'));
+    }
+    function formatPhoneNumber(e){
+      let v=e.target.value.replace(/\D/g,''); if(v && !v.startsWith('7')) v='7'+v;
+      let out='+7'; if(v.length>1){ out+=' ('+v.slice(1,4); if(v.length>4){ out+=') '+v.slice(4,7);
+      if(v.length>7){ out+='-'+v.slice(7,9); if(v.length>9){ out+='-'+v.slice(9,11);}} else out+=')'; }
+      e.target.value=out;
+    }}
 
-        // Update card appearance
-        card.classList.add('has-file');
-        
-        if (file.type.startsWith('image/')) {
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            card.innerHTML = `
-              <img src="${e.target.result}" class="file-preview" alt="Preview">
-              <div class="upload-title">${file.name}</div>
-              <div class="upload-subtitle">${(file.size / 1024 / 1024).toFixed(1)} MB</div>
-            `;
-          };
-          reader.readAsDataURL(file);
-        } else {
-          card.innerHTML = `
-            <div class="upload-icon">📄</div>
-            <div class="upload-title">${file.name}</div>
-            <div class="upload-subtitle">${(file.size / 1024 / 1024).toFixed(1)} MB</div>
-          `;
-        }
-
-        // Update profile avatar if it's profile photo
-        if (inputId === 'profilePhoto') {
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            const avatar = document.getElementById('profileAvatar');
-            avatar.innerHTML = `<img src="${e.target.result}" alt="Profile">`;
-          };
-          reader.readAsDataURL(file);
-        }
-
-        showFieldMessage(message, 'success', translations[currentLang].success);
-      }
+    // --------- GEO ---------
+    function getCurrentLocation(){
+      const btn=document.getElementById('gpsButton'); const input=document.getElementById('startCity');
+      btn.classList.add('loading'); btn.textContent='⏳';
+      if(!navigator.geolocation){ handleLocationError(); return; }
+      navigator.geolocation.getCurrentPosition(pos=>{
+        const lat=pos.coords.latitude, lon=pos.coords.longitude;
+        currentLocation={lat,lon}; document.getElementById('latitude').value=lat; document.getElementById('longitude').value=lon;
+        reverseGeocode(lat,lon).then(addr=>{
+          input.value=addr; btn.classList.remove('loading'); btn.classList.add('success'); btn.textContent='✅';
+          showToast('success',translations.locationSuccess);
+          window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('success');
+        }).catch(()=>{ input.value=`${lat.toFixed(6)}, ${lon.toFixed(6)}`; btn.classList.remove('loading'); btn.classList.add('success'); btn.textContent='✅'; showToast('success',translations.locationSuccess); });
+      }, ()=>handleLocationError(), {enableHighAccuracy:true,timeout:10000,maximumAge:0});
+    }
+    function handleLocationError(){ const btn=document.getElementById('gpsButton'); btn.classList.remove('loading'); btn.textContent='📍'; showToast('error',translations.locationError); window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('error'); }
+    async function reverseGeocode(lat,lon){
+      const res=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=kk`);
+      const data=await res.json(); return (data.address?.city||data.address?.town||data.address?.village||data.display_name||`${lat.toFixed(6)}, ${lon.toFixed(6)}`);
     }
 
-    // Format phone number
-    function formatPhoneNumber(e) {
-      let value = e.target.value.replace(/\D/g, '');
-      let formattedValue = '';
-      
-      if (value.length > 0) {
-        if (!value.startsWith('7')) {
-          value = '7' + value;
-        }
-        formattedValue = '+7';
-        if (value.length > 1) {
-          formattedValue += ' (' + value.substring(1, 4);
-          if (value.length > 4) {
-            formattedValue += ') ' + value.substring(4, 7);
-            if (value.length > 7) {
-              formattedValue += '-' + value.substring(7, 9);
-              if (value.length > 9) {
-                formattedValue += '-' + value.substring(9, 11);
-              }
-            }
-          } else if (value.length > 1) {
-            formattedValue += ')';
-          }
-        }
-      }
-      
-      e.target.value = formattedValue;
+    // --------- LOAD PROFILE ---------
+    async function loadDriverProfile(){
+      const overlay=document.getElementById('loadingOverlay'); overlay.classList.add('show');
+      try{
+        const telegramId=document.getElementById('telegramId').value;
+        if(!telegramId) throw new Error('Telegram ID жоқ');
+        const resp=await fetch('/api/check/who', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({telegram_id:parseInt(telegramId)})});
+        if(!resp.ok) throw new Error('HTTP: '+resp.status);
+        const payload=await resp.json();
+        if(payload.success && payload.data?.exists && payload.data.user_type==='driver'){
+          originalData={...payload.data.driver_data}; populateForm(payload.data.driver_data);
+        }else{ throw new Error('Жүргізуші табылмады'); }
+      }catch(e){ console.error(e); showToast('error', translations.error + ': ' + e.message); }
+      finally{ overlay.classList.remove('show'); recalcBottomPad(); }
     }
 
-    // Validate field
-    function validateField(e) {
-      const field = e.target;
-      const value = field.value.trim();
-      const fieldName = field.name;
-      const messageEl = document.getElementById(fieldName + 'Message');
-      
-      let isValid = true;
-      let errorMessage = '';
+    function populateForm(d){
+      if(d.first_name) document.getElementById('firstName').value=d.first_name;
+      if(d.last_name)  document.getElementById('lastName').value=d.last_name;
+      if(d.birthday){ const b=document.getElementById('birthday'); b.value=d.birthday; b.disabled=true; }
+      if(d.contact_number) document.getElementById('contactNumber').value=d.contact_number;
+      if(d.start_city) document.getElementById('startCity').value=d.start_city;
 
-      // Required validation
-      if (field.required && !value) {
-        isValid = false;
-        errorMessage = translations[currentLang].required;
-      }
-      
-      // Specific validations
-      switch (fieldName) {
-        case 'contactNumber':
-          if (value && !/^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/.test(value)) {
-            isValid = false;
-            errorMessage = translations[currentLang].invalidPhone;
-          }
-          break;
-        
-        case 'birthday':
-          if (value) {
-            const age = new Date().getFullYear() - new Date(value).getFullYear();
-            if (age < 18) {
-              isValid = false;
-              errorMessage = translations[currentLang].invalidAge;
-            }
-          }
-          break;
+      if(d.truck_type){
+        document.getElementById('truckType').value=d.truck_type;
+        const card=document.querySelector(`.truck-card[data-type="${d.truck_type}"]`); card?.classList.add('selected');
+        const names={small:'Кіші', medium:'Орта', large:'Үлкен', refrigerator:'Рефрижератор', tow:'Эвакуатор'};
+        document.getElementById('currentTruckType').textContent=names[d.truck_type]||d.truck_type;
       }
 
-      // Update UI
-      if (isValid) {
-        field.classList.remove('error');
-        field.classList.add('success');
-        hideFieldMessage(messageEl);
-      } else {
-        field.classList.remove('success');
-        field.classList.add('error');
-        showFieldMessage(messageEl, 'error', errorMessage);
-      }
+      if(d.latitude){ document.getElementById('latitude').value=d.latitude; currentLocation={lat:d.latitude, lon:d.longitude}; }
+      if(d.longitude){ document.getElementById('longitude').value=d.longitude; }
 
-      return isValid;
-    }
-
-    // Get current location
-    function getCurrentLocation() {
-      const btn = document.getElementById('gpsButton');
-      const input = document.getElementById('startCity');
-      const message = document.getElementById('locationMessage');
-      
-      btn.classList.add('loading');
-      btn.innerHTML = '⏳';
-      
-      if (!navigator.geolocation) {
-        handleLocationError('Геолокация не поддерживается');
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        position => {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-          
-          currentLocation = { lat, lon };
-          document.getElementById('latitude').value = lat;
-          document.getElementById('longitude').value = lon;
-          
-          // Reverse geocoding
-          reverseGeocode(lat, lon).then(address => {
-            input.value = address;
-            btn.classList.remove('loading');
-            btn.classList.add('success');
-            btn.innerHTML = '✅';
-            showFieldMessage(message, 'success', translations[currentLang].locationSuccess);
-          }).catch(error => {
-            input.value = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-            btn.classList.remove('loading');
-            btn.classList.add('success');
-            btn.innerHTML = '✅';
-            showFieldMessage(message, 'success', translations[currentLang].locationSuccess);
-          });
-        },
-        error => handleLocationError(error.message),
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
-        }
-      );
-    }
-
-    // Handle location error
-    function handleLocationError(error) {
-      const btn = document.getElementById('gpsButton');
-      const message = document.getElementById('locationMessage');
-      
-      btn.classList.remove('loading');
-      btn.innerHTML = '📍';
-      showFieldMessage(message, 'error', translations[currentLang].locationError + ': ' + error);
-    }
-
-    // Reverse geocoding
-    async function reverseGeocode(lat, lon) {
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=${currentLang}`
-        );
-        const data = await response.json();
-        
-        if (data.address) {
-          const addr = data.address;
-          return addr.city || addr.town || addr.village || data.display_name;
-        }
-        
-        return data.display_name || `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-      } catch (error) {
-        throw new Error('Geocoding failed');
-      }
-    }
-
-    // Load driver profile from API
-    async function loadDriverProfile() {
-      const overlay = document.getElementById('loadingOverlay');
-      overlay.classList.add('show');
-      
-      try {
-        const telegramId = document.getElementById('telegramId').value;
-        if (!telegramId) {
-          throw new Error('Telegram ID not found');
-        }
-        
-        const response = await fetch('/api/check/who', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ telegram_id: parseInt(telegramId) })
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.success && data.data.exists && data.data.user_type === 'driver') {
-          populateForm(data.data.driver_data);
-          originalData = { ...data.data.driver_data };
-        } else {
-          throw new Error('Driver not found');
-        }
-      } catch (error) {
-        console.error('Error loading profile:', error);
-        showToast('error', translations[currentLang].error + ': ' + error.message);
-      } finally {
-        overlay.classList.remove('show');
-      }
-    }
-
-    // Populate form with driver data
-    function populateForm(driver) {
-      // Basic info
-      if (driver.first_name) document.getElementById('firstName').value = driver.first_name;
-      if (driver.last_name) document.getElementById('lastName').value = driver.last_name;
-      if (driver.birthday) document.getElementById('birthday').value = driver.birthday;
-      if (driver.contact_number) document.getElementById('contactNumber').value = driver.contact_number;
-      if (driver.start_city) document.getElementById('startCity').value = driver.start_city;
-      
-      // Location
-      if (driver.latitude) {
-        document.getElementById('latitude').value = driver.latitude;
-        currentLocation = { lat: driver.latitude, lon: driver.longitude };
-      }
-      if (driver.longitude) {
-        document.getElementById('longitude').value = driver.longitude;
-      }
-      
-      // Files - mark as existing
-      const fileFields = [
-        { id: 'profilePhoto', dbField: 'profile_photo' },
-        { id: 'licenseFront', dbField: 'license_front' },
-        { id: 'licenseBack', dbField: 'license_back' }
-      ];
-      
-      fileFields.forEach(field => {
-        if (driver[field.dbField]) {
-          const card = document.getElementById(field.id + 'Card');
-          card.classList.add('has-file');
-          
-          const existingBadge = document.createElement('div');
-          existingBadge.className = 'existing-badge';
-          existingBadge.textContent = translations[currentLang].existing;
-          card.appendChild(existingBadge);
-          
-          // Show file preview for images
-          if (field.id === 'profilePhoto') {
-            const avatar = document.getElementById('profileAvatar');
-            avatar.innerHTML = `<img src="./ava/${driver[field.dbField]}" alt="Profile">`;
-            
-            card.innerHTML = `
-              <img src="./ava/${driver[field.dbField]}" class="file-preview" alt="Profile">
-              <div class="upload-title" data-ru="Фото профиля" data-kz="Профиль фотосы">Фото профиля</div>
-              <div class="upload-subtitle" data-ru="Нажмите для изменения" data-kz="Өзгерту үшін басыңыз">Нажмите для изменения</div>
-              <div class="existing-badge">${translations[currentLang].existing}</div>
-            `;
-          } else {
-            const isLicenseFront = field.id === 'licenseFront';
-            card.innerHTML = `
-              <img src="./document/${driver[field.dbField]}" class="file-preview" alt="License">
-              <div class="upload-title" data-ru="${isLicenseFront ? 'Лицевая сторона' : 'Обратная сторона'}" data-kz="${isLicenseFront ? 'Алдыңғы жағы' : 'Артқы жағы'}">${isLicenseFront ? 'Лицевая сторона' : 'Обратная сторона'}</div>
-              <div class="upload-subtitle" data-ru="Нажмите для изменения" data-kz="Өзгерту үшін басыңыз">Нажмите для изменения</div>
-              <div class="existing-badge">${translations[currentLang].existing}</div>
-            `;
+      const files=[{id:'profilePhoto', db:'profile_photo', base:'/ava/'},{id:'licenseFront', db:'license_front', base:'/documents/'},{id:'licenseBack', db:'license_back', base:'/documents/'}];
+      files.forEach(f=>{
+        if(d[f.db]){
+          const card=document.getElementById(f.id+'Card'); card?.classList.add('has-file');
+          if(f.id==='profilePhoto'){
+            document.getElementById('profileAvatar').innerHTML=`<img src="${f.base}${d[f.db]}" alt="Profile">`;
+            card.innerHTML=`<img src="${f.base}${d[f.db]}" class="file-preview" alt="Profile"><div class="upload-text">Профиль фотосы</div><div class="upload-hint">Өзгерту үшін басыңыз</div>`;
+          }else{
+            card.innerHTML=`<img src="${f.base}${d[f.db]}" class="file-preview" alt="License"><div class="upload-text">Құжат</div><div class="upload-hint">Өзгерту үшін басыңыз</div>`;
           }
         }
       });
-      
-      // Header info
-      const fullName = [driver.first_name, driver.last_name].filter(Boolean).join(' ') || 'Имя Фамилия';
-      document.getElementById('profileName').textContent = fullName;
-      
-      if (driver.created_at) {
-        const year = new Date(driver.created_at).getFullYear();
-        document.getElementById('memberYear').textContent = year;
+
+      const full=[d.first_name,d.last_name].filter(Boolean).join(' ')||'Аты-жөні';
+      document.getElementById('profileName').textContent=full;
+
+      const statusMap={pending:{icon:'⏳',text:'Қарауда'}, approved:{icon:'✅',text:'Мақұлданған'}, rejected:{icon:'❌',text:'Қабылданбаған'}};
+      if(d.status && statusMap[d.status]) document.getElementById('statusBadge').innerHTML=`${statusMap[d.status].icon} ${statusMap[d.status].text}`;
+    }
+
+    // --------- UPDATE ---------
+    async function updateProfile(){
+      const btn=document.getElementById('updateBtn');
+      const firstName=document.getElementById('firstName').value.trim();
+      const lastName=document.getElementById('lastName').value.trim();
+      const contactNumber=document.getElementById('contactNumber').value.trim();
+      const startCity=document.getElementById('startCity').value.trim();
+      const truckType=document.getElementById('truckType').value;
+      if(!firstName||!lastName||!contactNumber||!startCity||!truckType){
+        showToast('error',translations.fillRequired); window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('error'); return;
       }
-      
-      // Status
-      const statusIndicator = document.getElementById('statusIndicator');
-      const statusText = {
-        'pending': translations[currentLang].pending,
-        'approved': translations[currentLang].approved,
-        'rejected': translations[currentLang].rejected
-      };
-      
-      if (driver.status) {
-        statusIndicator.className = `status-indicator ${driver.status}`;
-        statusIndicator.textContent = statusText[driver.status] || driver.status;
-      }
+      btn.classList.add('btn-loading'); btn.disabled=true;
+      try{
+        const fd=new FormData(document.getElementById('updateForm'));
+        const resp=await fetch('/api/driver/update',{method:'POST',body:fd});
+        if(!resp.ok) throw new Error('HTTP: '+resp.status);
+        const res=await resp.json();
+        if(res.success){ showToast('success',translations.updateSuccess); window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('success'); setTimeout(loadDriverProfile, 900); }
+        else throw new Error(res.message||'Fail');
+      }catch(e){ console.error(e); showToast('error',translations.updateError); window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('error'); }
+      finally{ btn.classList.remove('btn-loading'); btn.disabled=false; }
     }
 
-    // Update profile
-    async function updateProfile() {
-      const btn = document.getElementById('updateBtn');
-      
-      // Validate form
-      if (!validateForm()) {
-        showToast('error', translations[currentLang].fillRequired);
-        return;
-      }
-      
-      // Start loading
-      btn.classList.add('btn-loading');
-      btn.disabled = true;
-      
-      try {
-        const formData = new FormData(document.getElementById('updateForm'));
-        
-        const response = await fetch('/api/driver/update', {
-          method: 'POST',
-          body: formData
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        
-        if (result.success) {
-          showToast('success', translations[currentLang].updateSuccess);
-          
-          // Reload profile data to show updated info instead of closing
-          setTimeout(() => {
-            loadDriverProfile();
-          }, 1500);
-        } else {
-          throw new Error(result.message || 'Update failed');
-        }
-      } catch (error) {
-        console.error('Error updating profile:', error);
-        showToast('error', translations[currentLang].updateError + ': ' + error.message);
-      } finally {
-        btn.classList.remove('btn-loading');
-        btn.disabled = false;
-      }
-    }
-
-    // Validate entire form
-    function validateForm() {
-      const requiredFields = document.querySelectorAll('input[required]');
-      let isValid = true;
-      
-      requiredFields.forEach(field => {
-        if (!validateField({ target: field })) {
-          isValid = false;
-        }
-      });
-      
-      return isValid;
-    }
-
-    // Reset form
-    function resetForm() {
-      if (confirm('Вы уверены, что хотите сбросить все изменения?')) {
-        document.getElementById('updateForm').reset();
-        
-        // Reset file cards
-        document.querySelectorAll('.upload-card').forEach(card => {
-          card.classList.remove('has-file');
-          const existingBadge = card.querySelector('.existing-badge');
-          if (existingBadge) {
-            existingBadge.remove();
-          }
-        });
-        
-        // Hide all messages
-        document.querySelectorAll('.field-message').forEach(msg => {
-          hideFieldMessage(msg);
-        });
-        
-        // Reset field styles
-        document.querySelectorAll('input').forEach(field => {
-          field.classList.remove('success', 'error');
-        });
-        
-        // Reset GPS button
-        const gpsBtn = document.getElementById('gpsButton');
-        gpsBtn.classList.remove('loading', 'success');
-        gpsBtn.innerHTML = '📍';
-        
-        // Repopulate with original data
-        if (originalData) {
-          populateForm(originalData);
-        }
-        
-        showToast('success', 'Форма сброшена');
-      }
-    }
-
-    // Show field message
-    function showFieldMessage(element, type, text) {
-      if (!element) return;
-      
-      element.className = `field-message ${type} show`;
-      element.textContent = text;
-    }
-
-    // Hide field message
-    function hideFieldMessage(element) {
-      if (!element) return;
-      
-      element.classList.remove('show');
-    }
-
-    // FIXED: Open driver trip page as Telegram mini app
-    function openDriverTrip() {
-      if (window.Telegram && Telegram.WebApp) {
-        // Navigate to driver page within the same Telegram mini app
-        window.location.href = '/driver';
-      } else {
-        // Fallback for regular browser
-        window.location.href = '/driver';
-      }
-    }
-
-    // Show toast notification
-    function showToast(type, message) {
-      const toast = document.createElement('div');
-      toast.className = `toast ${type}`;
-      toast.textContent = message;
-      
-      document.body.appendChild(toast);
-      
-      // Show toast
-      setTimeout(() => {
-        toast.classList.add('show');
-      }, 100);
-      
-      // Hide toast
-      setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => {
-          if (document.body.contains(toast)) {
-            document.body.removeChild(toast);
-          }
-        }, 300);
-      }, 3000);
+    // --------- TOAST ---------
+    function showToast(type,msg){
+      const t=document.createElement('div'); t.className='toast '+type; t.textContent=msg; document.body.appendChild(t);
+      // force reflow
+      getComputedStyle(t).opacity; t.classList.add('show');
+      setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=>t.remove(),250); }, 2800);
     }
   </script>
 </body>

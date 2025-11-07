@@ -1,5 +1,6 @@
 package handler
 
+// order-handler.go
 import (
 	"context"
 	"database/sql"
@@ -220,7 +221,7 @@ func (h *Handler) handleDriverRequest(w http.ResponseWriter, r *http.Request) {
 	startTime := time.Now()
 
 	drivers, err := h.findDriversByRouteMatching(
-		params.PickupLat, params.PickupLon, 
+		params.PickupLat, params.PickupLon,
 		params.DropoffLat, params.DropoffLon,
 		params.RadiusKm, params.TruckType)
 	if err != nil {
@@ -261,8 +262,6 @@ func (h *Handler) handleDriverRequest(w http.ResponseWriter, r *http.Request) {
 	h.sendSuccessResponse(w, "Водители по маршруту найдены успешно", response)
 }
 
-
-
 // Calculate statistics for route matching
 func (h *Handler) calculateRouteMatchingStats(drivers []DriverWithTrip) SearchStats {
 	if len(drivers) == 0 {
@@ -289,7 +288,6 @@ func (h *Handler) calculateRouteMatchingStats(drivers []DriverWithTrip) SearchSt
 		GoodMatches:    goodMatches,
 	}
 }
-
 
 // Helper function to calculate search statistics for Go-calculated distances
 func (h *Handler) calculateSearchStatsForGoCalculation(drivers []DriverWithTrip, params DriverRequestParams) SearchStats {
@@ -883,7 +881,6 @@ func (h *Handler) handleDriverListAPI(w http.ResponseWriter, r *http.Request) {
 	h.sendSuccessResponse(w, "Список водителей получен успешно", response)
 }
 
-
 // Core route-to-route matching function: A→B driver matches A→B client
 func (h *Handler) findDriversByRouteMatching(clientFromLat, clientFromLon, clientToLat, clientToLon, radiusKm float64, truckType string) ([]DriverWithTrip, error) {
 	h.logger.Info("🔍 Finding drivers by route matching (A→B matches A→B)",
@@ -1026,7 +1023,7 @@ LIMIT 500;
 		// CORE LOGIC: Route-to-route matching
 		// Check if driver's A point is within radius of client's A point
 		distanceA := h.haversineDistance(clientFromLat, clientFromLon, driverFromLat, driverFromLon)
-		// Check if driver's B point is within radius of client's B point  
+		// Check if driver's B point is within radius of client's B point
 		distanceB := h.haversineDistance(clientToLat, clientToLon, driverToLat, driverToLon)
 
 		h.logger.Debug("Checking route match",
@@ -1108,7 +1105,7 @@ LIMIT 500;
 			if distanceA <= 5.0 && distanceB <= 10.0 {
 				driver.MatchQuality = "perfect"
 			} else if distanceA <= 15.0 && distanceB <= 25.0 {
-				driver.MatchQuality = "good" 
+				driver.MatchQuality = "good"
 			} else {
 				driver.MatchQuality = "fair"
 			}
@@ -1153,7 +1150,6 @@ LIMIT 500;
 
 	return matchingDrivers, nil
 }
-
 
 // Fixed driver matching function - calculates distance in Go instead of SQL
 func (h *Handler) findMatchingDriversWithGoCalculation(params DriverRequestParams) ([]DriverWithTrip, error) {
@@ -1310,7 +1306,7 @@ LIMIT 500;
 			// Skip drivers without valid coordinates
 			continue
 		}
-		
+
 		if toLatN.Valid && toLonN.Valid {
 			driver.ToLat = toLatN.Float64
 			driver.ToLon = toLonN.Float64
@@ -1396,7 +1392,7 @@ LIMIT 500;
 			zap.Float64("closest_distance", allDrivers[0].DistanceKm),
 			zap.String("closest_driver", allDrivers[0].FullName),
 			zap.String("closest_start_city", allDrivers[0].StartCity))
-		
+
 		if len(allDrivers) > 1 {
 			h.logger.Info("📊 Driver search results - farthest",
 				zap.Float64("farthest_distance", allDrivers[len(allDrivers)-1].DistanceKm),
@@ -1406,7 +1402,6 @@ LIMIT 500;
 
 	return allDrivers, nil
 }
-
 
 // isValidCoordinates validates if coordinates are within Kazakhstan bounds
 func (h *Handler) isValidCoordinates(lat, lon float64) bool {

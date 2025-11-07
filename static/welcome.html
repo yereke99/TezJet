@@ -7,7 +7,6 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
-      /* Uber-inspired minimal color palette */
       --bg-primary: #000000;
       --bg-secondary: #ffffff;
       --bg-card: #f8f9fa;
@@ -46,8 +45,6 @@
       width: 100%;
       top: 0;
       left: 0;
-      
-      /* TELEGRAM WEBAPP OPTIMIZATION */
       height: var(--tg-viewport-stable-height, 100vh);
       padding-top: max(15px, env(safe-area-inset-top, 15px));
       padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
@@ -55,7 +52,6 @@
       padding-right: max(20px, env(safe-area-inset-right, 20px));
     }
 
-    /* Minimal background with subtle texture */
     .background {
       position: fixed;
       top: 0;
@@ -77,7 +73,6 @@
       z-index: -1;
     }
 
-    /* Loading overlay */
     .loading-overlay {
       position: fixed;
       top: 0;
@@ -119,7 +114,6 @@
       to { transform: rotate(360deg); }
     }
 
-    /* FIXED: Language switch - positioned lower on right to avoid Telegram system buttons */
     .lang-switch {
       position: absolute;
       top: max(70px, calc(env(safe-area-inset-top, 20px) + 50px));
@@ -157,7 +151,6 @@
       background: var(--border-light);
     }
 
-    /* FIXED: Main container with better layout for full screen */
     .main-container {
       height: calc(100vh - max(35px, env(safe-area-inset-top, 35px)) - max(20px, env(safe-area-inset-bottom, 20px)));
       height: calc(100dvh - max(35px, env(safe-area-inset-top, 35px)) - max(20px, env(safe-area-inset-bottom, 20px)));
@@ -168,17 +161,13 @@
       margin: 0 auto;
       max-width: 400px;
       width: 100%;
-      /* CRITICAL: Remove padding here since body has it */
       padding: 0;
     }
 
-    /* FIXED: Header section with constrained growth */
     .header-section {
-      /* REMOVED: flex: 1 - this was causing the expansion issue */
       flex-grow: 1;
       flex-shrink: 1;
-      /* CRITICAL: Add max-height to prevent over-expansion */
-      max-height: calc(100vh - 200px); /* Reserve 200px for buttons */
+      max-height: calc(100vh - 200px);
       max-height: calc(100dvh - 200px);
       display: flex;
       flex-direction: column;
@@ -187,11 +176,9 @@
       text-align: center;
       padding: 20px 0;
       position: relative;
-      /* CRITICAL: Ensure minimum space for buttons */
       min-height: 200px;
     }
 
-    /* Logo - minimal Uber style with Q */
     .logo-container {
       position: relative;
       margin-bottom: 32px;
@@ -221,7 +208,6 @@
       50% { transform: translateY(-6px); }
     }
 
-    /* Brand text - Uber typography with better spacing */
     .brand-text {
       margin-bottom: 20px;
       flex-shrink: 0;
@@ -268,16 +254,12 @@
       }
     }
 
-    /* FIXED: Action buttons section with guaranteed space */
     .action-section {
-      /* CRITICAL: Prevent shrinking and ensure visibility */
       flex-shrink: 0;
       flex-grow: 0;
       padding: 16px 0 0 0;
       width: 100%;
-      /* CRITICAL: Reserve minimum space */
       min-height: 180px;
-      /* CRITICAL: Ensure it's always at bottom */
       margin-top: auto;
     }
 
@@ -302,7 +284,6 @@
       text-decoration: none;
       color: inherit;
       box-shadow: var(--shadow-subtle);
-      /* CRITICAL: Fixed height to prevent layout shifts */
       min-height: 70px;
     }
 
@@ -368,7 +349,6 @@
       color: var(--text-secondary);
     }
 
-    /* Primary button - Uber black style */
     .action-btn.primary {
       background: var(--accent-primary);
       border: 1px solid var(--accent-primary);
@@ -396,7 +376,6 @@
       border-color: #1a1a1a;
     }
 
-    /* Animations on load */
     .action-btn {
       opacity: 0;
       transform: translateY(20px);
@@ -418,7 +397,6 @@
       }
     }
 
-    /* Driver redirect message */
     .driver-redirect {
       background: var(--accent-primary);
       color: var(--text-white);
@@ -442,252 +420,66 @@
       line-height: 1.4;
     }
 
-    /* CRITICAL: Enhanced responsive design for full screen */
     @media (max-width: 480px) {
-      html, body {
-        padding-left: max(16px, env(safe-area-inset-left, 16px));
-        padding-right: max(16px, env(safe-area-inset-right, 16px));
-      }
-
-      .brand-name {
-        font-size: 32px;
-      }
-
-      .brand-slogan {
-        font-size: 15px;
-      }
-
-      .brand-description {
-        font-size: 13px;
-      }
-
-      .logo {
-        width: 68px;
-        height: 68px;
-        font-size: 28px;
-      }
-
-      .action-btn {
-        padding: 15px 16px;
-        min-height: 68px;
-      }
-
-      .action-btn-title {
-        font-size: 15px;
-      }
-
-      .action-btn-subtitle {
-        font-size: 12px;
-      }
-
-      .action-btn-icon {
-        width: 42px;
-        height: 42px;
-        font-size: 17px;
-      }
+      .brand-name { font-size: 32px; }
+      .brand-slogan { font-size: 15px; }
+      .brand-description { font-size: 13px; }
+      .logo { width: 68px; height: 68px; font-size: 28px; }
+      .action-btn { padding: 15px 16px; min-height: 68px; }
+      .action-btn-title { font-size: 15px; }
+      .action-btn-subtitle { font-size: 12px; }
+      .action-btn-icon { width: 42px; height: 42px; font-size: 17px; }
     }
 
-    /* CRITICAL: Better height-based responsive design */
     @media (max-height: 700px) {
-      .header-section {
-        padding: 15px 0;
-        max-height: calc(100vh - 160px);
-        max-height: calc(100dvh - 160px);
-        min-height: 150px;
-      }
-
-      .logo {
-        width: 60px;
-        height: 60px;
-        font-size: 24px;
-      }
-
-      .logo-container {
-        margin-bottom: 24px;
-      }
-
-      .brand-name {
-        font-size: 28px;
-        margin-bottom: 6px;
-      }
-
-      .brand-slogan {
-        font-size: 14px;
-      }
-
-      .brand-text {
-        margin-bottom: 16px;
-      }
-
-      .action-section {
-        min-height: 150px;
-      }
-
-      .action-btn {
-        min-height: 60px;
-        padding: 12px 16px;
-      }
+      .header-section { padding: 15px 0; max-height: calc(100vh - 160px); min-height: 150px; }
+      .logo { width: 60px; height: 60px; font-size: 24px; }
+      .logo-container { margin-bottom: 24px; }
+      .brand-name { font-size: 28px; margin-bottom: 6px; }
+      .brand-slogan { font-size: 14px; }
+      .brand-text { margin-bottom: 16px; }
+      .action-section { min-height: 150px; }
+      .action-btn { min-height: 60px; padding: 12px 16px; }
     }
 
-    /* CRITICAL: Very short screens (landscape phones) */
     @media (max-height: 500px) {
-      .header-section {
-        padding: 10px 0;
-        max-height: calc(100vh - 140px);
-        max-height: calc(100dvh - 140px);
-        min-height: 120px;
-      }
-
-      .logo {
-        width: 50px;
-        height: 50px;
-        font-size: 20px;
-      }
-
-      .logo-container {
-        margin-bottom: 16px;
-      }
-
-      .brand-name {
-        font-size: 24px;
-        margin-bottom: 4px;
-      }
-
-      .brand-slogan {
-        font-size: 13px;
-      }
-
-      .brand-description {
-        font-size: 12px;
-      }
-
-      .brand-text {
-        margin-bottom: 12px;
-      }
-
-      .action-section {
-        min-height: 130px;
-      }
-
-      .action-btn {
-        min-height: 55px;
-        padding: 10px 14px;
-      }
-
-      .action-btn-title {
-        font-size: 14px;
-      }
-
-      .action-btn-subtitle {
-        font-size: 11px;
-      }
-
-      .action-btn-icon {
-        width: 38px;
-        height: 38px;
-        font-size: 16px;
-      }
+      .header-section { padding: 10px 0; max-height: calc(100vh - 140px); min-height: 120px; }
+      .logo { width: 50px; height: 50px; font-size: 20px; }
+      .logo-container { margin-bottom: 16px; }
+      .brand-name { font-size: 24px; margin-bottom: 4px; }
+      .brand-slogan { font-size: 13px; }
+      .brand-description { font-size: 12px; }
+      .brand-text { margin-bottom: 12px; }
+      .action-section { min-height: 130px; }
+      .action-btn { min-height: 55px; padding: 10px 14px; }
+      .action-btn-title { font-size: 14px; }
+      .action-btn-subtitle { font-size: 11px; }
+      .action-btn-icon { width: 38px; height: 38px; font-size: 16px; }
     }
 
-    /* CRITICAL: Ultra short screens */
-    @media (max-height: 400px) {
-      .main-container {
-        justify-content: space-between;
-      }
-
-      .header-section {
-        flex-grow: 0;
-        padding: 5px 0;
-        min-height: auto;
-        max-height: none;
-      }
-
-      .logo-container {
-        margin-bottom: 8px;
-      }
-
-      .brand-text {
-        margin-bottom: 8px;
-      }
-
-      .action-section {
-        min-height: 120px;
-      }
-    }
-
-    /* Prevent text selection */
     .brand-name,
     .brand-slogan,
     .action-btn {
       -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
       user-select: none;
     }
 
-    /* Enhanced focus states for accessibility */
     .action-btn:focus,
     .lang-btn:focus {
       outline: 2px solid var(--accent-secondary);
       outline-offset: 2px;
     }
 
-    /* Welcome sequence animation */
     .welcome-sequence {
       opacity: 0;
       animation: welcomeSequence 0.8s ease-out 0.1s forwards;
     }
 
     @keyframes welcomeSequence {
-      0% {
-        opacity: 0;
-        transform: scale(0.98);
-      }
-      100% {
-        opacity: 1;
-        transform: scale(1);
-      }
+      0% { opacity: 0; transform: scale(0.98); }
+      100% { opacity: 1; transform: scale(1); }
     }
 
-    /* Smooth transitions for language changes */
-    .brand-text,
-    .action-buttons {
-      transition: transform 0.15s ease;
-    }
-
-    /* Clean loading state */
-    .loading-spinner {
-      border-width: 2px;
-    }
-
-    /* Better button touch targets */
-    .action-btn {
-      min-height: 70px;
-    }
-
-    .lang-btn {
-      min-height: 40px;
-    }
-
-    /* Improved contrast for better readability */
-    .action-btn-subtitle {
-      color: #666666;
-    }
-
-    .brand-description {
-      color: #888888;
-    }
-
-    /* Refined shadows for depth */
-    .action-btn.primary {
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-    }
-
-    .action-btn.primary:hover {
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-    }
-
-    /* CRITICAL: Force GPU acceleration for smooth animations */
     .main-container,
     .action-btn,
     .logo {
@@ -696,13 +488,11 @@
       will-change: transform;
     }
 
-    /* CRITICAL: Prevent overflow issues in full screen */
     body {
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
     }
 
-    /* CRITICAL: Ensure buttons are always visible */
     .action-section {
       position: relative;
       z-index: 10;
@@ -710,24 +500,19 @@
   </style>
 </head>
 <body>
-  <!-- Loading Overlay -->
   <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-spinner"></div>
     <div class="loading-text" data-kz="Жүктелуде..." data-ru="Загрузка...">Жүктелуде...</div>
   </div>
 
-  <!-- Minimal Background -->
   <div class="background"></div>
 
-  <!-- Language Switch -->
   <div class="lang-switch">
     <button class="lang-btn active" onclick="setLang('kz')" id="lang-kz">ҚАЗ</button>
     <button class="lang-btn" onclick="setLang('ru')" id="lang-ru">РУС</button>
   </div>
 
-  <!-- Main Container -->
   <div class="main-container welcome-sequence">
-    <!-- Header Section -->
     <div class="header-section">
       <div class="logo-container">
         <div class="logo">Q</div>
@@ -740,16 +525,13 @@
       </div>
     </div>
 
-    <!-- Action Section -->
     <div class="action-section">
       <div class="action-buttons">
-        <!-- Driver Redirect Message (hidden by default) -->
-        <div class="driver-redirect" id="driverRedirectMessage" style="display: none;">
+        <div class="driver-redirect" id="redirectMessage" style="display: none;">
           <h3 data-kz="Қош келдіңіз!" data-ru="Добро пожаловать!">Қош келдіңіз!</h3>
-          <p data-kz="Жүргізуші ретінде тапсырыстар тізіміне бағыттаймыз..." data-ru="Перенаправляем в список заказов как водителя...">Жүргізуші ретінде тапсырыстар тізіміне бағыттаймыз...</p>
+          <p data-kz="Бағыттау..." data-ru="Перенаправление...">Бағыттау...</p>
         </div>
 
-        <!-- Delivery Button -->
         <a href="/delivery" class="action-btn primary" id="deliveryBtn">
           <div class="action-btn-content">
             <div class="action-btn-icon">📦</div>
@@ -761,7 +543,6 @@
           <div class="action-btn-arrow">→</div>
         </a>
 
-        <!-- Driver Button -->
         <a href="/register" class="action-btn" id="driverBtn">
           <div class="action-btn-content">
             <div class="action-btn-icon">🚗</div>
@@ -777,18 +558,17 @@
   </div>
 
   <script>
-    // Global variables - Kazakh as default
-    let currentLang = 'kz'; // DEFAULT TO KAZAKH
+    let currentLang = 'kz';
     let isChecking = false;
     let isRedirecting = false;
 
-    // Translations
     const translations = {
       kz: {
         loading: 'Жүктелуде...',
         checkingUser: 'Пайдаланушыны тексеру...',
         redirecting: 'Бағыттау...',
-        redirectingDriver: 'Жүргізуші ретінде тапсырыстарға бағыттау...',
+        redirectingDriver: 'Тапсырыстарға бағыттау...',
+        redirectingClient: 'Қол жетімді жүргізушілерге бағыттау...',
         error: 'Қате пайда болды',
         brandSlogan: 'Тез жеткізу қызметі',
         brandDescription: 'Алматы қаласында сенімді және тез жеткізу',
@@ -796,14 +576,14 @@
         deliverySubtitle: 'Жүкті тез әрі қауіпсіз жеткіземіз',
         driverTitle: 'Жүргізуші болу',
         driverSubtitle: 'Бізге қосылып табыс табыңыз',
-        welcomeBack: 'Қош келдіңіз!',
-        redirectingToOrders: 'Тапсырыстарға бағыттау...'
+        welcomeBack: 'Қош келдіңіз!'
       },
       ru: {
         loading: 'Загрузка...',
         checkingUser: 'Проверка пользователя...',
         redirecting: 'Перенаправление...',
-        redirectingDriver: 'Перенаправление к заказам как водителя...',
+        redirectingDriver: 'Перенаправление к заказам...',
+        redirectingClient: 'Перенаправление к доступным водителям...',
         error: 'Произошла ошибка',
         brandSlogan: 'Быстрая доставка',
         brandDescription: 'Надежная и быстрая доставка по Алматы',
@@ -811,113 +591,36 @@
         deliverySubtitle: 'Быстро и безопасно доставим ваш груз',
         driverTitle: 'Стать водителем',
         driverSubtitle: 'Присоединяйтесь и зарабатывайте с нами',
-        welcomeBack: 'Добро пожаловать!',
-        redirectingToOrders: 'Перенаправление к заказам...'
+        welcomeBack: 'Добро пожаловать!'
       }
     };
 
-    // ENHANCED: Dynamic viewport height management for full screen
-    function updateViewportHeight() {
-      console.log('📱 Updating viewport height for full screen optimization');
-      
-      let vh = window.innerHeight;
-      let vw = window.innerWidth;
-      
-      // Use Telegram WebApp viewport if available
-      if (window.Telegram && Telegram.WebApp) {
-        vh = Telegram.WebApp.viewportHeight || vh;
-        const stableHeight = Telegram.WebApp.viewportStableHeight || vh;
-        
-        console.log(`📐 Telegram viewport - Height: ${vh}px, Stable: ${stableHeight}px`);
-        
-        // Set CSS custom properties for Telegram
-        document.documentElement.style.setProperty('--tg-viewport-height', `${vh}px`);
-        document.documentElement.style.setProperty('--tg-viewport-stable-height', `${stableHeight}px`);
-      }
-      
-      // Set universal viewport custom properties
-      document.documentElement.style.setProperty('--actual-vh', `${vh}px`);
-      document.documentElement.style.setProperty('--actual-vw', `${vw}px`);
-      
-      // Ensure body height matches viewport
-      document.body.style.height = `${vh}px`;
-      document.documentElement.style.height = `${vh}px`;
-      
-      console.log(`📐 Updated viewport - Width: ${vw}px, Height: ${vh}px`);
-    }
-
-    // Initialize app
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('🚀 QazLine Uber-Style Welcome Page loaded - FULL SCREEN OPTIMIZED');
-      
-      // CRITICAL: Update viewport first for full screen
-      updateViewportHeight();
+      console.log('🚀 QazLine Welcome Page loaded');
       
       initializeTelegram();
       setupEventListeners();
-      
-      // Ensure Kazakh is active by default
       setLang('kz');
       
-      // Start user check after UI is ready
       setTimeout(() => {
         checkUserTypeAndRedirect();
       }, 800);
     });
 
-    // ENHANCED: Initialize Telegram WebApp with full screen handling
     function initializeTelegram() {
-      if (window.Telegram && Telegram.WebApp) {
-        console.log('📱 Initializing Telegram WebApp for full screen');
-        
+      if (window.Telegram?.WebApp) {
+        console.log('📱 Initializing Telegram WebApp');
         Telegram.WebApp.ready();
         Telegram.WebApp.expand();
         Telegram.WebApp.disableVerticalSwipes();
-
-        // Handle theme (adjust for Uber-style)
-        const theme = Telegram.WebApp.colorScheme;
-        console.log('🎨 Telegram theme:', theme);
-
-        // CRITICAL: Handle viewport changes for full screen
-        Telegram.WebApp.onEvent('viewportChanged', () => {
-          console.log('📱 Telegram viewport changed - updating...');
-          updateViewportHeight();
-        });
-
-        console.log('✅ Telegram WebApp initialized with full screen support');
-      } else {
-        console.log('⚠️ Telegram WebApp not available - running in browser mode');
+        console.log('✅ Telegram WebApp initialized');
       }
     }
 
-    // Setup event listeners
     function setupEventListeners() {
-      // ENHANCED: Handle window resize for full screen
-      window.addEventListener('resize', () => {
-        console.log('📐 Window resized - updating layout');
-        updateViewportHeight();
-      });
-
-      window.addEventListener('orientationchange', () => {
-        console.log('📱 Orientation changed - updating layout');
-        setTimeout(() => {
-          updateViewportHeight();
-        }, 100);
-      });
-
-      // ENHANCED: Handle fullscreen changes
-      document.addEventListener('fullscreenchange', () => {
-        console.log('🖥️ Fullscreen state changed');
-        setTimeout(() => {
-          updateViewportHeight();
-        }, 100);
-      });
-
-      // Prevent double-clicks during checking
       document.getElementById('deliveryBtn').addEventListener('click', function(e) {
         if (isChecking || isRedirecting) {
           e.preventDefault();
-          console.log('🛑 Click prevented - checking/redirecting in progress');
           return false;
         }
       });
@@ -925,96 +628,68 @@
       document.getElementById('driverBtn').addEventListener('click', function(e) {
         if (isChecking || isRedirecting) {
           e.preventDefault();
-          console.log('🛑 Click prevented - checking/redirecting in progress');
           return false;
         }
       });
     }
 
-    // Enhanced user checking with proper redirect logic
+    // CORRECT REDIRECT LOGIC
     async function checkUserTypeAndRedirect() {
       const telegramId = getTelegramId();
       
       if (!telegramId) {
-        console.log('⚠️ No Telegram ID available, showing welcome page');
+        console.log('⚠️ No Telegram ID, showing welcome page');
         hideLoading();
         return;
       }
 
       try {
         isChecking = true;
-        isRedirecting = false;
         updateLoadingText('checkingUser');
         
-        console.log('🔍 Checking user type for Telegram ID:', telegramId);
+        console.log('🔍 Checking user type for ID:', telegramId);
 
         const response = await fetch('/api/check/who', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            telegram_id: parseInt(telegramId)
-          })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ telegram_id: parseInt(telegramId) })
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          throw new Error(`HTTP ${response.status}`);
         }
 
         const result = await response.json();
         console.log('📊 API Response:', result);
 
-        // Proper driver detection and redirect
         if (result.success && result.data) {
           const userData = result.data;
           
-          // Check if user exists and is a driver
+          // DRIVER → delivery-list.html
           if (userData.exists === true && userData.user_type === 'driver') {
-            console.log('🚗 DRIVER DETECTED! Redirecting to delivery list...');
-            console.log('👤 Driver data:', userData.driver_data);
-            
-            // Show driver redirect message
-            showDriverRedirectMessage();
-            
-            // Set redirecting state
-            isRedirecting = true;
-            updateLoadingText('redirectingDriver');
-            
-            // Use Telegram haptic feedback if available
-            if (window.Telegram && Telegram.WebApp && Telegram.WebApp.HapticFeedback) {
-              Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-            }
-            
-            // Force redirect after 2 seconds
-            setTimeout(() => {
-              console.log('🔄 FORCED REDIRECT to /delivery-list');
-              window.location.replace('/delivery-list');
-            }, 2000);
-            
+            console.log('🚗 DRIVER DETECTED → Redirecting to delivery-list.html');
+            showRedirectMessage('redirectingDriver');
+            redirectTo('/delivery-list');
             return;
           }
           
-          // Check if user exists as client
+          // CLIENT with orders → driver-list.html
           if (userData.exists === true && userData.user_type === 'client') {
-            console.log('👤 Existing client detected, showing welcome page');
-          } else {
-            console.log('👤 New user detected, showing welcome page');
+            console.log('👤 CLIENT DETECTED → Redirecting to driver-list.html');
+            showRedirectMessage('redirectingClient');
+            redirectTo('/driver-list');
+            return;
           }
-        } else {
-          console.log('👤 No user data or unsuccessful response, showing welcome page');
         }
 
-        // If we reach here, show welcome page
+        // NEW USER → show welcome page
+        console.log('👤 New user → showing welcome page');
         hideLoading();
         
       } catch (error) {
-        console.error('❌ Error checking user type:', error);
-        
-        // Show error briefly, then show welcome page
+        console.error('❌ Error checking user:', error);
         updateLoadingText('error');
         setTimeout(() => {
-          console.log('🔄 Showing welcome page after error');
           hideLoading();
         }, 2000);
       } finally {
@@ -1022,45 +697,49 @@
       }
     }
 
-    // Show driver redirect message
-    function showDriverRedirectMessage() {
-      const message = document.getElementById('driverRedirectMessage');
+    function showRedirectMessage(key) {
+      const message = document.getElementById('redirectMessage');
       if (message) {
+        const p = message.querySelector('p');
+        if (p && translations[currentLang][key]) {
+          p.textContent = translations[currentLang][key];
+        }
         message.style.display = 'block';
-        console.log('📢 Driver redirect message shown');
       }
+      isRedirecting = true;
+      updateLoadingText(key);
     }
 
-    // Get Telegram ID with enhanced logging
-    function getTelegramId() {
-      // Try to get from Telegram WebApp
-      if (window.Telegram && Telegram.WebApp) {
-        console.log('📱 Telegram WebApp available');
-        
-        if (Telegram.WebApp.initDataUnsafe?.user) {
-          const id = Telegram.WebApp.initDataUnsafe.user.id;
-          console.log('✅ Got Telegram ID from WebApp:', id);
-          return id;
-        } else {
-          console.log('⚠️ No user data in initDataUnsafe');
-        }
-      } else {
-        console.log('⚠️ Telegram WebApp not available');
+    function redirectTo(url) {
+      console.log('🔄 Redirecting to:', url);
+      
+      if (window.Telegram?.WebApp?.HapticFeedback) {
+        Telegram.WebApp.HapticFeedback.notificationOccurred('success');
       }
       
-      // For testing outside Telegram
+      setTimeout(() => {
+        window.location.replace(url);
+      }, 1500);
+    }
+
+    function getTelegramId() {
+      if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
+        const id = Telegram.WebApp.initDataUnsafe.user.id;
+        console.log('✅ Got Telegram ID:', id);
+        return id;
+      }
+      
       const urlParams = new URLSearchParams(window.location.search);
       const testId = urlParams.get('test_id');
       if (testId) {
-        console.log('🧪 Using test Telegram ID:', testId);
+        console.log('🧪 Using test ID:', testId);
         return testId;
       }
       
-      console.log('❌ No Telegram ID available from any source');
+      console.log('❌ No Telegram ID');
       return null;
     }
 
-    // Update loading text
     function updateLoadingText(key) {
       const loadingText = document.querySelector('.loading-text');
       if (loadingText && translations[currentLang][key]) {
@@ -1068,42 +747,27 @@
       }
     }
 
-    // Hide loading overlay
     function hideLoading() {
-      const overlay = document.getElementById('loadingOverlay');
-      overlay.classList.add('hidden');
-      
-      // Start welcome animations
+      document.getElementById('loadingOverlay').classList.add('hidden');
       setTimeout(() => {
         document.querySelector('.main-container').style.opacity = '1';
       }, 200);
     }
 
-    // Language switching with Kazakh as default
     function setLang(lang) {
-      if (isChecking || isRedirecting) {
-        console.log('🛑 Language change prevented - checking/redirecting in progress');
-        return;
-      }
+      if (isChecking || isRedirecting) return;
 
       currentLang = lang;
-      console.log('🌐 Language changed to:', lang);
+      console.log('🌐 Language:', lang);
       
-      // Update active language button
-      document.querySelectorAll('.lang-btn').forEach(btn => {
-        btn.classList.remove('active');
-      });
+      document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
       document.getElementById('lang-' + lang).classList.add('active');
       
-      // Update all translatable elements
       document.querySelectorAll('[data-kz]').forEach(el => {
         const text = el.getAttribute('data-' + lang);
-        if (text) {
-          el.textContent = text;
-        }
+        if (text) el.textContent = text;
       });
 
-      // Smooth transition animation
       document.querySelector('.brand-text').style.transform = 'scale(0.99)';
       document.querySelector('.action-buttons').style.transform = 'scale(0.99)';
       
@@ -1113,216 +777,13 @@
       }, 100);
     }
 
-    // Navigation with transition
-    function navigateWithTransition(url) {
-      if (isChecking || isRedirecting) {
-        console.log('🛑 Navigation prevented - checking/redirecting in progress');
-        return false;
-      }
-
-      console.log('🔄 Navigating to:', url);
-      
-      // Add loading state
-      isRedirecting = true;
-      updateLoadingText('redirecting');
-      document.getElementById('loadingOverlay').classList.remove('hidden');
-      
-      // Navigate after brief delay
-      setTimeout(() => {
-        window.location.href = url;
-      }, 200);
-      
-      return true;
-    }
-
-    // Update action buttons with transition navigation
-    document.addEventListener('DOMContentLoaded', function() {
-      const deliveryBtn = document.getElementById('deliveryBtn');
-      const driverBtn = document.getElementById('driverBtn');
-      
-      if (deliveryBtn) {
-        deliveryBtn.addEventListener('click', function(e) {
-          e.preventDefault();
-          navigateWithTransition('/delivery');
-        });
-      }
-      
-      if (driverBtn) {
-        driverBtn.addEventListener('click', function(e) {
-          e.preventDefault();
-          navigateWithTransition('/register');
-        });
-      }
-    });
-
-    // Debug function
-    async function debugCheckWho() {
-      const telegramId = getTelegramId();
-      
-      if (!telegramId) {
-        console.log('❌ No Telegram ID for testing');
-        return;
-      }
-
-      try {
-        console.log('🧪 Testing /api/check/who endpoint...');
-        
-        const response = await fetch('/api/check/who', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            telegram_id: parseInt(telegramId)
-          })
-        });
-
-        console.log('📡 Response status:', response.status);
-        const result = await response.json();
-        console.log('📊 Raw response:', result);
-
-      } catch (error) {
-        console.error('❌ Debug test failed:', error);
-      }
-    }
-
-    // Force redirect for testing
-    function forceRedirectToDeliveryList() {
-      console.log('🔧 FORCE REDIRECT - Testing redirect to delivery list');
-      isRedirecting = true;
-      showDriverRedirectMessage();
-      updateLoadingText('redirectingDriver');
-      document.getElementById('loadingOverlay').classList.remove('hidden');
-      
-      setTimeout(() => {
-        console.log('🔄 EXECUTING FORCE REDIRECT');
-        window.location.replace('/delivery-list');
-      }, 2000);
-    }
-
-    // ENHANCED: Debug layout info
-    function debugLayout() {
-      console.log('=== LAYOUT DEBUG INFO ===');
-      console.log('Window size:', window.innerWidth + 'x' + window.innerHeight);
-      console.log('Screen size:', screen.width + 'x' + screen.height);
-      console.log('Viewport units:', document.documentElement.style.getPropertyValue('--actual-vh'));
-      
-      const container = document.querySelector('.main-container');
-      const header = document.querySelector('.header-section');
-      const actions = document.querySelector('.action-section');
-      
-      if (container) {
-        const rect = container.getBoundingClientRect();
-        console.log('Container:', rect.width + 'x' + rect.height);
-      }
-      
-      if (header) {
-        const rect = header.getBoundingClientRect();
-        console.log('Header:', rect.width + 'x' + rect.height);
-      }
-      
-      if (actions) {
-        const rect = actions.getBoundingClientRect();
-        console.log('Actions:', rect.width + 'x' + rect.height, 'top:', rect.top);
-      }
-      
-      console.log('Actions visible:', actions && actions.getBoundingClientRect().bottom <= window.innerHeight);
-      console.log('========================');
-    }
-
-    // Make functions globally available
     window.setLang = setLang;
-    window.debugCheckWho = debugCheckWho;
-    window.forceRedirectToDeliveryList = forceRedirectToDeliveryList;
-    window.debugLayout = debugLayout;
-    window.updateViewportHeight = updateViewportHeight;
 
-    // Performance monitoring
-    window.addEventListener('load', function() {
-      console.log('⚡ Uber-Style QazLine page fully loaded - FULL SCREEN READY');
-      // Final layout update after everything is loaded
-      setTimeout(() => {
-        updateViewportHeight();
-        debugLayout();
-      }, 100);
-    });
-
-    // Handle page visibility changes
-    document.addEventListener('visibilitychange', function() {
-      if (document.hidden) {
-        console.log('👁️ Page hidden');
-      } else {
-        console.log('👁️ Page visible');
-        // Update layout when page becomes visible
-        setTimeout(updateViewportHeight, 100);
-      }
-    });
-
-    // Keyboard navigation support
-    document.addEventListener('keydown', function(e) {
-      if (isChecking || isRedirecting) return;
-      
-      switch(e.key) {
-        case '1':
-          navigateWithTransition('/delivery');
-          break;
-        case '2':
-          navigateWithTransition('/register');
-          break;
-        case 'd':
-          debugCheckWho();
-          break;
-        case 'f':
-          forceRedirectToDeliveryList();
-          break;
-        case 'l':
-          debugLayout();
-          break;
-        case 'v':
-          updateViewportHeight();
-          break;
-        case 'Escape':
-          if (window.Telegram && Telegram.WebApp) {
-            Telegram.WebApp.close();
-          }
-          break;
-      }
-    });
-
-    // Error handling for network issues
-    window.addEventListener('online', function() {
-      console.log('🌐 Connection restored');
-      if (!isChecking && !isRedirecting) {
-        checkUserTypeAndRedirect();
-      }
-    });
-
-    window.addEventListener('offline', function() {
-      console.log('📵 Connection lost');
-      updateLoadingText('error');
-    });
-
-    // Prevent context menu
-    document.addEventListener('contextmenu', function(e) {
-      e.preventDefault();
-    });
-
-    // Add haptic feedback for Telegram
-    function addHapticFeedback() {
-      if (window.Telegram && Telegram.WebApp && Telegram.WebApp.HapticFeedback) {
-        Telegram.WebApp.HapticFeedback.impactOccurred('light');
-      }
-    }
-
-    // Add haptic feedback to buttons
-    document.querySelectorAll('.action-btn, .lang-btn').forEach(btn => {
-      btn.addEventListener('click', addHapticFeedback);
-    });
-
-    console.log('🎉 Uber-Style QazLine Welcome Page initialized successfully - FULL SCREEN OPTIMIZED');
-    console.log('🗣️ Default language: Kazakh (ҚАЗ)');
-    console.log('🔧 Debug commands: debugCheckWho(), forceRedirectToDeliveryList(), debugLayout(), updateViewportHeight()');
-    console.log('⌨️ Keyboard shortcuts: 1=delivery, 2=driver, d=debug, f=force, l=layout, v=viewport');
+    console.log('🎉 QazLine Welcome Page initialized');
+    console.log('📋 Redirect logic:');
+    console.log('  - Driver → /delivery-list');
+    console.log('  - Client with orders → /driver-list');
+    console.log('  - New user → show welcome page');
   </script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 package handler
 
+// handler.go
 import (
 	"context"
 	"database/sql"
@@ -380,30 +381,82 @@ func (h *Handler) parseDriverTripRequest(r *http.Request) (*DriverTrip, error) {
 	return trip, nil
 }
 
-// saveDriverTrip saves the driver trip to database
 func (h *Handler) saveDriverTrip(trip *DriverTrip) (string, error) {
 	tripID := uuid.New().String()
 
+	// Ensure default values for optional fields
+	truckType := trip.TruckType
+	if truckType == "" {
+		truckType = "any"
+	}
+
+	comment := trip.Comment
+	if comment == "" {
+		comment = ""
+	}
+
+	startTime := trip.StartTime
+	if startTime == "" {
+		startTime = time.Now().Format("2006-01-02 15:04:05")
+	}
+
+	// Ensure we have valid coordinates
+	if trip.FromLat == 0 || trip.FromLon == 0 {
+		h.logger.Warn("Missing FROM coordinates for driver trip",
+			zap.String("from_address", trip.FromAddress))
+	}
+
+	if trip.ToLat == 0 || trip.ToLon == 0 {
+		h.logger.Warn("Missing TO coordinates for driver trip",
+			zap.String("to_address", trip.ToAddress))
+	}
+
+	// FIXED: Insert with ALL required columns including truck_type and status
 	query := `
 		INSERT INTO driver_trips (
-			id, driver_id, telegram_id, from_address, from_lat, from_lon, 
-			to_address, to_lat, to_lon, distance_km, eta_min,
-			price, start_time, comment, status, created_at
+			id, driver_id, telegram_id, 
+			from_address, from_lat, from_lon, 
+			to_address, to_lat, to_lon, 
+			distance_km, eta_min, price, 
+			truck_type, start_time, comment, 
+			departure_time, status, created_at
 		) VALUES (
-			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', CURRENT_TIMESTAMP
+			?, ?, ?, 
+			?, ?, ?, 
+			?, ?, ?, 
+			?, ?, ?, 
+			?, ?, ?, 
+			CURRENT_TIMESTAMP, 'active', CURRENT_TIMESTAMP
 		)`
 
 	_, err := h.db.Exec(
 		query,
-		tripID, // This is the generated UUID
-		trip.DriverID, trip.TelegramID, trip.FromAddress, trip.FromLat, trip.FromLon,
-		trip.ToAddress, trip.ToLat, trip.ToLon, trip.DistanceKm, trip.EtaMin,
-		trip.Price, trip.StartTime, trip.Comment,
+		tripID, trip.DriverID, trip.TelegramID,
+		trip.FromAddress, trip.FromLat, trip.FromLon,
+		trip.ToAddress, trip.ToLat, trip.ToLon,
+		trip.DistanceKm, trip.EtaMin, trip.Price,
+		truckType, startTime, comment,
 	)
 
 	if err != nil {
-		return "", err
+		h.logger.Error("Failed to insert driver trip",
+			zap.Error(err),
+			zap.String("trip_id", tripID),
+			zap.String("driver_id", trip.DriverID),
+			zap.String("truck_type", truckType),
+			zap.String("from_address", trip.FromAddress),
+			zap.String("to_address", trip.ToAddress))
+		return "", fmt.Errorf("failed to save driver trip: %w", err)
 	}
+
+	h.logger.Info("✅ Driver trip saved to database successfully",
+		zap.String("trip_id", tripID),
+		zap.String("driver_id", trip.DriverID),
+		zap.String("truck_type", truckType),
+		zap.String("from", trip.FromAddress),
+		zap.String("to", trip.ToAddress),
+		zap.Int("price", trip.Price),
+		zap.Float64("distance_km", trip.DistanceKm))
 
 	return tripID, nil
 }
@@ -655,6 +708,25 @@ func (h *Handler) parseDriverRegistration(r *http.Request) (*DriverRegistration,
 		return nil, fmt.Errorf("telegram ID обязателен")
 	}
 
+	// UPDATED: Parse truck type
+	driver.TruckType = getValue("truckType")
+	if driver.TruckType == "" {
+		return nil, fmt.Errorf("көлік түрі міндетті / тип транспорта обязателен")
+	}
+
+	// Validate truck type
+	validTruckTypes := map[string]bool{
+		"intercity": true,
+		"small":     true,
+		"medium":    true,
+		"large":     true,
+		"tow":       true,
+		"any":       true,
+	}
+	if !validTruckTypes[driver.TruckType] {
+		return nil, fmt.Errorf("неверный тип транспорта")
+	}
+
 	// Validate age
 	if driver.Birthday != "" {
 		birthday, err := time.Parse("2006-01-02", driver.Birthday)
@@ -792,6 +864,7 @@ func (h *Handler) saveFile(r *http.Request, fieldName, dir string, telegramID in
 }
 
 // saveDriverRegistration saves driver registration to database
+// UPDATED: saveDriverRegistration saves driver registration to database with truck_type
 func (h *Handler) saveDriverRegistration(driver *DriverRegistration) (string, error) {
 	driverID := uuid.New().String()
 
@@ -799,16 +872,16 @@ func (h *Handler) saveDriverRegistration(driver *DriverRegistration) (string, er
 		INSERT INTO drivers (
 			id, telegram_id, first_name, last_name, birthday, contact_number,
 			start_city, latitude, longitude, profile_photo, license_front,
-			license_back, status, created_at
+			license_back, truck_type, status, created_at
 		) VALUES (
-			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP
+			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP
 		)`
 
 	_, err := h.db.Exec(
 		query,
 		driverID, driver.TelegramID, driver.FirstName, driver.LastName, driver.Birthday,
 		driver.ContactNumber, driver.StartCity, driver.Latitude, driver.Longitude,
-		driver.ProfilePhoto, driver.LicenseFront, driver.LicenseBack,
+		driver.ProfilePhoto, driver.LicenseFront, driver.LicenseBack, driver.TruckType,
 	)
 
 	if err != nil {
@@ -825,7 +898,21 @@ func (h *Handler) sendDriverConfirmationMessage(b *bot.Bot, driver *DriverRegist
 		return
 	}
 
-	// FIXED: Using %s for string UUID
+	// Truck type names in Kazakh and Russian
+	truckTypeNames := map[string]string{
+		"intercity": "Қала аралық / Межгород",
+		"small":     "Кіші (1.5т дейін) / Малый (до 1.5т)",
+		"medium":    "Орташа (5т дейін) / Средний (до 5т)",
+		"large":     "Үлкен (20т дейін) / Большой (до 20т)",
+		"tow":       "Эвакуатор / Эвакуатор",
+		"any":       "Кез келген / Любой",
+	}
+
+	truckTypeName := truckTypeNames[driver.TruckType]
+	if truckTypeName == "" {
+		truckTypeName = driver.TruckType
+	}
+
 	message := fmt.Sprintf(`🚗 <b>Жүргізуші ретінде тіркелу!</b>
 
 📋 <b>Өтінім нөмірі:</b> #%s
@@ -834,17 +921,19 @@ func (h *Handler) sendDriverConfirmationMessage(b *bot.Bot, driver *DriverRegist
 📱 <b>Байланыс:</b> %s
 🏙️ <b>Жұмыс қаласы:</b> %s
 🎂 <b>Туған күні:</b> %s
+🚚 <b>Көлік түрі:</b> %s
 
 ✅ Сіздің өтініміңіз қабылданды!
 ⏳ Құжаттарды тексеру 24 сағат ішінде аяқталады.
 
 📞 Сұрақтар болса хабарласыңыз: @support`,
-		driverID, // FIXED: Using %s for string UUID
+		driverID,
 		driver.FirstName,
 		driver.LastName,
 		driver.ContactNumber,
 		driver.StartCity,
 		driver.Birthday,
+		truckTypeName,
 	)
 
 	ctx := context.Background()
@@ -870,23 +959,27 @@ func (h *Handler) sendDriverConfirmationMessage(b *bot.Bot, driver *DriverRegist
 // CheckDriverExist checks if driver exists in database
 func (h *Handler) CheckDriverExist(telegramID int64) (*DriverRegistration, error) {
 	query := `
-		SELECT id, telegram_id, first_name, last_name, birthday, contact_number,
-			   start_city, latitude, longitude, profile_photo, license_front,
-			   license_back, status, created_at
-		FROM drivers 
-		WHERE telegram_id = ?`
+        SELECT id, telegram_id, first_name, last_name, birthday, contact_number,
+               start_city, latitude, longitude, 
+               truck_type,  -- ADD THIS
+               profile_photo, license_front, license_back, 
+               status, created_at
+        FROM drivers 
+        WHERE telegram_id = ?`
 
 	var driver DriverRegistration
 	err := h.db.QueryRow(query, telegramID).Scan(
 		&driver.ID, &driver.TelegramID, &driver.FirstName, &driver.LastName,
 		&driver.Birthday, &driver.ContactNumber, &driver.StartCity,
-		&driver.Latitude, &driver.Longitude, &driver.ProfilePhoto,
-		&driver.LicenseFront, &driver.LicenseBack, &driver.Status, &driver.CreatedAt,
+		&driver.Latitude, &driver.Longitude,
+		&driver.TruckType, // ADD THIS
+		&driver.ProfilePhoto, &driver.LicenseFront, &driver.LicenseBack,
+		&driver.Status, &driver.CreatedAt,
 	)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil // Driver doesn't exist
+			return nil, nil
 		}
 		return nil, err
 	}
@@ -955,6 +1048,7 @@ func (h *Handler) handleCheckWho(w http.ResponseWriter, r *http.Request) {
 			"start_city":     driver.StartCity,
 			"latitude":       driver.Latitude,
 			"longitude":      driver.Longitude,
+			"truck_type":     driver.TruckType,
 			"profile_photo":  driver.ProfilePhoto,
 			"license_front":  driver.LicenseFront,
 			"license_back":   driver.LicenseBack,
@@ -1078,7 +1172,6 @@ func (h *Handler) parseDriverUpdateData(r *http.Request, existing *DriverRegistr
 	getValue := func(key string) string {
 		value := strings.TrimSpace(r.FormValue(key))
 		if value == "" {
-			// Return existing value if not provided
 			switch key {
 			case "firstName":
 				return existing.FirstName
@@ -1090,6 +1183,8 @@ func (h *Handler) parseDriverUpdateData(r *http.Request, existing *DriverRegistr
 				return existing.ContactNumber
 			case "startCity":
 				return existing.StartCity
+			case "truckType": // ADD THIS
+				return existing.TruckType
 			}
 		}
 		return value
@@ -1103,10 +1198,11 @@ func (h *Handler) parseDriverUpdateData(r *http.Request, existing *DriverRegistr
 		Birthday:      getValue("birthday"),
 		ContactNumber: getValue("contactNumber"),
 		StartCity:     getValue("startCity"),
-		ProfilePhoto:  existing.ProfilePhoto, // Will be updated if new file uploaded
-		LicenseFront:  existing.LicenseFront, // Will be updated if new file uploaded
-		LicenseBack:   existing.LicenseBack,  // Will be updated if new file uploaded
-		Status:        existing.Status,       // Keep existing status
+		TruckType:     getValue("truckType"), // ADD THIS LINE
+		ProfilePhoto:  existing.ProfilePhoto,
+		LicenseFront:  existing.LicenseFront,
+		LicenseBack:   existing.LicenseBack,
+		Status:        existing.Status,
 		CreatedAt:     existing.CreatedAt,
 	}
 
@@ -1137,17 +1233,20 @@ func (h *Handler) parseDriverUpdateData(r *http.Request, existing *DriverRegistr
 // updateDriverInDatabase updates driver data in database
 func (h *Handler) updateDriverInDatabase(driver *DriverRegistration) error {
 	query := `
-		UPDATE drivers SET
-			first_name = ?, last_name = ?, birthday = ?, contact_number = ?,
-			start_city = ?, latitude = ?, longitude = ?, profile_photo = ?,
-			license_front = ?, license_back = ?
-		WHERE id = ?`
+        UPDATE drivers SET
+            first_name = ?, last_name = ?, birthday = ?, contact_number = ?,
+            start_city = ?, latitude = ?, longitude = ?, 
+            truck_type = ?,  -- ADD THIS
+            profile_photo = ?, license_front = ?, license_back = ?
+        WHERE id = ?`
 
 	_, err := h.db.Exec(
 		query,
 		driver.FirstName, driver.LastName, driver.Birthday, driver.ContactNumber,
-		driver.StartCity, driver.Latitude, driver.Longitude, driver.ProfilePhoto,
-		driver.LicenseFront, driver.LicenseBack, driver.ID,
+		driver.StartCity, driver.Latitude, driver.Longitude,
+		driver.TruckType, // ADD THIS
+		driver.ProfilePhoto, driver.LicenseFront, driver.LicenseBack,
+		driver.ID,
 	)
 
 	return err

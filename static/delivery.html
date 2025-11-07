@@ -34,6 +34,7 @@
       --tg-safe-top: env(safe-area-inset-top, 0px);
       --tg-safe-bottom: env(safe-area-inset-bottom, 0px);
       --tg-viewport-height: 100vh;
+      --picker-top-offset: 56px;
     }
 
     * {
@@ -579,7 +580,7 @@
     /* FIXED: Search Header with Safe Area */
     .picker-header {
       position: fixed;
-      top: calc(var(--tg-safe-top) + 12px);
+      top: calc(var(--tg-safe-top) + var(--picker-top-offset)); /* было +12px */
       left: 16px;
       right: 16px;
       z-index: 2010;
@@ -649,10 +650,10 @@
       z-index: 2020;
     }
 
-    /* FIXED: Suggestions - moved lower, z-index below confirm button */
+   /* FIXED: Suggestions ниже хедера на его высоту (~56–60px) + небольшой зазор */
     .suggestions {
       position: fixed;
-      top: calc(var(--tg-safe-top) + 84px);
+      top: calc(var(--tg-safe-top) + var(--picker-top-offset) + 60px); /* было +84px */
       left: 16px;
       right: 16px;
       background: white;
@@ -770,6 +771,7 @@
       .truck-card {
         padding: 12px 8px;
       }
+      .location-btn.top{ top: calc(var(--tg-safe-top) + 56px); }
     }
 
     @media (max-width: 360px) {
@@ -1010,6 +1012,27 @@
       if (html) el.innerHTML = html;
       return el;
     }
+
+    function enterMapSelectionMode() {
+      isMapSelectionMode = true;
+      document.getElementById('mapCenterPin').classList.remove('hidden');
+      document.getElementById('mapConfirmBtn').classList.add('show');
+      document.getElementById('bottomSheet').style.transform = 'translateY(100%)';
+
+      // ↓ Перемещаем кнопку вниз у карты
+      document.querySelector('.location-btn')?.classList.remove('top');
+    }
+
+    function exitMapSelectionMode() {
+      isMapSelectionMode = false;
+      document.getElementById('mapCenterPin').classList.add('hidden');
+      document.getElementById('mapConfirmBtn').classList.remove('show');
+      document.getElementById('bottomSheet').style.transform = '';
+
+      // ↓ Возвращаем кнопку наверх у карты
+      document.querySelector('.location-btn')?.classList.add('top');
+    }
+
 
     async function initMap() {
       await ymaps3.ready;

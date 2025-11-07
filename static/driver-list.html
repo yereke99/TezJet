@@ -3,31 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <title>Доступные водители</title>
+  <title>Доступные водители • QazLine</title>
   
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://api-maps.yandex.ru/v3/?apikey=8a3e4da0-9ef2-4176-9203-e7014c1dba6f&lang=ru_RU"></script>
 
   <style>
     :root {
-      /* Telegram WebApp viewport variables */
+      /* Uber-inspired color palette */
+      --primary-green: #10b981;
+      --primary-dark: #059669;
+      --primary-light: #34d399;
+      --background: #f7f7f7;
+      --surface: #ffffff;
+      --surface-hover: #f9f9f9;
+      --text-primary: #111827;
+      --text-secondary: #6b7280;
+      --text-muted: #9ca3af;
+      --border: #e5e7eb;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+      --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+      --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+      --radius: 12px;
+      --radius-lg: 16px;
+      
+      /* Safe areas */
       --tg-viewport-height: 100vh;
       --tg-viewport-stable-height: 100vh;
+      --tg-safe-area-inset-top: 0px;
       --tg-content-safe-area-inset-top: 0px;
-      
-      /* Theme colors */
-      --bg-primary: #f8f9fa;
-      --bg-secondary: #ffffff;
-      --text-primary: #333333;
-      --text-secondary: #666666;
-      --text-muted: #999999;
-      --accent-primary: #000000;
-      --accent-secondary: #10b981;
-      --border-color: #e0e0e0;
-      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
-      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-      --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-      --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
     }
 
     * {
@@ -37,7 +42,6 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* Enhanced body with proper viewport handling */
     html {
       height: 100%;
       height: 100dvh;
@@ -45,103 +49,77 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-      background: var(--bg-primary);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: var(--background);
       color: var(--text-primary);
-      
-      /* Dynamic height handling */
       height: var(--tg-viewport-stable-height, 100vh);
       min-height: var(--tg-viewport-height, 100vh);
-      max-height: var(--tg-viewport-height, 100vh);
-      
-      /* Safe area handling */
-      padding-top: calc(env(safe-area-inset-top) + var(--tg-content-safe-area-inset-top, 0px));
-      padding-bottom: env(safe-area-inset-bottom);
+      padding-top: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px) + 8px);
+      padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
       padding-left: env(safe-area-inset-left);
       padding-right: env(safe-area-inset-right);
-      
-      /* Smooth transitions */
-      transition: height 0.3s ease, padding 0.3s ease;
-      
-      /* Prevent overscroll */
       overscroll-behavior: none;
       -webkit-overflow-scrolling: touch;
-      
-      /* Performance optimization */
       transform: translateZ(0);
-      will-change: auto;
     }
 
-    /* Support for dynamic viewport units */
     @supports (height: 100dvh) {
       body {
         height: 100dvh;
         min-height: 100dvh;
-        max-height: 100dvh;
       }
     }
 
-    /* Enhanced Header with safe area support */
+    /* Header with Uber style - FIXED POSITIONING */
     .header {
       position: fixed;
-      top: env(safe-area-inset-top);
-      left: env(safe-area-inset-left);
-      right: env(safe-area-inset-right);
-      background: var(--bg-secondary);
+      top: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px) + 8px);
+      left: calc(env(safe-area-inset-left) + 16px);
+      right: calc(env(safe-area-inset-right) + 16px);
+      background: var(--surface);
+      border-radius: var(--radius-lg);
       box-shadow: var(--shadow-md);
       z-index: 1000;
       padding: 12px 16px;
-      
-      /* GPU acceleration */
       transform: translateZ(0);
-      will-change: transform;
-      backface-visibility: hidden;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
 
     .header-content {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      max-width: 100%;
     }
 
     .back-btn {
-      background: #f0f0f0;
+      background: var(--background);
       border: none;
       border-radius: 50%;
-      width: 44px; /* Increased for better touch target */
-      height: 44px;
+      width: 40px;
+      height: 40px;
       cursor: pointer;
       color: var(--text-primary);
-      font-size: 18px;
+      font-size: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: all 0.2s ease;
       touch-action: manipulation;
-      -webkit-user-select: none;
-      user-select: none;
-    }
-
-    .back-btn:hover {
-      background: #e0e0e0;
-      transform: scale(1.05);
     }
 
     .back-btn:active {
-      transform: scale(0.95);
+      transform: scale(0.92);
+      background: var(--border);
     }
 
     .header-title {
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 600;
       text-align: center;
       flex: 1;
-      color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin: 0 16px;
+      margin: 0 12px;
+      letter-spacing: -0.3px;
     }
 
     .header-controls {
@@ -151,74 +129,66 @@
     }
 
     .lang-switch {
-      background: #f0f0f0;
+      background: var(--background);
       border-radius: 20px;
-      padding: 2px;
+      padding: 3px;
       display: flex;
+      gap: 2px;
     }
 
     .lang-btn {
-      padding: 8px 12px;
+      padding: 6px 10px;
       border: none;
       background: transparent;
       color: var(--text-secondary);
-      border-radius: 18px;
-      font-size: 12px;
+      border-radius: 16px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s ease;
       touch-action: manipulation;
-      min-width: 36px;
-      min-height: 32px;
+      min-width: 32px;
     }
 
     .lang-btn.active {
-      background: white;
-      color: var(--text-primary);
-      box-shadow: var(--shadow-sm);
+      background: var(--surface);
+      color: var(--primary-green);
+      box-shadow: var(--shadow);
     }
 
     .refresh-btn {
-      background: #f0f0f0;
+      background: var(--background);
       border: none;
       border-radius: 50%;
-      width: 44px;
-      height: 44px;
+      width: 40px;
+      height: 40px;
       cursor: pointer;
-      color: var(--text-primary);
+      color: var(--text-secondary);
       font-size: 16px;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       touch-action: manipulation;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
-    .refresh-btn:hover {
-      background: #e0e0e0;
-      transform: rotate(180deg);
-    }
-
     .refresh-btn:active {
-      transform: rotate(180deg) scale(0.9);
+      transform: scale(0.92) rotate(180deg);
     }
 
-    /* Main Content with proper spacing */
+    /* Main Content - FIXED: starts higher */
     .main-content {
-      padding-top: calc(70px + env(safe-area-inset-top));
-      padding-bottom: calc(20px + env(safe-area-inset-bottom));
-      padding-left: env(safe-area-inset-left);
-      padding-right: env(safe-area-inset-right);
+      padding-top: calc(68px + var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px));
+      padding-bottom: calc(90px + env(safe-area-inset-bottom));
+      padding-left: calc(env(safe-area-inset-left) + 16px);
+      padding-right: calc(env(safe-area-inset-right) + 16px);
       height: 100%;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
 
-    /* Drivers Section */
     .drivers-section {
-      margin: 16px;
-      margin-left: calc(16px + env(safe-area-inset-left));
-      margin-right: calc(16px + env(safe-area-inset-right));
+      margin-bottom: 16px;
     }
 
     .section-header {
@@ -229,64 +199,58 @@
     }
 
     .section-title {
-      font-size: 24px;
+      font-size: 28px;
       font-weight: 700;
       color: var(--text-primary);
+      letter-spacing: -0.5px;
     }
 
     .drivers-count {
-      background: var(--accent-primary);
+      background: var(--primary-green);
       color: white;
-      border-radius: 12px;
-      padding: 8px 12px;
+      border-radius: 20px;
+      padding: 6px 14px;
       font-size: 14px;
       font-weight: 600;
       min-width: 32px;
       text-align: center;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
     }
 
-    /* Enhanced Driver Cards */
+    /* Uber-style Driver Cards */
     .driver-card {
-      background: var(--bg-secondary);
-      border-radius: 12px;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
       margin-bottom: 12px;
       padding: 16px;
       cursor: pointer;
       transition: all 0.2s ease;
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--border);
       position: relative;
       touch-action: manipulation;
-      
-      /* Performance optimization */
       transform: translateZ(0);
-      will-change: transform;
-    }
-
-    .driver-card:hover {
-      transform: translateY(-2px) translateZ(0);
-      box-shadow: var(--shadow-lg);
     }
 
     .driver-card:active {
-      transform: translateY(-1px) translateZ(0);
-      transition: transform 0.1s ease;
+      transform: scale(0.98) translateZ(0);
+      background: var(--surface-hover);
     }
 
     .driver-header {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
       margin-bottom: 12px;
     }
 
     .driver-photo {
-      width: 50px;
-      height: 50px;
+      width: 56px;
+      height: 56px;
       border-radius: 50%;
       object-fit: cover;
-      background: #f0f0f0;
+      background: var(--background);
       flex-shrink: 0;
-      border: 2px solid #f0f0f0;
+      border: 2px solid var(--border);
     }
 
     .driver-info {
@@ -295,13 +259,14 @@
     }
 
     .driver-name {
-      font-size: 16px;
+      font-size: 17px;
       font-weight: 600;
       margin-bottom: 2px;
       color: var(--text-primary);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      letter-spacing: -0.3px;
     }
 
     .driver-vehicle {
@@ -318,9 +283,10 @@
     }
 
     .price-amount {
-      font-size: 18px;
+      font-size: 20px;
       font-weight: 700;
-      color: var(--accent-primary);
+      color: var(--primary-green);
+      letter-spacing: -0.5px;
     }
 
     .driver-details {
@@ -328,29 +294,35 @@
       align-items: center;
       justify-content: space-between;
       margin-top: 8px;
-      padding-top: 8px;
-      border-top: 1px solid #f0f0f0;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
     }
 
     .distance-info {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
       font-size: 14px;
       color: var(--text-secondary);
     }
 
+    .distance-info span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
     .route-info {
-      font-size: 12px;
+      font-size: 13px;
       color: var(--text-muted);
       text-align: right;
-      max-width: 40%;
+      max-width: 45%;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    /* Enhanced Loading State */
+    /* Loading State */
     .loading-container {
       display: flex;
       flex-direction: column;
@@ -363,8 +335,8 @@
     .loading-spinner {
       width: 40px;
       height: 40px;
-      border: 3px solid #f0f0f0;
-      border-top: 3px solid var(--accent-primary);
+      border: 3px solid var(--border);
+      border-top: 3px solid var(--primary-green);
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin-bottom: 20px;
@@ -379,56 +351,80 @@
       font-size: 16px;
       color: var(--text-secondary);
       text-align: center;
+      font-weight: 500;
     }
 
-    /* Enhanced Empty State */
+    /* Empty State */
     .empty-state {
       text-align: center;
       padding: 60px 20px;
     }
 
     .empty-icon {
-      font-size: 60px;
+      font-size: 72px;
       margin-bottom: 20px;
-      opacity: 0.3;
+      opacity: 0.5;
     }
 
     .empty-title {
-      font-size: 20px;
-      font-weight: 600;
+      font-size: 22px;
+      font-weight: 700;
       margin-bottom: 12px;
       color: var(--text-primary);
+      letter-spacing: -0.3px;
     }
 
     .empty-message {
-      font-size: 14px;
+      font-size: 15px;
       color: var(--text-secondary);
       line-height: 1.5;
       max-width: 280px;
       margin: 0 auto;
     }
 
-    /* OPTIMIZED Driver Detail Modal */
+    /* Floating Action Button */
+    .fab-container {
+      position: fixed;
+      bottom: calc(env(safe-area-inset-bottom) + 16px);
+      right: calc(env(safe-area-inset-right) + 16px);
+      z-index: 999;
+      transform: translateZ(0);
+    }
+
+    .fab {
+      background: var(--primary-green);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      transition: all 0.3s ease;
+      touch-action: manipulation;
+      position: relative;
+    }
+
+    .fab:active {
+      transform: scale(0.9);
+    }
+
+    /* Driver Modal - FIXED: Bottom Sheet Style */
     .driver-modal {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.5);
       z-index: 2000;
       display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 10px;
-      
-      /* Safe area support */
-      padding-top: calc(10px + env(safe-area-inset-top));
-      padding-bottom: calc(10px + env(safe-area-inset-bottom));
-      padding-left: calc(10px + env(safe-area-inset-left));
-      padding-right: calc(10px + env(safe-area-inset-right));
-      
-      /* Performance */
+      align-items: flex-end;  /* CRITICAL: Bottom sheet alignment */
+      padding: 0;
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
     }
@@ -438,38 +434,50 @@
     }
 
     .modal-content {
-      background: var(--bg-secondary);
+      background: var(--surface);
       width: 100%;
-      max-width: 500px;
-      max-height: calc(var(--tg-viewport-height, 100vh) - 40px);
-      border-radius: 20px;
+      max-height: calc(var(--tg-viewport-height, 90vh) - calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px) + 60px));
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
       overflow: hidden;
       position: relative;
       box-shadow: var(--shadow-xl);
-      
-      /* Performance optimization */
       transform: translateZ(0);
-      will-change: transform;
-      backface-visibility: hidden;
+      animation: slideUp 0.3s ease;
+      padding-bottom: calc(env(safe-area-inset-bottom) + 16px);
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(100%);
+      }
+      to {
+        transform: translateY(0);
+      }
     }
 
     @supports (height: 100dvh) {
       .modal-content {
-        max-height: calc(100dvh - 40px);
+        max-height: calc(100dvh - calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px) + 60px));
       }
     }
 
-    /* OPTIMIZED Map Section - Fullscreen Ready */
+    /* Modal handle */
+    .modal-handle {
+      width: 36px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 8px auto 12px;
+    }
+
+    /* Map Section - FIXED: Proper touch-action */
     .modal-map-section {
       position: relative;
-      height: 250px;
+      height: 200px;
       width: 100%;
-      background: #f0f0f0;
+      background: var(--background);
       overflow: hidden;
-      
-      /* Performance optimization */
       transform: translateZ(0);
-      will-change: transform;
       contain: layout style paint;
     }
 
@@ -481,26 +489,11 @@
       bottom: 0;
       z-index: 3000;
       border-radius: 0;
-      
-      /* Dynamic viewport handling */
       height: var(--tg-viewport-height, 100vh);
       min-height: var(--tg-viewport-stable-height, 100vh);
-      
-      /* Safe area handling */
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
-      padding-left: env(safe-area-inset-left);
-      padding-right: env(safe-area-inset-right);
-      
-      /* Prevent overscroll and optimize touch */
+      padding-top: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px));
+      padding-bottom: calc(env(safe-area-inset-bottom) + 16px);
       overscroll-behavior: none;
-      -webkit-overflow-scrolling: auto;
-      touch-action: manipulation;
-      
-      /* GPU acceleration */
-      transform: translateZ(0);
-      will-change: transform;
-      backface-visibility: hidden;
     }
 
     @supports (height: 100dvh) {
@@ -510,27 +503,25 @@
       }
     }
 
+    /* FIXED: Map needs proper touch handling */
     #driverRouteMap {
       width: 100%;
       height: 100%;
-      
-      /* Performance optimization */
       contain: layout style paint;
       transform: translateZ(0);
-      will-change: auto;
     }
 
-    /* OPTIMIZED Map Controls with safe area support */
+    /* Map Controls */
     .map-expand-btn,
     .map-close-btn {
       position: absolute;
-      top: calc(env(safe-area-inset-top) + var(--tg-content-safe-area-inset-top, 0px) + 15px);
-      right: calc(env(safe-area-inset-right) + 15px);
-      background: white;
+      top: 16px;
+      right: 16px;
+      background: var(--surface);
       border: none;
       border-radius: 50%;
-      width: 44px; /* Optimal touch target */
-      height: 44px;
+      width: 40px;
+      height: 40px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -541,23 +532,12 @@
       transition: all 0.2s ease;
       z-index: 10;
       touch-action: manipulation;
-      -webkit-user-select: none;
-      user-select: none;
-      
-      /* Performance */
       transform: translateZ(0);
-      will-change: transform;
-    }
-
-    .map-expand-btn:hover,
-    .map-close-btn:hover {
-      background: #f0f0f0;
-      transform: scale(1.05) translateZ(0);
     }
 
     .map-expand-btn:active,
     .map-close-btn:active {
-      transform: scale(0.95) translateZ(0);
+      transform: scale(0.9) translateZ(0);
     }
 
     .map-close-btn {
@@ -565,72 +545,66 @@
       color: white;
     }
 
-    .map-close-btn:hover {
-      background: #dc2626;
-    }
-
     /* Modal Header */
     .modal-header {
-      padding: 20px;
-      border-bottom: 1px solid #f0f0f0;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
       position: relative;
-      background: var(--bg-secondary);
+      background: var(--surface);
     }
 
     .close-btn {
       position: absolute;
-      top: 15px;
-      right: 15px;
-      background: #f5f5f5;
+      top: 12px;
+      right: 12px;
+      background: var(--background);
       border: none;
       border-radius: 50%;
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
+      font-size: 18px;
       color: var(--text-secondary);
       transition: all 0.2s ease;
       touch-action: manipulation;
     }
 
-    .close-btn:hover {
-      background: #e0e0e0;
-      transform: scale(1.05);
-    }
-
     .close-btn:active {
       transform: scale(0.9);
+      background: var(--border);
     }
 
     .modal-driver-photo {
-      width: 60px;
-      height: 60px;
+      width: 56px;
+      height: 56px;
       border-radius: 50%;
       object-fit: cover;
-      background: #f0f0f0;
-      border: 3px solid #f0f0f0;
+      background: var(--background);
+      border: 2px solid var(--border);
       flex-shrink: 0;
     }
 
     .modal-driver-info {
       flex: 1;
       min-width: 0;
+      padding-right: 40px;
     }
 
     .modal-driver-info h3 {
       font-size: 18px;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--text-primary);
       margin-bottom: 4px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      letter-spacing: -0.3px;
     }
 
     .modal-driver-info p {
@@ -641,10 +615,10 @@
       text-overflow: ellipsis;
     }
 
-    /* OPTIMIZED Modal Body with proper scrolling */
+    /* Modal Body - FIXED: Proper scrolling */
     .modal-body {
       padding: 0 20px 20px;
-      max-height: calc(var(--tg-viewport-height, 95vh) - 370px);
+      max-height: calc(var(--tg-viewport-height, 85vh) - 370px);
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
@@ -656,34 +630,23 @@
       }
     }
 
-    /* Handle small screens */
-    @media (max-height: 600px) {
-      .modal-map-section {
-        height: 180px;
-      }
-      
-      .modal-body {
-        max-height: calc(var(--tg-viewport-height, 100vh) - 290px);
-      }
-    }
-
     .trip-section {
       margin-bottom: 20px;
     }
 
     .section-title-modal {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
       margin-bottom: 12px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
 
     .route-display {
-      background: #f8f9fa;
-      border-radius: 12px;
-      padding: 12px;
+      background: var(--background);
+      border-radius: var(--radius);
+      padding: 16px;
       margin-bottom: 12px;
     }
 
@@ -691,7 +654,7 @@
       display: flex;
       align-items: flex-start;
       gap: 12px;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
     }
 
     .route-item:last-child {
@@ -699,35 +662,38 @@
     }
 
     .route-marker {
-      width: 12px;
-      height: 12px;
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
       flex-shrink: 0;
       margin-top: 4px;
     }
 
     .route-marker.from {
-      background: var(--accent-secondary);
+      background: var(--primary-green);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
     }
 
     .route-marker.to {
       background: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
     }
 
     .route-text {
-      font-size: 14px;
+      font-size: 15px;
       color: var(--text-primary);
-      line-height: 1.4;
+      line-height: 1.5;
       flex: 1;
       word-wrap: break-word;
+      font-weight: 500;
     }
 
     .detail-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 8px 0;
-      border-bottom: 1px solid #f0f0f0;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
       gap: 16px;
     }
 
@@ -736,52 +702,53 @@
     }
 
     .detail-label {
-      font-size: 14px;
+      font-size: 15px;
       color: var(--text-secondary);
       flex-shrink: 0;
     }
 
     .detail-value {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
       color: var(--text-primary);
       text-align: right;
     }
 
     .price-highlight {
-      font-size: 18px;
+      font-size: 20px;
       font-weight: 700;
-      color: var(--accent-secondary);
+      color: var(--primary-green);
+      letter-spacing: -0.5px;
     }
 
     .comment-section {
-      background: #f8f9fa;
-      border-radius: 12px;
-      padding: 12px;
+      background: var(--background);
+      border-radius: var(--radius);
+      padding: 14px;
       margin: 12px 0;
     }
 
     .comment-text {
-      font-size: 14px;
+      font-size: 15px;
       color: var(--text-primary);
-      line-height: 1.4;
+      line-height: 1.5;
       word-wrap: break-word;
     }
 
-    /* ENHANCED Contact Buttons */
+    /* Contact Buttons */
     .contact-buttons {
       display: flex;
-      gap: 8px;
-      margin-bottom: 8px;
+      gap: 12px;
+      margin-bottom: 12px;
     }
 
     .contact-btn {
       flex: 1;
-      background: var(--accent-primary);
+      background: var(--text-primary);
       color: white;
       border: none;
-      border-radius: 12px;
-      padding: 14px;
+      border-radius: var(--radius);
+      padding: 16px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s ease;
@@ -789,34 +756,24 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      font-size: 14px;
+      font-size: 15px;
       touch-action: manipulation;
-      min-height: 48px;
-      
-      /* Performance */
+      min-height: 52px;
       transform: translateZ(0);
-      will-change: transform;
     }
 
     .contact-btn.whatsapp {
       background: #25D366;
     }
 
-    .contact-btn:hover {
-      transform: translateY(-1px) translateZ(0);
-      box-shadow: var(--shadow-md);
-    }
-
     .contact-btn:active {
-      transform: translateY(0) translateZ(0);
-      transition: transform 0.1s ease;
+      transform: scale(0.97) translateZ(0);
     }
 
-    /* OPTIMIZED Yandex Map Markers */
-    .yandex-marker-a,
-    .yandex-marker-b {
-      width: 36px;
-      height: 36px;
+    /* Map Markers */
+    .custom-marker {
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -824,134 +781,85 @@
       font-weight: 700;
       font-size: 18px;
       color: white;
-      border: 4px solid white;
-      box-shadow: var(--shadow-lg);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      border: 3px solid white;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
       position: relative;
       z-index: 100;
-      
-      /* Performance optimization */
       transform: translateZ(0);
-      will-change: auto;
+      letter-spacing: -0.5px;
     }
 
-    .yandex-marker-a {
-      background: var(--accent-secondary);
+    .custom-marker.pickup {
+      background: var(--primary-green);
     }
 
-    .yandex-marker-b {
+    .custom-marker.dropoff {
       background: #ef4444;
     }
 
-      /* Responsive adjustments for mobile with integrated header */
-      @media (max-width: 480px) {
-        .header {
-          top: calc(env(safe-area-inset-top) + var(--tg-content-safe-area-inset-top, 44px) + 16px);
-          left: calc(env(safe-area-inset-left) + 12px);
-          right: calc(env(safe-area-inset-right) + 12px);
-          padding: 12px 16px;
-        }
-
-        .main-content {
-          padding-top: calc(70px + env(safe-area-inset-top) + var(--tg-content-safe-area-inset-top, 44px));
-        }
-
-        .header-title {
-          font-size: 16px;
-          margin: 0 8px;
-        }
-
-        .drivers-count {
-          right: 50px;
-          padding: 6px 10px;
-          font-size: 12px;
-          min-width: 28px;
-        }
-
-        .drivers-section {
-          margin: 0;
-          padding: 0 2px;
-        }
-
-        .driver-card {
-          padding: 12px;
-          margin-bottom: 8px;
-        }
-
-        .driver-header {
-          gap: 12px;
-        }
-
-        .driver-photo {
-          width: 45px;
-          height: 45px;
-        }
-
-        .driver-name {
-          font-size: 15px;
-        }
-
-        .price-amount {
-          font-size: 16px;
-        }
-      }
-
-    /* LANDSCAPE MODE OPTIMIZATIONS */
-    @media (orientation: landscape) and (max-height: 500px) {
-      .modal-map-section {
-        height: 150px;
-      }
-      
-      .modal-body {
-        max-height: calc(var(--tg-viewport-height, 100vh) - 250px);
-      }
-      
+    /* Responsive */
+    @media (max-width: 480px) {
       .header {
-        padding: 8px 16px;
+        top: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px) + 12px);
+        left: calc(env(safe-area-inset-left) + 12px);
+        right: calc(env(safe-area-inset-right) + 12px);
+        padding: 10px 14px;
       }
-      
-      .main-content {
-        padding-top: calc(60px + env(safe-area-inset-top));
+
+      .header-title {
+        font-size: 16px;
+      }
+
+      .section-title {
+        font-size: 24px;
+      }
+
+      .driver-card {
+        padding: 14px;
+      }
+
+      .driver-name {
+        font-size: 16px;
+      }
+
+      .price-amount {
+        font-size: 18px;
       }
     }
 
-    /* ACCESSIBILITY IMPROVEMENTS */
+    @media (orientation: landscape) and (max-height: 500px) {
+      .modal-map-section {
+        height: 140px;
+      }
+      
+      .modal-body {
+        max-height: calc(var(--tg-viewport-height, 100vh) - 230px);
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       * {
         transition: none !important;
         animation: none !important;
       }
-      
-      .loading-spinner {
-        animation: none;
-        border-top-color: transparent;
-      }
     }
 
-    /* HIGH DPI SCREENS */
-    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 2dppx) {
-      .driver-photo,
-      .modal-driver-photo {
-        image-rendering: -webkit-optimize-contrast;
-        image-rendering: crisp-edges;
-      }
-    }
-
-    /* DARK MODE SUPPORT */
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg-primary: #1a1a1a;
-        --bg-secondary: #2d2d2d;
-        --text-primary: #ffffff;
-        --text-secondary: #b0b0b0;
-        --text-muted: #808080;
-        --border-color: #404040;
+        --background: #111827;
+        --surface: #1f2937;
+        --surface-hover: #2d3748;
+        --text-primary: #f9fafb;
+        --text-secondary: #d1d5db;
+        --text-muted: #9ca3af;
+        --border: #374151;
       }
     }
   </style>
 </head>
 <body>
-  <!-- Enhanced Header with safe area support -->
+  <!-- Header -->
   <div class="header">
     <div class="header-content">
       <button class="back-btn" onclick="goBack()" aria-label="Назад">←</button>
@@ -961,18 +869,17 @@
           <button class="lang-btn active" onclick="setLanguage('ru')" id="lang-ru" aria-label="Русский">RU</button>
           <button class="lang-btn" onclick="setLanguage('kz')" id="lang-kz" aria-label="Қазақша">KZ</button>
         </div>
-        <button class="refresh-btn" onclick="refreshDrivers()" title="Обновить" aria-label="Обновить список">🔄</button>
+        <button class="refresh-btn" onclick="refreshDrivers()" title="Обновить" aria-label="Обновить">🔄</button>
       </div>
     </div>
   </div>
 
   <!-- Main Content -->
   <div class="main-content">
-    <!-- Drivers Section -->
     <div class="drivers-section">
       <div class="section-header">
         <div class="section-title" data-text="available_drivers">Доступные водители</div>
-        <div class="drivers-count" id="driversCount" aria-label="Количество водителей">0</div>
+        <div class="drivers-count" id="driversCount" aria-label="Количество">0</div>
       </div>
       
       <!-- Loading State -->
@@ -996,17 +903,23 @@
     </div>
   </div>
 
-  <!-- OPTIMIZED Driver Detail Modal -->
-  <div class="driver-modal" id="driverModal" role="dialog" aria-modal="true" aria-labelledby="modalDriverName">
+  <!-- Floating Action Button -->
+  <div class="fab-container">
+    <button class="fab" onclick="createNewTrip()" aria-label="Создать новую поездку">+</button>
+  </div>
+
+  <!-- Driver Modal - FIXED: Bottom Sheet -->
+  <div class="driver-modal" id="driverModal" role="dialog" aria-modal="true" onclick="handleModalBackdropClick(event)">
     <div class="modal-content">
+      <div class="modal-handle"></div>
       
-      <!-- OPTIMIZED Map Section at Top -->
+      <!-- Map Section -->
       <div class="modal-map-section" id="mapSection">
         <div id="driverRouteMap" role="application" aria-label="Карта маршрута"></div>
-        <button class="map-expand-btn" id="mapExpandBtn" onclick="expandMap()" 
-                title="Развернуть карту" aria-label="Развернуть карту на весь экран">⛶</button>
+        <button class="map-expand-btn" id="mapExpandBtn" onclick="expandMap(event)" 
+                title="Развернуть" aria-label="Развернуть">⛶</button>
         <button class="map-close-btn" id="mapCloseBtn" onclick="closeFullscreenMap()" 
-                style="display: none;" title="Закрыть полный экран" aria-label="Закрыть полноэкранный режим">✕</button>
+                style="display: none;" title="Закрыть" aria-label="Закрыть">✕</button>
       </div>
 
       <!-- Driver Header -->
@@ -1023,7 +936,7 @@
       <div class="modal-body">
         <!-- Route Display -->
         <div class="trip-section">
-          <div class="section-title-modal">Маршрут</div>
+          <div class="section-title-modal">МАРШРУТ</div>
           <div class="route-display">
             <div class="route-item">
               <div class="route-marker from"></div>
@@ -1036,14 +949,14 @@
           </div>
         </div>
 
-        <!-- ENHANCED Contact Section -->
+        <!-- Contact Section -->
         <div class="trip-section">
-          <div class="section-title-modal">Связаться с водителем</div>
+          <div class="section-title-modal">СВЯЗАТЬСЯ С ВОДИТЕЛЕМ</div>
           <div class="contact-buttons">
-            <button class="contact-btn" onclick="callDriver()" id="callBtn" aria-label="Позвонить водителю">
+            <button class="contact-btn" onclick="callDriver()" id="callBtn" aria-label="Позвонить">
               📞 Позвонить
             </button>
-            <button class="contact-btn whatsapp" onclick="openWhatsApp()" id="whatsappBtn" aria-label="Написать в WhatsApp">
+            <button class="contact-btn whatsapp" onclick="openWhatsApp()" id="whatsappBtn" aria-label="WhatsApp">
               💬 WhatsApp
             </button>
           </div>
@@ -1051,7 +964,7 @@
 
         <!-- Trip Details -->
         <div class="trip-section">
-          <div class="section-title-modal">Детали поездки</div>
+          <div class="section-title-modal">ДЕТАЛИ ПОЕЗДКИ</div>
           <div class="detail-row">
             <span class="detail-label">Цена</span>
             <span class="detail-value price-highlight" id="modalPrice">0 ₸</span>
@@ -1072,7 +985,7 @@
 
         <!-- Comment Section -->
         <div id="modalCommentSection" class="trip-section" style="display: none;">
-          <div class="section-title-modal">Комментарий водителя</div>
+          <div class="section-title-modal">КОММЕНТАРИЙ ВОДИТЕЛЯ</div>
           <div class="comment-section">
             <div class="comment-text" id="modalComment"></div>
           </div>
@@ -1082,7 +995,7 @@
   </div>
 
   <script>
-    // Enhanced translations with more comprehensive coverage
+    // Translations
     const translations = {
       ru: {
         available_drivers: 'Доступные водители',
@@ -1096,12 +1009,7 @@
         tow: 'Эвакуатор',
         any: 'Любой',
         km: 'км',
-        min: 'мин',
-        error_loading: 'Ошибка загрузки',
-        error_connection: 'Ошибка соединения',
-        retry: 'Повторить',
-        loading_map: 'Загрузка карты...',
-        map_error: 'Ошибка загрузки карты'
+        min: 'мин'
       },
       kz: {
         available_drivers: 'Қолжетімді жүргізушілер',
@@ -1115,16 +1023,11 @@
         tow: 'Эвакуатор',
         any: 'Кез келген',
         km: 'км',
-        min: 'мин',
-        error_loading: 'Жүктеу қатесі',
-        error_connection: 'Байланыс қатесі',
-        retry: 'Қайталау',
-        loading_map: 'Карта жүктелуде...',
-        map_error: 'Карта жүктеу қатесі'
+        min: 'мин'
       }
     };
 
-    // Enhanced global state with performance tracking
+    // Global state
     let availableDrivers = [];
     let currentLanguage = 'ru';
     let selectedDriver = null;
@@ -1136,86 +1039,75 @@
     let loadAttempts = 0;
     const maxLoadAttempts = 3;
     
-    // Performance monitoring
-    let performanceMetrics = {
-      loadStart: null,
-      mapInitTime: null,
-      renderTime: null
+    // Store trip coordinates from URL
+    let tripCoordinates = {
+      fromLat: null,
+      fromLon: null,
+      toLat: null,
+      toLon: null,
+      fromAddress: null,
+      toAddress: null
     };
 
-    // ENHANCED Initialize page with Telegram WebApp optimizations
+    // Initialize
     document.addEventListener('DOMContentLoaded', () => {
-      performanceMetrics.loadStart = Date.now();
-      
-      console.log('🚀 Driver list page initializing...');
+      console.log('🚀 QazLine Driver List initializing...');
       
       setupTelegramWebApp();
       setupViewportHandling();
-      setupPerformanceOptimizations();
+      loadTripCoordinates();
       loadDrivers();
       
-      console.log('✅ Driver list page initialized');
+      console.log('✅ QazLine initialized');
     });
 
-    // ENHANCED Telegram WebApp setup with viewport monitoring
+    // Setup Telegram WebApp
     function setupTelegramWebApp() {
       if (window.Telegram?.WebApp) {
         const tg = Telegram.WebApp;
-        console.log('📱 Telegram WebApp detected, configuring...');
+        console.log('📱 Telegram WebApp detected');
         
         tg.ready();
         tg.expand();
         tg.disableVerticalSwipes();
         
-        // Set theme based on Telegram
         if (tg.colorScheme === 'dark') {
           document.body.setAttribute('data-theme', 'dark');
         }
         
-        // Handle theme changes
         tg.onEvent('themeChanged', () => {
           document.body.setAttribute('data-theme', tg.colorScheme || 'light');
         });
         
-        // CRITICAL: Handle viewport changes for fullscreen optimization
         tg.onEvent('viewportChanged', handleViewportChange);
         
         console.log('✅ Telegram WebApp configured');
-      } else {
-        console.log('🌐 Running in regular browser');
       }
     }
 
-    // ENHANCED Viewport handling with dynamic updates
+    // Setup viewport handling
     function setupViewportHandling() {
       updateViewportVariables();
       
-      // Listen for all possible viewport changes
       window.addEventListener('resize', debounce(handleViewportChange, 100));
       window.addEventListener('orientationchange', () => {
-        setTimeout(handleViewportChange, 200); // Wait for orientation to complete
+        setTimeout(handleViewportChange, 200);
       });
       
-      // Monitor for fullscreen changes
       document.addEventListener('fullscreenchange', handleViewportChange);
       document.addEventListener('webkitfullscreenchange', handleViewportChange);
       
       console.log('📐 Viewport handling configured');
     }
 
-    // ENHANCED Viewport change handler
     function handleViewportChange() {
-      console.log('📐 Viewport changed, updating...');
-      
       updateViewportVariables();
       
-      // Resize map if in fullscreen
       if (isMapFullscreen && driverRouteMap) {
         setTimeout(() => {
           try {
-            if (driverRouteMap.container && driverRouteMap.container.fitToViewport) {
+            if (driverRouteMap.container?.fitToViewport) {
               driverRouteMap.container.fitToViewport();
-              console.log('🗺️ Fullscreen map resized');
             }
           } catch (error) {
             console.warn('⚠️ Map resize warning:', error);
@@ -1223,103 +1115,81 @@
         }, 100);
       }
       
-      // Update modal heights
       updateModalHeights();
     }
 
-    // Update CSS custom properties for dynamic viewport
     function updateViewportVariables() {
       const vh = window.Telegram?.WebApp?.viewportHeight || window.innerHeight;
       const stableVh = window.Telegram?.WebApp?.viewportStableHeight || vh;
       const safeAreaTop = window.Telegram?.WebApp?.safeAreaInset?.top || 0;
+      const contentSafeAreaTop = window.Telegram?.WebApp?.contentSafeAreaInset?.top || 0;
       
       document.documentElement.style.setProperty('--tg-viewport-height', `${vh}px`);
       document.documentElement.style.setProperty('--tg-viewport-stable-height', `${stableVh}px`);
-      document.documentElement.style.setProperty('--tg-content-safe-area-inset-top', `${safeAreaTop}px`);
+      document.documentElement.style.setProperty('--tg-safe-area-inset-top', `${safeAreaTop}px`);
+      document.documentElement.style.setProperty('--tg-content-safe-area-inset-top', `${contentSafeAreaTop}px`);
       
-      console.log(`📐 Viewport updated: ${vh}px (stable: ${stableVh}px)`);
+      console.log(`📐 Viewport: ${vh}px, Safe: ${safeAreaTop}px, Content: ${contentSafeAreaTop}px`);
     }
 
-    // Update modal max-heights dynamically
     function updateModalHeights() {
       const vh = window.Telegram?.WebApp?.viewportHeight || window.innerHeight;
+      const safeTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--tg-safe-area-inset-top') || '0');
+      const contentTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--tg-content-safe-area-inset-top') || '0');
+      
       const modalContent = document.querySelector('.modal-content');
       const modalBody = document.querySelector('.modal-body');
       
       if (modalContent) {
-        modalContent.style.maxHeight = `calc(${vh}px - 40px)`;
+        const modalMaxHeight = vh - (safeTop + contentTop + 60);
+        modalContent.style.maxHeight = `${modalMaxHeight}px`;
       }
       
       if (modalBody) {
-        modalBody.style.maxHeight = `calc(${vh}px - 370px)`;
+        const bodyMaxHeight = vh - 370;
+        modalBody.style.maxHeight = `${bodyMaxHeight}px`;
       }
     }
 
-    // Setup performance optimizations
-    function setupPerformanceOptimizations() {
-      // Intersection Observer for lazy loading if needed
-      if ('IntersectionObserver' in window) {
-        console.log('🔍 Intersection Observer available');
-      }
+    // Load trip coordinates from URL
+    function loadTripCoordinates() {
+      const urlParams = new URLSearchParams(window.location.search);
       
-      // Passive event listeners for better performance
-      document.addEventListener('touchstart', () => {}, { passive: true });
-      document.addEventListener('touchmove', () => {}, { passive: true });
+      tripCoordinates.fromLat = parseFloat(urlParams.get('from_lat')) || 43.238949;
+      tripCoordinates.fromLon = parseFloat(urlParams.get('from_lon')) || 76.889709;
+      tripCoordinates.toLat = parseFloat(urlParams.get('to_lat')) || 43.238949;
+      tripCoordinates.toLon = parseFloat(urlParams.get('to_lon')) || 76.889709;
+      tripCoordinates.fromAddress = urlParams.get('from_address') || null;
+      tripCoordinates.toAddress = urlParams.get('to_address') || null;
       
-      // Preconnect to important domains
-      const preconnectLinks = [
-        'https://api-maps.yandex.ru',
-        'https://core-renderer-tiles.maps.yandex.net'
-      ];
-      
-      preconnectLinks.forEach(url => {
-        const link = document.createElement('link');
-        link.rel = 'preconnect';
-        link.href = url;
-        document.head.appendChild(link);
-      });
-      
-      console.log('⚡ Performance optimizations applied');
+      console.log('📍 Trip coordinates loaded:', tripCoordinates);
     }
 
-    // ENHANCED Language switching with error handling
+    // Language switching
     function setLanguage(lang) {
-      if (!translations[lang]) {
-        console.warn(`⚠️ Language ${lang} not supported`);
-        return;
-      }
-      
       currentLanguage = lang;
       
-      // Update language buttons
       document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
       const langBtn = document.getElementById('lang-' + lang);
-      if (langBtn) {
-        langBtn.classList.add('active');
-      }
+      if (langBtn) langBtn.classList.add('active');
       
-      // Update all translatable elements
       document.querySelectorAll('[data-text]').forEach(element => {
         const key = element.getAttribute('data-text');
-        if (translations[lang] && translations[lang][key]) {
+        if (translations[lang]?.[key]) {
           element.innerHTML = translations[lang][key];
         }
       });
       
-      // Refresh drivers list if loaded
       if (availableDrivers.length > 0) {
         displayDrivers(availableDrivers);
       }
       
-      console.log(`🌍 Language switched to ${lang}`);
+      console.log(`🌍 Language: ${lang}`);
     }
 
-    // ENHANCED Load drivers with retry logic and better error handling
+    // Load drivers
     async function loadDrivers() {
-      if (isLoading) {
-        console.log('⏳ Already loading drivers...');
-        return;
-      }
+      if (isLoading) return;
       
       isLoading = true;
       loadAttempts++;
@@ -1327,26 +1197,19 @@
       try {
         showLoadingState();
         
-        // Get location from URL params with fallbacks
-        const urlParams = new URLSearchParams(window.location.search);
-        const fromLat = parseFloat(urlParams.get('from_lat')) || 43.238949;
-        const fromLon = parseFloat(urlParams.get('from_lon')) || 76.889709;
-        const toLat = parseFloat(urlParams.get('to_lat')) || 43.238949;
-        const toLon = parseFloat(urlParams.get('to_lon')) || 76.889709;
-        
         const params = new URLSearchParams({
-          from_lat: fromLat,
-          from_lon: fromLon,
-          to_lat: toLat,
-          to_lon: toLon,
+          from_lat: tripCoordinates.fromLat,
+          from_lon: tripCoordinates.fromLon,
+          to_lat: tripCoordinates.toLat,
+          to_lon: tripCoordinates.toLon,
           radius: 50,
-          limit: 20 // Limit for better performance
+          limit: 20
         });
         
-        console.log('🔍 Loading drivers with params:', Object.fromEntries(params));
+        console.log('🔍 Loading drivers...');
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
         
         const response = await fetch(`/api/driver-list?${params.toString()}`, {
           signal: controller.signal,
@@ -1359,47 +1222,43 @@
         clearTimeout(timeoutId);
         
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          throw new Error(`HTTP ${response.status}`);
         }
         
         const result = await response.json();
         
-        if (result.success && result.data && Array.isArray(result.data.drivers)) {
+        if (result.success && result.data?.drivers) {
           availableDrivers = result.data.drivers;
-          loadAttempts = 0; // Reset on success
+          loadAttempts = 0;
           
           console.log(`✅ Found ${availableDrivers.length} drivers`);
-          
-          performanceMetrics.renderTime = Date.now() - performanceMetrics.loadStart;
-          console.log(`⚡ Total load time: ${performanceMetrics.renderTime}ms`);
-          
           displayDrivers(availableDrivers);
         } else {
-          throw new Error(result.message || 'Invalid response format');
+          throw new Error(result.message || 'Invalid response');
         }
         
       } catch (error) {
         console.error('❌ Error loading drivers:', error);
         
         if (error.name === 'AbortError') {
-          showError(translations[currentLanguage].error_connection);
+          showError('Ошибка соединения');
         } else if (loadAttempts < maxLoadAttempts) {
-          console.log(`🔄 Retrying... (${loadAttempts}/${maxLoadAttempts})`);
+          console.log(`🔄 Retry ${loadAttempts}/${maxLoadAttempts}`);
           setTimeout(() => {
             isLoading = false;
             loadDrivers();
-          }, 2000 * loadAttempts); // Exponential backoff
+          }, 2000 * loadAttempts);
           return;
         } else {
           showEmptyState();
-          showError(`${translations[currentLanguage].error_loading}: ${error.message}`);
+          showError(`Ошибка загрузки: ${error.message}`);
         }
       } finally {
         isLoading = false;
       }
     }
 
-    // ENHANCED Display drivers with performance optimizations
+    // Display drivers
     function displayDrivers(drivers) {
       hideLoadingState();
       
@@ -1411,25 +1270,23 @@
         return;
       }
       
-      // Update count
       driversCount.textContent = drivers.length;
       
-      // Use DocumentFragment for better performance
       const fragment = document.createDocumentFragment();
       
       drivers.forEach((driver, index) => {
-        const driverCard = createDriverCard(driver, index);
-        fragment.appendChild(driverCard);
+        const card = createDriverCard(driver, index);
+        fragment.appendChild(card);
       });
       
       driversList.innerHTML = '';
       driversList.appendChild(fragment);
       driversList.style.display = 'block';
       
-      console.log(`✅ Displayed ${drivers.length} driver cards`);
+      console.log(`✅ Displayed ${drivers.length} drivers`);
     }
 
-    // Create optimized driver card element
+    // Create driver card
     function createDriverCard(driver, index) {
       const distance = driver.distance_km || driver.distance_to_pickup_km || 0;
       const truckTypeName = translations[currentLanguage][driver.truck_type] || translations[currentLanguage]['any'];
@@ -1442,16 +1299,14 @@
       card.className = 'driver-card';
       card.setAttribute('role', 'listitem');
       card.setAttribute('tabindex', '0');
-      card.setAttribute('aria-label', `Водитель ${driver.first_name} ${driver.last_name}, ${truckTypeName}, ${driverPrice} тенге`);
       
-      // Use template literals with proper escaping
       card.innerHTML = `
         <div class="driver-header">
           <img src="/ava/${encodeURIComponent(driver.profile_photo || 'default.jpg')}" 
                alt="${escapeHtml(driver.first_name)} ${escapeHtml(driver.last_name)}"
                class="driver-photo"
                loading="lazy"
-               onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIHZpZXdCb3g9IjAgMCA1MCA1MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjUiIGN5PSIyNSIgcj0iMjUiIGZpbGw9IiNmMGYwZjAiLz4KPHRleHQgeD0iMjUiIHk9IjMwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEyIiBmaWxsPSIjOTk5Ij7igKI8L3RleHQ+Cjwvc3ZnPgo='">
+               onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNTYiIHZpZXdCb3g9IjAgMCA1NiA1NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjgiIGN5PSIyOCIgcj0iMjgiIGZpbGw9IiNmMGYwZjAiLz4KPHRleHQgeD0iMjgiIHk9IjMyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5Ij7igKI8L3RleHQ+Cjwvc3ZnPgo='">
           <div class="driver-info">
             <div class="driver-name">${escapeHtml(driver.first_name)} ${escapeHtml(driver.last_name)}</div>
             <div class="driver-vehicle">${escapeHtml(truckTypeName)}</div>
@@ -1463,9 +1318,9 @@
         
         <div class="driver-details">
           <div class="distance-info">
-            <span>${distance.toFixed(1)} ${translations[currentLanguage]['km']}</span>
+            <span>📍 ${distance.toFixed(1)} ${translations[currentLanguage]['km']}</span>
             <span>•</span>
-            <span>${etaMin} ${translations[currentLanguage]['min']}</span>
+            <span>🕐 ${etaMin} ${translations[currentLanguage]['min']}</span>
           </div>
           <div class="route-info">
             ${escapeHtml(startCity)} → ${escapeHtml(endCity)}
@@ -1473,7 +1328,6 @@
         </div>
       `;
       
-      // Add click and keyboard event listeners
       card.addEventListener('click', () => showDriverDetails(driver.id));
       card.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -1485,7 +1339,6 @@
       return card;
     }
 
-    // Utility function to escape HTML
     function escapeHtml(text) {
       if (!text) return '';
       const div = document.createElement('div');
@@ -1493,13 +1346,11 @@
       return div.innerHTML;
     }
 
-    // Enhanced city extraction with better fallbacks
     function extractCityFromAddress(address) {
       if (!address || address === 'Адрес не указан') {
         return 'Неизвестно';
       }
 
-      // Kazakhstan cities in both languages
       const cities = [
         'Алматы', 'Almaty', 'Астана', 'Нур-Султан', 'Nur-Sultan',
         'Шымкент', 'Shymkent', 'Караганда', 'Karaganda', 'Актобе', 'Aktobe',
@@ -1516,7 +1367,6 @@
         }
       }
 
-      // Try to extract first meaningful part
       const parts = address.split(',');
       if (parts.length > 0) {
         const firstPart = parts[0].trim();
@@ -1525,11 +1375,10 @@
         }
       }
 
-      // Fallback to truncated address
       return address.length > 20 ? address.substring(0, 17) + '...' : address;
     }
 
-    // ENHANCED Show driver details with improved error handling
+    // Show driver details
     function showDriverDetails(driverId) {
       const driver = availableDrivers.find(d => d.id === driverId);
       if (!driver) {
@@ -1541,28 +1390,25 @@
       selectedDriver = driver;
       
       try {
-        // Update modal content safely
         updateModalContent(driver);
         
-        // Show modal first
         const modal = document.getElementById('driverModal');
         modal.classList.add('active');
-        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        document.body.style.overflow = 'hidden';
         
-        // Initialize map after modal is visible
         setTimeout(() => {
           initYandexDriverMap(driver);
         }, 100);
         
-        console.log(`📋 Showing details for driver: ${driver.first_name} ${driver.last_name}`);
+        console.log(`📋 Showing driver: ${driver.first_name} ${driver.last_name}`);
         
       } catch (error) {
-        console.error('❌ Error showing driver details:', error);
-        showError('Ошибка отображения деталей');
+        console.error('❌ Error showing driver:', error);
+        showError('Ошибка отображения');
       }
     }
 
-    // Update modal content safely
+    // Update modal content
     function updateModalContent(driver) {
       const elements = {
         modalDriverPhoto: document.getElementById('modalDriverPhoto'),
@@ -1578,33 +1424,24 @@
         modalComment: document.getElementById('modalComment')
       };
       
-      // Check if all elements exist
       for (const [key, element] of Object.entries(elements)) {
         if (!element) {
-          console.warn(`⚠️ Modal element not found: ${key}`);
+          console.warn(`⚠️ Missing element: ${key}`);
           return;
         }
       }
       
-      // Update photo with error handling
       elements.modalDriverPhoto.src = `/ava/${encodeURIComponent(driver.profile_photo || 'default.jpg')}`;
-      elements.modalDriverPhoto.onerror = function() {
-        this.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMzAiIGZpbGw9IiNmMGYwZjAiLz4KPHRleHQgeD0iMzAiIHk9IjM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5Ij7igKI8L3RleHQ+Cjwvc3ZnPgo=';
-      };
-      
-      // Update text content
       elements.modalDriverName.textContent = `${driver.first_name} ${driver.last_name}`;
       elements.modalDriverVehicle.textContent = translations[currentLanguage][driver.truck_type] || translations[currentLanguage]['any'];
       elements.modalFromAddress.textContent = driver.from_address || 'Адрес не указан';
       elements.modalToAddress.textContent = driver.to_address || 'Адрес не указан';
       elements.modalPrice.textContent = `${driver.price || 'Договорная'} ₸`;
       
-      // Calculate and display distance/ETA
       const distance = driver.distance_km || driver.distance_to_pickup_km || 0;
       elements.modalDistance.textContent = `${distance.toFixed(1)} ${translations[currentLanguage]['km']}`;
       elements.modalETA.textContent = `${driver.eta_min || Math.ceil(distance * 2)} ${translations[currentLanguage]['min']}`;
       
-      // Format departure time safely
       let departureText = 'Время не указано';
       if (driver.departure_time) {
         try {
@@ -1624,7 +1461,6 @@
       }
       elements.modalDeparture.textContent = departureText;
       
-      // Handle comment section
       if (driver.comment && driver.comment.trim()) {
         elements.modalComment.textContent = driver.comment.trim();
         elements.modalCommentSection.style.display = 'block';
@@ -1633,12 +1469,10 @@
       }
     }
 
-    // OPTIMIZED Initialize Yandex Maps v3 with better error handling
+    // Initialize Yandex Maps
     async function initYandexDriverMap(driver) {
-      // Clean up existing map
       cleanupDriverMap();
       
-      // Get coordinates with validation
       const coords = validateAndParseCoordinates(driver);
       if (!coords) {
         showMapError();
@@ -1647,24 +1481,13 @@
       
       const { pickupCoords, dropoffCoords } = coords;
       
-      console.log('🗺️ Initializing optimized Yandex map:', { pickupCoords, dropoffCoords });
-      performanceMetrics.mapInitTime = Date.now();
+      console.log('🗺️ Initializing map:', { pickupCoords, dropoffCoords });
       
       try {
         await ymaps3.ready;
         
-        // Import required modules with error handling
-        let YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapMarker;
+        const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapMarker } = ymaps3;
         
-        try {
-          ({ YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapMarker } = ymaps3);
-        } catch (importError) {
-          console.error('❌ Yandex Maps modules import failed:', importError);
-          showMapError();
-          return;
-        }
-        
-        // Create map with optimized settings
         driverRouteMap = new YMap(
           document.getElementById('driverRouteMap'),
           {
@@ -1673,130 +1496,108 @@
               zoom: 12
             },
             theme: document.body.getAttribute('data-theme') === 'dark' ? 'dark' : 'light',
-            behaviors: ['drag', 'pinch', 'dblClick', 'mouseWheel'],
-            copyrights: false
+            behaviors: ['drag', 'pinch', 'dblClick', 'mouseWheel']
           }
         );
         
-        // Add layers
         driverRouteMap.addChild(new YMapDefaultSchemeLayer({ 
-          theme: document.body.getAttribute('data-theme') === 'dark' ? 'dark' : 'light' 
+          theme: document.body.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'
         }));
         driverRouteMap.addChild(new YMapDefaultFeaturesLayer());
         
-        // Create optimized markers
-        createOptimizedMarkers(pickupCoords, dropoffCoords);
+        createMarkers(pickupCoords, dropoffCoords);
         
-        // Calculate and fit bounds
         const bounds = calculateBounds([pickupCoords, dropoffCoords]);
         
-        // Fit map to show both points with animation
         setTimeout(() => {
-          if (driverRouteMap && driverRouteMap.setLocation) {
+          if (driverRouteMap?.setLocation) {
             driverRouteMap.setLocation({
               bounds: bounds,
-              duration: 1000
+              duration: 800
             });
           }
-        }, 500);
+        }, 300);
         
-        const initTime = Date.now() - performanceMetrics.mapInitTime;
-        console.log(`✅ Yandex driver map initialized in ${initTime}ms`);
+        console.log('✅ Map initialized');
         
       } catch (error) {
-        console.error('❌ Error initializing Yandex driver map:', error);
+        console.error('❌ Map error:', error);
         showMapError();
       }
     }
 
-    // Validate and parse coordinates
     function validateAndParseCoordinates(driver) {
       const fromLat = parseFloat(driver.from_lat || driver.pickup_lat);
       const fromLon = parseFloat(driver.from_lon || driver.pickup_lon);
       const toLat = parseFloat(driver.to_lat || driver.dropoff_lat);
       const toLon = parseFloat(driver.to_lon || driver.dropoff_lon);
       
-      // Validate coordinates
-      const isValidCoord = (lat, lon) => {
+      const isValid = (lat, lon) => {
         return !isNaN(lat) && !isNaN(lon) && 
                Math.abs(lat) <= 90 && Math.abs(lon) <= 180 &&
                lat !== 0 && lon !== 0;
       };
       
-      // Use fallback coordinates (Almaty area) if invalid
-      const pickupCoords = isValidCoord(fromLat, fromLon) 
+      const pickupCoords = isValid(fromLat, fromLon) 
         ? [fromLon, fromLat] 
         : [76.889709, 43.238949];
         
-      const dropoffCoords = isValidCoord(toLat, toLon) 
+      const dropoffCoords = isValid(toLat, toLon) 
         ? [toLon, toLat] 
         : [76.920000, 43.260000];
       
-      console.log('📍 Coordinates validated:', { pickupCoords, dropoffCoords });
+      console.log('📍 Coordinates:', { pickupCoords, dropoffCoords });
       
       return { pickupCoords, dropoffCoords };
     }
 
-    // Create optimized map markers
-    function createOptimizedMarkers(pickupCoords, dropoffCoords) {
+    function createMarkers(pickupCoords, dropoffCoords) {
       try {
         const { YMapMarker } = ymaps3;
         
-        // Create pickup marker (A)
         const pickupElement = document.createElement('div');
-        pickupElement.className = 'yandex-marker-a';
+        pickupElement.className = 'custom-marker pickup';
         pickupElement.innerHTML = 'A';
-        pickupElement.setAttribute('aria-label', 'Точка отправления');
         
         pickupMarker = new YMapMarker(
-          {
-            coordinates: pickupCoords,
-            draggable: false
-          },
+          { coordinates: pickupCoords, draggable: false },
           pickupElement
         );
         
         driverRouteMap.addChild(pickupMarker);
         
-        // Create dropoff marker (B)
         const dropoffElement = document.createElement('div');
-        dropoffElement.className = 'yandex-marker-b';
+        dropoffElement.className = 'custom-marker dropoff';
         dropoffElement.innerHTML = 'B';
-        dropoffElement.setAttribute('aria-label', 'Точка назначения');
         
         dropoffMarker = new YMapMarker(
-          {
-            coordinates: dropoffCoords,
-            draggable: false
-          },
+          { coordinates: dropoffCoords, draggable: false },
           dropoffElement
         );
         
         driverRouteMap.addChild(dropoffMarker);
         
-        console.log('✅ Map markers created successfully');
+        console.log('✅ Markers created');
         
       } catch (error) {
-        console.error('❌ Error creating markers:', error);
+        console.error('❌ Marker error:', error);
       }
     }
 
-    // Show map error with fallback
     function showMapError() {
       const mapContainer = document.getElementById('driverRouteMap');
       if (mapContainer) {
         mapContainer.innerHTML = `
           <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; 
-                      height: 100%; color: var(--text-secondary); font-size: 14px; background: #f5f5f5; padding: 20px; text-align: center;">
-            <div style="font-size: 24px; margin-bottom: 8px;">🗺️</div>
-            <div style="font-weight: 600; margin-bottom: 4px;">${translations[currentLanguage].map_error}</div>
+                      height: 100%; color: var(--text-secondary); font-size: 14px; background: var(--background); padding: 20px; text-align: center;">
+            <div style="font-size: 32px; margin-bottom: 8px;">🗺️</div>
+            <div style="font-weight: 600; margin-bottom: 4px;">Ошибка загрузки карты</div>
             <div style="opacity: 0.7;">Попробуйте обновить страницу</div>
           </div>
         `;
       }
     }
 
-    // Clean up driver map resources
     function cleanupDriverMap() {
       if (driverRouteMap) {
         try {
@@ -1811,25 +1612,21 @@
           if (driverRouteMap.destroy) {
             driverRouteMap.destroy();
           }
-          console.log('🗺️ Driver map cleaned up');
+          console.log('🗺️ Map cleaned up');
         } catch (error) {
-          console.warn('⚠️ Error cleaning up map:', error);
+          console.warn('⚠️ Cleanup warning:', error);
         }
       }
       
       driverRouteMap = null;
-      pickupMarker = null;
-      dropoffMarker = null;
     }
 
-    // OPTIMIZED Calculate bounds with padding
     function calculateBounds(coordinates) {
       let minLon = Math.min(...coordinates.map(c => c[0]));
       let maxLon = Math.max(...coordinates.map(c => c[0]));
       let minLat = Math.min(...coordinates.map(c => c[1]));
       let maxLat = Math.max(...coordinates.map(c => c[1]));
       
-      // Add smart padding based on distance
       const lonSpan = maxLon - minLon;
       const latSpan = maxLat - minLat;
       const lonPadding = Math.max(lonSpan * 0.3, 0.01);
@@ -1841,10 +1638,12 @@
       ];
     }
 
-    // ENHANCED Expand map to fullscreen with optimizations
-    function expandMap() {
+    // Expand map
+    function expandMap(event) {
+      event.stopPropagation();
+      
       if (!driverRouteMap) {
-        console.warn('⚠️ Cannot expand map - not initialized');
+        console.warn('⚠️ Cannot expand - map not initialized');
         return;
       }
       
@@ -1852,114 +1651,94 @@
       const expandBtn = document.getElementById('mapExpandBtn');
       const closeBtn = document.getElementById('mapCloseBtn');
       
-      if (!mapSection || !expandBtn || !closeBtn) {
-        console.error('❌ Map control elements not found');
-        return;
-      }
+      if (!mapSection || !expandBtn || !closeBtn) return;
       
       mapSection.classList.add('fullscreen');
       expandBtn.style.display = 'none';
       closeBtn.style.display = 'flex';
       isMapFullscreen = true;
       
-      // Update viewport variables for fullscreen
       updateViewportVariables();
       
-      // Resize map after fullscreen with retry logic
-      let resizeAttempts = 0;
-      const maxResizeAttempts = 3;
-      
-      const resizeMap = () => {
+      setTimeout(() => {
         try {
-          if (driverRouteMap && driverRouteMap.container && driverRouteMap.container.fitToViewport) {
+          if (driverRouteMap?.container?.fitToViewport) {
             driverRouteMap.container.fitToViewport();
-            console.log('🔍 Map expanded to fullscreen successfully');
-          } else {
-            throw new Error('Map container not ready');
+            console.log('🔍 Map expanded');
           }
         } catch (error) {
-          resizeAttempts++;
-          if (resizeAttempts < maxResizeAttempts) {
-            console.warn(`⚠️ Map resize attempt ${resizeAttempts} failed, retrying...`);
-            setTimeout(resizeMap, 100 * resizeAttempts);
-          } else {
-            console.error('❌ Failed to resize map after multiple attempts');
-          }
+          console.warn('⚠️ Resize warning:', error);
         }
-      };
+      }, 300);
       
-      setTimeout(resizeMap, 300);
-      
-      // Add escape key listener
       document.addEventListener('keydown', handleEscapeKey);
     }
 
-    // Handle escape key for fullscreen
     function handleEscapeKey(e) {
       if (e.key === 'Escape' && isMapFullscreen) {
         closeFullscreenMap();
       }
     }
 
-    // ENHANCED Close fullscreen map
+    // Close fullscreen map
     function closeFullscreenMap() {
       const mapSection = document.getElementById('mapSection');
       const expandBtn = document.getElementById('mapExpandBtn');
       const closeBtn = document.getElementById('mapCloseBtn');
       
-      if (!mapSection || !expandBtn || !closeBtn) {
-        return;
-      }
+      if (!mapSection || !expandBtn || !closeBtn) return;
       
       mapSection.classList.remove('fullscreen');
       expandBtn.style.display = 'flex';
       closeBtn.style.display = 'none';
       isMapFullscreen = false;
       
-      // Update viewport variables
       updateViewportVariables();
       
-      // Resize map back to normal
       setTimeout(() => {
-        if (driverRouteMap && driverRouteMap.container && driverRouteMap.container.fitToViewport) {
+        if (driverRouteMap?.container?.fitToViewport) {
           try {
             driverRouteMap.container.fitToViewport();
-            console.log('📱 Map returned to normal size');
+            console.log('📱 Map restored');
           } catch (error) {
-            console.warn('⚠️ Map resize warning:', error);
+            console.warn('⚠️ Resize warning:', error);
           }
         }
       }, 300);
       
-      // Remove escape key listener
       document.removeEventListener('keydown', handleEscapeKey);
     }
 
-    // ENHANCED Close driver modal with cleanup
+    // Close modal
     function closeDriverModal() {
       const modal = document.getElementById('driverModal');
       if (!modal) return;
       
       modal.classList.remove('active');
-      document.body.style.overflow = ''; // Restore background scrolling
+      document.body.style.overflow = '';
       
-      // Clean up map resources
       cleanupDriverMap();
       
-      // Reset fullscreen state
       if (isMapFullscreen) {
         closeFullscreenMap();
       }
       
       selectedDriver = null;
       
-      console.log('❌ Driver modal closed and resources cleaned up');
+      console.log('❌ Modal closed');
     }
 
-    // ENHANCED Contact functions with validation
+    // Handle modal backdrop click
+    function handleModalBackdropClick(event) {
+      if (event.target.matches('.driver-modal')) {
+        closeDriverModal();
+      }
+    }
+
+    // Call driver
     function callDriver() {
       if (!selectedDriver) {
-        console.error('❌ No selected driver');
+        console.error('❌ No driver selected');
         return;
       }
       
@@ -1969,26 +1748,26 @@
         return;
       }
       
-      // Clean and validate phone number
       const cleanPhone = contactNumber.replace(/[^\d+]/g, '');
       if (cleanPhone.length < 10) {
-        showError('Некорректный номер телефона');
+        showError('Некорректный номер');
         return;
       }
       
-      console.log(`📞 Calling driver: ${cleanPhone}`);
+      console.log(`📞 Calling: ${cleanPhone}`);
       
       try {
         window.open(`tel:${cleanPhone}`, '_self');
       } catch (error) {
-        console.error('❌ Error opening phone dialer:', error);
-        showError('Ошибка открытия номеронабирателя');
+        console.error('❌ Call error:', error);
+        showError('Ошибка');
       }
     }
 
+    // Open WhatsApp
     function openWhatsApp() {
       if (!selectedDriver) {
-        console.error('❌ No selected driver');
+        console.error('❌ No driver selected');
         return;
       }
       
@@ -2000,11 +1779,10 @@
       
       const cleanPhone = contactNumber.replace(/[^\d]/g, '');
       if (cleanPhone.length < 10) {
-        showError('Некорректный номер телефона');
+        showError('Некорректный номер');
         return;
       }
       
-      // Ensure Kazakhstan format
       let formattedPhone = cleanPhone;
       if (formattedPhone.startsWith('8')) {
         formattedPhone = '7' + formattedPhone.slice(1);
@@ -2014,26 +1792,37 @@
       }
       
       const driverName = `${selectedDriver.first_name} ${selectedDriver.last_name}`;
+      const fromAddress = tripCoordinates.fromAddress || selectedDriver.from_address || 'указанной точки А';
+      const toAddress = tripCoordinates.toAddress || selectedDriver.to_address || 'указанной точки Б';
+      
       const message = encodeURIComponent(
-        `Здравствуйте, ${driverName}! Я нашел ваш номер в приложении TezJet. ` +
-        `Мне нужна поездка от ${selectedDriver.from_address || 'указанной точки'} ` +
-        `до ${selectedDriver.to_address || 'указанной точки'}. ` +
-        `Цена: ${selectedDriver.price || 'по договоренности'} ₸.`
+        `Здравствуйте, ${driverName}! Я нашел ваш номер в приложении QazLine.\n\n` +
+        `Мне нужна грузоперевозка:\n` +
+        `📍 Откуда: ${fromAddress}\n` +
+        `📍 Куда: ${toAddress}\n\n` +
+        `Цена: ${selectedDriver.price || 'по договоренности'} ₸\n\n` +
+        `Прошу связаться со мной для уточнения деталей.`
       );
       
       const whatsappUrl = `https://wa.me/${formattedPhone}?text=${message}`;
       
-      console.log(`💬 Opening WhatsApp: ${formattedPhone}`);
+      console.log(`💬 WhatsApp: ${formattedPhone}`);
       
       try {
         window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
       } catch (error) {
-        console.error('❌ Error opening WhatsApp:', error);
+        console.error('❌ WhatsApp error:', error);
         showError('Ошибка открытия WhatsApp');
       }
     }
 
-    // State management functions
+    // Create new trip
+    function createNewTrip() {
+      console.log('➕ Creating new trip...');
+      window.location.href = '/delivery';
+    }
+
+    // State management
     function showLoadingState() {
       const elements = {
         loadingState: document.getElementById('loadingState'),
@@ -2048,9 +1837,7 @@
 
     function hideLoadingState() {
       const loadingState = document.getElementById('loadingState');
-      if (loadingState) {
-        loadingState.style.display = 'none';
-      }
+      if (loadingState) loadingState.style.display = 'none';
     }
 
     function showEmptyState() {
@@ -2073,24 +1860,21 @@
       if (window.Telegram?.WebApp) {
         Telegram.WebApp.showAlert(message);
       } else {
-        // Fallback for non-Telegram environments
         const notification = document.createElement('div');
         notification.style.cssText = `
           position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-          background: #ef4444; color: white; padding: 12px 24px; border-radius: 8px;
+          background: #ef4444; color: white; padding: 14px 24px; border-radius: 12px;
           font-size: 14px; font-weight: 600; z-index: 10000; max-width: 90%;
           box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
         `;
         notification.textContent = message;
         document.body.appendChild(notification);
         
-        setTimeout(() => {
-          notification.remove();
-        }, 5000);
+        setTimeout(() => notification.remove(), 5000);
       }
     }
 
-    // Navigation functions
+    // Navigation
     function goBack() {
       console.log('⬅️ Going back...');
       
@@ -2104,25 +1888,21 @@
     }
 
     function refreshDrivers() {
-      console.log('🔄 Refreshing drivers...');
+      console.log('🔄 Refreshing...');
       
-      // Reset load attempts on manual refresh
       loadAttempts = 0;
       availableDrivers = [];
       
-      // Animate refresh button
       const refreshBtn = document.querySelector('.refresh-btn');
       if (refreshBtn) {
         refreshBtn.style.animation = 'spin 0.5s linear';
-        setTimeout(() => {
-          refreshBtn.style.animation = '';
-        }, 500);
+        setTimeout(() => refreshBtn.style.animation = '', 500);
       }
       
       loadDrivers();
     }
 
-    // Utility function for debouncing
+    // Utility
     function debounce(func, wait) {
       let timeout;
       return function executedFunction(...args) {
@@ -2135,15 +1915,13 @@
       };
     }
 
-    // ENHANCED Event listeners with proper cleanup
+    // Event listeners
     document.addEventListener('click', (e) => {
-      // Close modal when clicking outside
       if (e.target.matches('.driver-modal')) {
         closeDriverModal();
       }
     });
 
-    // Handle escape key for modal
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         if (isMapFullscreen) {
@@ -2154,52 +1932,28 @@
       }
     });
 
-    // Auto-refresh drivers with visibility check
+    // Auto-refresh
     let autoRefreshInterval = setInterval(() => {
       if (document.visibilityState === 'visible' && !isLoading) {
-        console.log('🔄 Auto-refreshing drivers...');
+        console.log('🔄 Auto-refresh');
         refreshDrivers();
       }
-    }, 30000); // Every 30 seconds
+    }, 30000);
 
-    // Cleanup on page unload
+    // Cleanup
     window.addEventListener('beforeunload', () => {
-      console.log('🧹 Cleaning up resources...');
-      
-      if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
-      }
-      
+      if (autoRefreshInterval) clearInterval(autoRefreshInterval);
       cleanupDriverMap();
-      
-      // Remove event listeners
       document.removeEventListener('keydown', handleEscapeKey);
     });
 
-    // Handle page visibility changes
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        console.log('👁️ Page became visible');
-        // Optionally refresh data when page becomes visible
-        if (!isLoading && availableDrivers.length === 0) {
-          loadDrivers();
-        }
-      } else {
-        console.log('👁️‍🗨️ Page became hidden');
+      if (document.visibilityState === 'visible' && !isLoading && availableDrivers.length === 0) {
+        loadDrivers();
       }
     });
 
-    // Performance monitoring (development only)
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      window.addEventListener('load', () => {
-        if (performance.timing) {
-          const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
-          console.log(`⚡ Page load time: ${loadTime}ms`);
-        }
-      });
-    }
-
-    console.log('🚀 Enhanced driver list page script loaded with full optimizations');
+    console.log('🚀 QazLine Driver List loaded');
   </script>
 </body>
 </html>
