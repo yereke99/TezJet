@@ -1526,6 +1526,31 @@ func (h *Handler) handleDeliveryList(w http.ResponseWriter, r *http.Request) {
 	h.sendSuccessResponse(w, "Заказы получены", response)
 }
 
+// helper: привести путь фото к публичному URL
+func publicPhotoURL(baseURL, p string) string {
+	if p == "" {
+		return ""
+	}
+	// если уже абсолютный http(s) — не трогаем
+	if strings.HasPrefix(p, "http://") || strings.HasPrefix(p, "https://") {
+		return p
+	}
+	// если в БД только имя файла — дополним префиксом
+	if !strings.Contains(p, "/") {
+		p = "/delivery-photo/" + p
+	} else {
+		// если в БД 'delivery-photo/...' — добавим ведущий слеш
+		if !strings.HasPrefix(p, "/") {
+			p = "/" + p
+		}
+	}
+	// если есть базовый домен — склеим абсолютный URL (опционально)
+	if baseURL := strings.TrimRight(baseURL, "/"); baseURL != "" && !strings.HasPrefix(p, "http") {
+		return baseURL + p
+	}
+	return p
+}
+
 // FIXED: getDeliveryOrdersInRadius - Better filtering and debugging
 func (h *Handler) getDeliveryOrdersInRadius(driverLat, driverLon, radiusKm float64) ([]DeliveryRequest, error) {
 	h.logger.Info("Getting delivery orders in radius",
@@ -1539,7 +1564,7 @@ func (h *Handler) getDeliveryOrdersInRadius(driverLat, driverLon, radiusKm float
 			id, telegram_id, from_address, from_lat, from_lon, 
 			to_address, to_lat, to_lon, distance_km, eta_min,
 			price, truck_type, contact, time_start, comment, 
-			status, created_at
+			item_photo_path, status, created_at
 		FROM delivery_requests 
 		WHERE status = 'pending'
 		AND created_at >= datetime('now', '-72 hours')
@@ -1563,7 +1588,7 @@ func (h *Handler) getDeliveryOrdersInRadius(driverLat, driverLon, radiusKm float
 			&order.ID, &order.TelegramID, &order.FromAddress, &order.FromLat, &order.FromLon,
 			&order.ToAddress, &order.ToLat, &order.ToLon, &order.DistanceKm, &order.EtaMin,
 			&order.Price, &order.TruckType, &order.Contact, &order.TimeStart, &order.Comment,
-			&order.Status, &order.CreatedAt,
+			&order.CargoPhoto, &order.Status, &order.CreatedAt,
 		)
 		if err != nil {
 			h.logger.Error("Error scanning delivery order", zap.Error(err))
@@ -1571,6 +1596,10 @@ func (h *Handler) getDeliveryOrdersInRadius(driverLat, driverLon, radiusKm float
 		}
 
 		ordersProcessed++
+
+		if p := strings.TrimSpace(order.CargoPhoto); p != "" {
+			order.CargoPhoto = filepath.Base(p)
+		}
 
 		// FIXED: More lenient distance calculation and fallback for missing coordinates
 		var distance float64

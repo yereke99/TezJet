@@ -1,2377 +1,927 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
   <title>Заказы | Тапсырыстар</title>
+
+  <!-- Telegram SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  
-  <style>
-    :root {
-      --tg-theme-bg-color: #ffffff;
-      --tg-theme-text-color: #000000;
-      --tg-theme-hint-color: #999999;
-      --tg-theme-link-color: #007AFF;
-      --tg-theme-button-color: #007AFF;
-      --tg-theme-button-text-color: #ffffff;
-      
-      /* Uber-style minimal colors */
-      --primary: #000000;
-      --primary-light: #333333;
-      --secondary: #007AFF;
-      --accent: #1565C0;
-      --danger: #D32F2F;
-      --warning: #F57C00;
-      --success: #388E3C;
-      --bg: #ffffff;
-      --bg-secondary: #f8f9fa;
-      --card: #ffffff;
-      --text: #000000;
-      --text-secondary: #666666;
-      --text-muted: #999999;
-      --border: #e0e0e0;
-      --border-light: #f0f0f0;
-      --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
-      --shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.15);
-      --gradient: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-      --secondary-gradient: linear-gradient(135deg, var(--secondary) 0%, var(--accent) 100%);
-      
-      /* Responsive breakpoints */
-      --mobile-max: 767px;
-      --tablet-min: 768px;
-      --tablet-max: 1023px;
-      --desktop-min: 1024px;
-      --large-desktop-min: 1440px;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
-      background: var(--tg-theme-bg-color, var(--bg));
-      color: var(--tg-theme-text-color, var(--text));
-      min-height: 100vh;
-      overflow-x: hidden;
-      padding: 0;
-      margin: 0;
-      user-select: none;
-      -webkit-user-select: none;
-      font-size: clamp(14px, 2vw, 16px);
-      line-height: 1.5;
-      
-      /* TELEGRAM WEBAPP OPTIMIZATION */
-      height: var(--tg-viewport-stable-height, 100vh);
-      padding-top: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px) + 15px);
-      padding-bottom: var(--tg-safe-area-inset-bottom, 0px);
-      padding-left: var(--tg-safe-area-inset-left, 0px);
-      padding-right: var(--tg-safe-area-inset-right, 0px);
-    }
-
-    /* Container for desktop layout */
-    .app-container {
-      max-width: 100%;
-      margin: 0 auto;
-      position: relative;
-      height: 100%;
-    }
-
-    /* Header - Minimal Uber Style */
-    .header {
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      background: var(--tg-theme-bg-color, var(--bg));
-      border-bottom: 1px solid var(--border-light);
-      padding: clamp(16px, 4vw, 24px) clamp(16px, 4vw, 24px);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-    }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: clamp(12px, 3vw, 16px);
-    }
-
-    .profile-btn {
-      width: clamp(40px, 8vw, 48px);
-      height: clamp(40px, 8vw, 48px);
-      border: none;
-      background: var(--gradient);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow: var(--shadow);
-      overflow: hidden;
-      position: relative;
-      touch-action: manipulation;
-    }
-
-    .profile-btn img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 50%;
-    }
-
-    .profile-btn:hover {
-      transform: scale(1.05);
-      box-shadow: var(--shadow-lg);
-    }
-
-    .profile-btn.no-photo {
-      background: var(--gradient);
-      color: white;
-      font-size: clamp(18px, 4vw, 22px);
-      font-weight: bold;
-    }
-
-    .header-title {
-      font-size: clamp(16px, 4vw, 20px);
-      font-weight: 600;
-      color: var(--text);
-      cursor: pointer;
-      padding: clamp(8px, 2vw, 12px) clamp(12px, 3vw, 16px);
-      border-radius: 12px;
-      transition: all 0.2s ease;
-      background: var(--bg-secondary);
-      touch-action: manipulation;
-    }
-
-    .header-title:hover {
-      background: var(--primary);
-      color: white;
-      transform: translateY(-1px);
-    }
-
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: clamp(12px, 3vw, 16px);
-    }
-
-    .refresh-btn {
-      width: clamp(40px, 8vw, 48px);
-      height: clamp(40px, 8vw, 48px);
-      border: none;
-      background: var(--gradient);
-      color: white;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: clamp(16px, 4vw, 20px);
-      transition: all 0.2s ease;
-      touch-action: manipulation;
-    }
-
-    .refresh-btn:hover {
-      transform: rotate(180deg) scale(1.05);
-    }
-
-    .refresh-btn.loading {
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .lang-switch {
-      display: flex;
-      background: var(--bg-secondary);
-      border-radius: 24px;
-      padding: 2px;
-      border: 1px solid var(--border);
-    }
-
-    .lang-btn {
-      padding: clamp(6px, 2vw, 10px) clamp(12px, 3vw, 16px);
-      border: none;
-      background: transparent;
-      border-radius: 20px;
-      font-size: clamp(12px, 3vw, 14px);
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      color: var(--text-muted);
-      touch-action: manipulation;
-      min-width: 48px;
-    }
-
-    .lang-btn.active {
-      background: var(--primary);
-      color: white;
-    }
-
-    /* Stats Bar - Minimal */
-    .stats-bar {
-      padding: clamp(16px, 4vw, 24px);
-      background: var(--bg-secondary);
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: clamp(12px, 3vw, 20px);
-      text-align: center;
-      border-bottom: 1px solid var(--border-light);
-    }
-
-    .stat-item {
-      padding: clamp(12px, 3vw, 16px);
-      border-radius: 16px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow);
-    }
-
-    .stat-value {
-      font-size: clamp(20px, 5vw, 28px);
-      font-weight: 700;
-      margin-bottom: 4px;
-      color: var(--text);
-    }
-
-    .stat-label {
-      font-size: clamp(10px, 2.5vw, 12px);
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-weight: 500;
-    }
-
-    /* Filter Bar - Minimal */
-    .filter-bar {
-      padding: clamp(12px, 3vw, 20px);
-      background: var(--card);
-      border-bottom: 1px solid var(--border-light);
-      display: flex;
-      gap: clamp(8px, 2vw, 12px);
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-    }
-
-    .filter-bar::-webkit-scrollbar {
-      display: none;
-    }
-
-    .filter-chip {
-      padding: clamp(8px, 2vw, 12px) clamp(16px, 4vw, 20px);
-      border-radius: 24px;
-      background: var(--bg-secondary);
-      color: var(--text-secondary);
-      font-size: clamp(12px, 3vw, 14px);
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      white-space: nowrap;
-      border: 1px solid var(--border);
-      touch-action: manipulation;
-      min-height: 48px;
-      display: flex;
-      align-items: center;
-    }
-
-    .filter-chip.active {
-      background: var(--primary);
-      color: white;
-      border-color: var(--primary);
-      transform: scale(1.02);
-    }
-
-    /* New order notification */
-    .new-order-notification {
-      position: fixed;
-      top: clamp(120px, 20vh, 160px);
-      left: clamp(16px, 4vw, 24px);
-      right: clamp(16px, 4vw, 24px);
-      background: var(--primary);
-      color: white;
-      padding: clamp(16px, 4vw, 24px);
-      border-radius: 16px;
-      box-shadow: var(--shadow-xl);
-      z-index: 1001;
-      display: none;
-      animation: slideInNotification 0.4s ease-out;
-    }
-
-    .new-order-notification.show {
-      display: block;
-    }
-
-    @keyframes slideInNotification {
-      from {
-        opacity: 0;
-        transform: translateY(-20px) scale(0.95);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-
-    .notification-content {
-      display: flex;
-      align-items: center;
-      gap: clamp(12px, 3vw, 16px);
-    }
-
-    .notification-icon {
-      font-size: clamp(24px, 6vw, 32px);
-      animation: bounceIcon 0.6s ease-out;
-    }
-
-    @keyframes bounceIcon {
-      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-      40% { transform: translateY(-8px); }
-      60% { transform: translateY(-4px); }
-    }
-
-    .notification-text {
-      flex: 1;
-    }
-
-    .notification-title {
-      font-size: clamp(16px, 4vw, 18px);
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-
-    .notification-subtitle {
-      font-size: clamp(13px, 3vw, 15px);
-      opacity: 0.9;
-    }
-
-    /* Order List - Minimal Cards */
-    .order-list {
-      padding: clamp(12px, 3vw, 20px);
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: clamp(12px, 3vw, 16px);
-      padding-bottom: clamp(100px, 20vh, 140px);
-      min-height: 60vh;
-    }
-
-    /* Desktop Layout */
-    @media (min-width: 1024px) {
-      .app-container {
-        max-width: 1200px;
-        padding: 0 24px;
-      }
-      
-      .order-list {
-        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-        gap: 24px;
-        padding: 24px;
-      }
-      
-      .header {
-        padding: 24px 32px;
-      }
-      
-      .stats-bar {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 32px;
-        padding: 32px;
-      }
-    }
-
-    /* Large Desktop Layout */
-    @media (min-width: 1440px) {
-      .app-container {
-        max-width: 1400px;
-      }
-      
-      .order-list {
-        grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-        gap: 28px;
-      }
-    }
-
-    /* Tablet Layout */
-    @media (min-width: 768px) and (max-width: 1023px) {
-      .order-list {
-        grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-        gap: 20px;
-        padding: 20px;
-      }
-      
-      .stats-bar {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 20px;
-      }
-    }
-
-    /* UBER-STYLE Order Cards */
-    .order-card {
-      background: var(--card);
-      border-radius: 16px;
-      padding: clamp(16px, 4vw, 24px);
-      box-shadow: var(--shadow);
-      border: 1px solid var(--border);
-      cursor: pointer;
-      transition: all 0.2s ease;
-      position: relative;
-      overflow: hidden;
-      transform: translateY(0);
-      will-change: transform;
-      touch-action: manipulation;
-    }
-
-    .order-card:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-lg);
-      border-color: var(--primary);
-    }
-
-    .order-card.new {
-      border-left: 4px solid var(--warning);
-    }
-
-    .order-card.loading {
-      opacity: 0.6;
-      pointer-events: none;
-    }
-
-    .order-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: clamp(16px, 4vw, 20px);
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .order-time {
-      font-size: clamp(12px, 3vw, 14px);
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-weight: 500;
-    }
-
-    .new-badge {
-      background: var(--warning);
-      color: white;
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-size: clamp(10px, 2.5vw, 11px);
-      font-weight: 700;
-      text-transform: uppercase;
-      animation: badgePulse 2s infinite;
-    }
-
-    @keyframes badgePulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.7; }
-    }
-
-    .order-route {
-      margin-bottom: clamp(16px, 4vw, 20px);
-    }
-
-    .route-point {
-      display: flex;
-      align-items: flex-start;
-      gap: clamp(12px, 3vw, 16px);
-      margin-bottom: clamp(12px, 3vw, 16px);
-      position: relative;
-    }
-
-    .route-point:last-child {
-      margin-bottom: 0;
-    }
-
-    .route-point::after {
-      content: '';
-      position: absolute;
-      left: clamp(12px, 3vw, 16px);
-      top: clamp(28px, 6vw, 32px);
-      width: 2px;
-      height: calc(100% + 8px);
-      background: var(--border);
-      z-index: 1;
-    }
-
-    .route-point:last-child::after {
-      display: none;
-    }
-
-    .route-marker {
-      width: clamp(24px, 5vw, 32px);
-      height: clamp(24px, 5vw, 32px);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: clamp(12px, 3vw, 14px);
-      font-weight: bold;
-      color: white;
-      flex-shrink: 0;
-      z-index: 2;
-      position: relative;
-      box-shadow: var(--shadow);
-    }
-
-    .route-marker.from {
-      background: var(--primary);
-    }
-
-    .route-marker.to {
-      background: var(--secondary);
-    }
-
-    .route-info {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .route-label {
-      font-size: clamp(10px, 2.5vw, 12px);
-      color: var(--text-muted);
-      margin-bottom: 4px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-weight: 600;
-    }
-
-    .route-address {
-      font-size: clamp(14px, 3.5vw, 16px);
-      color: var(--text);
-      font-weight: 500;
-      line-height: 1.3;
-      word-wrap: break-word;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .order-details {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: clamp(8px, 2vw, 12px);
-      margin-bottom: clamp(8px, 2vw, 12px);
-    }
-
-    .detail-item {
-      text-align: center;
-      padding: clamp(8px, 2vw, 12px);
-      background: var(--bg-secondary);
-      border-radius: 12px;
-      border: 1px solid var(--border);
-    }
-
-    .detail-value {
-      font-size: clamp(14px, 3.5vw, 18px);
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 2px;
-    }
-
-    .detail-value.price {
-      color: var(--primary);
-      font-size: clamp(16px, 4vw, 20px);
-    }
-
-    .detail-label {
-      font-size: clamp(9px, 2vw, 11px);
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-weight: 600;
-    }
-
-    .order-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-top: clamp(8px, 2vw, 12px);
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .order-comment {
-      flex: 1;
-      font-size: clamp(12px, 3vw, 14px);
-      color: var(--text-muted);
-      font-style: italic;
-      margin-right: 8px;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      min-width: 0;
-      line-height: 1.4;
-    }
-
-    .truck-type {
-      padding: 4px 10px;
-      background: var(--bg-secondary);
-      border-radius: 8px;
-      font-size: clamp(10px, 2.5vw, 12px);
-      font-weight: 600;
-      color: var(--text-secondary);
-      white-space: nowrap;
-      border: 1px solid var(--border);
-    }
-
-    .distance-badge {
-      position: absolute;
-      top: clamp(16px, 4vw, 20px);
-      right: clamp(16px, 4vw, 20px);
-      background: var(--warning);
-      color: white;
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-size: clamp(9px, 2vw, 11px);
-      font-weight: 700;
-    }
-
-    .distance-badge.nearby {
-      background: var(--success);
-    }
-
-    /* Empty State */
-    .empty-state {
-      text-align: center;
-      padding: clamp(60px, 15vh, 100px) clamp(20px, 5vw, 32px);
-    }
-
-    .empty-icon {
-      font-size: clamp(48px, 12vw, 64px);
-      margin-bottom: clamp(16px, 4vw, 24px);
-      opacity: 0.3;
-    }
-
-    .empty-title {
-      font-size: clamp(18px, 4.5vw, 24px);
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: clamp(8px, 2vw, 12px);
-    }
-
-    .empty-message {
-      font-size: clamp(14px, 3.5vw, 16px);
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
-
-    /* Loading State */
-    .loading-state {
-      text-align: center;
-      padding: clamp(40px, 10vh, 60px) clamp(20px, 5vw, 32px);
-    }
-
-    .loading-spinner {
-      width: clamp(32px, 8vw, 48px);
-      height: clamp(32px, 8vw, 48px);
-      border: 3px solid var(--border);
-      border-top: 3px solid var(--primary);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto clamp(16px, 4vw, 24px);
-    }
-
-    .loading-text {
-      font-size: clamp(14px, 3.5vw, 16px);
-      color: var(--text-muted);
-    }
-
-    /* Performance optimized card loading animation */
-    .order-card.fade-in {
-      animation: fadeInUp 0.4s ease-out;
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    /* UBER-STYLE Detail Modal - FIXED VERSION WITH TOP MARGIN */
-.detail-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  z-index: 2000;
-  display: none;
-  align-items: flex-end;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding-top: 30px;
-}
-
-.detail-modal.show {
-  display: flex;
-  animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.detail-sheet {
-  background: var(--card);
-  border-radius: 20px 20px 0 0;
-  width: 100%;
-  height: 88vh;
-  max-height: calc(100vh - 40px);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  animation: slideUp 0.3s ease;
-  position: relative;
-  margin-top: auto;
-  margin-bottom: 0;
-}
-
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-/* Desktop Modal - OPTIMIZED */
-@media (min-width: 1024px) {
-  .detail-modal {
-    align-items: center;
-    justify-content: center;
-    padding-top: 0;
-  }
-  
-  .detail-sheet {
-    width: 90vw;
-    max-width: 1400px;
-    height: 85vh;
-    max-height: 900px;
-    border-radius: 24px;
-    animation: scaleIn 0.3s ease;
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
-    margin-top: 0;
-  }
-  
-  @keyframes scaleIn {
-    from { 
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to { 
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-}
-
-/* Tablet Modal */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .detail-modal {
-    padding-top: 20px;
-  }
-  
-  .detail-sheet {
-    height: 88vh;
-    max-height: calc(100vh - 30px);
-    border-radius: 24px 24px 0 0;
-  }
-}
-    /* MINIMAL Header for modal with safe areas */
-    .detail-header {
-      padding: clamp(20px, 5vw, 32px);
-      padding-top: clamp(16px, 4vw, 24px);
-      border-bottom: 1px solid var(--border-light);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: white;
-      z-index: 10;
-      position: relative;
-      flex-shrink: 0;
-    }
-
-    .detail-title {
-      font-size: clamp(18px, 4.5vw, 24px);
-      font-weight: 700;
-      color: var(--text);
-    }
-
-    .close-btn {
-      width: clamp(36px, 8vw, 48px);
-      height: clamp(36px, 8vw, 48px);
-      border: none;
-      background: var(--bg-secondary);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: clamp(18px, 4vw, 24px);
-      transition: all 0.2s ease;
-      touch-action: manipulation;
-      color: var(--text-secondary);
-    }
-
-    .close-btn:hover {
-      background: var(--border);
-      transform: scale(1.05);
-      color: var(--text);
-    }
-
-    .detail-content {
-      flex: 1;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-    }
-
-    /* Responsive Map Layout */
-    .detail-map {
-      height: 50%;
-      position: relative;
-      overflow: hidden;
-      background: #ffffff;
-      border-bottom: 1px solid var(--border-light);
-      flex-shrink: 0;
-    }
-
-    @media (min-width: 1024px) {
-      .detail-content {
-        flex-direction: row;
-      }
-      
-      .detail-map {
-        width: 60%;
-        height: 100%;
-        border-bottom: none;
-        border-right: 1px solid var(--border-light);
-      }
-      
-      .detail-info {
-        width: 40%;
-        height: 100%;
-      }
-    }
-
-    #detailMap {
-      width: 100%;
-      height: 100%;
-      touch-action: none;
-    }
-
-    .map-overlay {
-      position: absolute;
-      top: clamp(16px, 4vw, 32px);
-      left: clamp(16px, 4vw, 32px);
-      background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      color: white;
-      padding: clamp(12px, 3vw, 20px);
-      border-radius: 16px;
-      font-size: clamp(14px, 3.5vw, 18px);
-      font-weight: 600;
-      z-index: 1000;
-      box-shadow: var(--shadow-lg);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      min-width: clamp(140px, 30vw, 200px);
-    }
-
-    .route-eta {
-      display: flex;
-      align-items: center;
-      gap: clamp(8px, 2vw, 12px);
-      color: white;
-      font-weight: 700;
-    }
-
-    .route-eta span:first-child {
-      font-size: clamp(16px, 4vw, 20px);
-    }
-
-    /* Order Info Panel - MINIMAL */
-    .detail-info {
-      height: 50%;
-      background: white;
-      padding: clamp(20px, 5vw, 32px);
-      padding-bottom: calc(clamp(20px, 5vw, 32px) + var(--tg-safe-area-inset-bottom, 0px) + env(safe-area-inset-bottom, 0px));
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .price-highlight {
-      text-align: center;
-      margin-bottom: clamp(20px, 5vw, 32px);
-    }
-
-    .price-amount {
-      font-size: clamp(32px, 8vw, 48px);
-      font-weight: 800;
-      color: var(--primary);
-      margin-bottom: 8px;
-    }
-
-    .price-label {
-      font-size: clamp(12px, 3vw, 16px);
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-weight: 600;
-    }
-
-    .route-details {
-      background: var(--bg-secondary);
-      border-radius: 16px;
-      padding: clamp(16px, 4vw, 24px);
-      margin-bottom: clamp(16px, 4vw, 24px);
-      border: 1px solid var(--border);
-    }
-
-    .route-step {
-      display: flex;
-      align-items: center;
-      gap: clamp(16px, 4vw, 20px);
-      margin-bottom: clamp(16px, 4vw, 20px);
-    }
-
-    .route-step:last-child {
-      margin-bottom: 0;
-    }
-
-    .step-marker {
-      width: clamp(32px, 7vw, 40px);
-      height: clamp(32px, 7vw, 40px);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: clamp(14px, 3.5vw, 18px);
-      font-weight: bold;
-      color: white;
-      flex-shrink: 0;
-      box-shadow: var(--shadow);
-    }
-
-    .step-marker.pickup {
-      background: var(--primary);
-    }
-
-    .step-marker.dropoff {
-      background: var(--secondary);
-    }
-
-    .step-info {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .step-address {
-      font-size: clamp(15px, 3.5vw, 18px);
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 4px;
-      line-height: 1.3;
-      word-wrap: break-word;
-    }
-
-    .step-label {
-      font-size: clamp(11px, 2.5vw, 14px);
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-weight: 600;
-    }
-
-    .order-meta {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: clamp(12px, 3vw, 20px);
-      margin-bottom: clamp(16px, 4vw, 24px);
-    }
-
-    .meta-item {
-      text-align: center;
-      padding: clamp(12px, 3vw, 16px);
-      background: var(--bg-secondary);
-      border-radius: 12px;
-      border: 1px solid var(--border);
-    }
-
-    .meta-value {
-      font-size: clamp(16px, 4vw, 20px);
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 4px;
-    }
-
-    .meta-label {
-      font-size: clamp(10px, 2.5vw, 12px);
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-weight: 600;
-    }
-
-    .contact-section {
-      background: var(--gradient);
-      border-radius: 16px;
-      padding: clamp(16px, 4vw, 24px);
-      color: white;
-      text-align: center;
-      margin-bottom: clamp(16px, 4vw, 24px);
-    }
-
-    .contact-title {
-      font-size: clamp(14px, 3.5vw, 18px);
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-
-    .contact-phone {
-      font-size: clamp(16px, 4vw, 20px);
-      margin-bottom: clamp(16px, 4vw, 20px);
-      opacity: 0.95;
-      font-weight: 600;
-    }
-
-    .contact-buttons {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: clamp(8px, 2vw, 12px);
-    }
-
-    .contact-btn {
-      padding: clamp(10px, 2.5vw, 16px);
-      border: none;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.2);
-      color: white;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: clamp(6px, 1.5vw, 10px);
-      text-decoration: none;
-      font-size: clamp(12px, 3vw, 16px);
-      touch-action: manipulation;
-      min-height: 48px;
-    }
-
-    .contact-btn:hover {
-      background: rgba(255, 255, 255, 0.3);
-      transform: translateY(-1px);
-    }
-
-    .accept-button {
-      width: 100%;
-      padding: clamp(16px, 4vw, 24px);
-      background: var(--gradient);
-      color: white;
-      border: none;
-      border-radius: 16px;
-      font-size: clamp(16px, 4vw, 20px);
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow: var(--shadow-lg);
-      touch-action: manipulation;
-      min-height: 56px;
-      margin-top: auto;
-    }
-
-    .accept-button:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-xl);
-    }
-
-    /* Hide Leaflet controls */
-    .leaflet-control-attribution,
-    .leaflet-control-zoom,
-    .leaflet-control {
-      display: none !important;
-    }
-
-    /* UBER-STYLE Custom Leaflet Markers */
-    .uber-marker {
-      width: clamp(32px, 7vw, 48px);
-      height: clamp(32px, 7vw, 48px);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      color: white;
-      font-size: clamp(14px, 3.5vw, 20px);
-      border: 4px solid white;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-      position: relative;
-      transition: all 0.2s ease;
-    }
-
-    .uber-marker.pickup {
-      background: var(--primary);
-    }
-
-    .uber-marker.dropoff {
-      background: var(--secondary);
-    }
-
-    .uber-marker:hover {
-      transform: scale(1.1);
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-    }
-
-    .leaflet-container {
-      background: #ffffff !important;
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif !important;
-    }
-
-    .leaflet-tile {
-      filter: contrast(1.05) brightness(1.05) saturate(0.95) !important;
-    }
-
-    /* Accessibility Improvements */
-    @media (prefers-reduced-motion: reduce) {
-      *,
-      *::before,
-      *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-      }
-    }
-
-    /* Focus indicators for keyboard navigation */
-    .profile-btn:focus,
-    .refresh-btn:focus,
-    .lang-btn:focus,
-    .filter-chip:focus,
-    .order-card:focus,
-    .close-btn:focus,
-    .contact-btn:focus,
-    .accept-button:focus {
-      outline: 2px solid var(--secondary);
-      outline-offset: 2px;
-    }
-
-    /* Make elements keyboard accessible */
-    .order-card {
-      -webkit-user-select: none;
-      user-select: none;
-    }
-
-    .order-card:focus {
-      outline: 2px solid var(--secondary);
-      outline-offset: 2px;
-    }
-
-    /* Improve scrollbar styling */
-    .order-list::-webkit-scrollbar,
-    .detail-info::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .order-list::-webkit-scrollbar-track,
-    .detail-info::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    .order-list::-webkit-scrollbar-thumb,
-    .detail-info::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.15);
-      border-radius: 3px;
-    }
-
-    .order-list::-webkit-scrollbar-thumb:hover,
-    .detail-info::-webkit-scrollbar-thumb:hover {
-      background: rgba(0, 0, 0, 0.25);
-    }
-  </style>
-  
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    :root{
+      /* Telegram theme fallbacks */
+      --tg-theme-bg-color:#ffffff;
+      --tg-theme-text-color:#0f172a;
+
+      /* Design tokens (Uber-ish) */
+      --primary:#000000;
+      --primary-600:#111111;
+      --secondary:#0B63F6;
+      --accent:#0B63F6;
+      --danger:#D32F2F;
+      --warning:#F59E0B;
+      --success:#16A34A;
+
+      --bg:#ffffff;
+      --bg-2:#F3F4F6;
+      --card:#ffffff;
+
+      --text:#0f172a;
+      --text-2:#475569;
+      --muted:#94a3b8;
+
+      --border:#e5e7eb;
+      --border-2:#eef2f7;
+
+      --shadow:0 6px 18px rgba(0,0,0,.08);
+      --shadow-lg:0 14px 28px rgba(0,0,0,.14);
+
+      --gradient:linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 100%); /* black */
+      --gradient-2:linear-gradient(135deg, #0B63F6 0%, #155EF1 100%);
+
+      --safe-top:calc(var(--tg-safe-area-inset-top, 0px) + env(safe-area-inset-top, 0px));
+      --safe-bottom:calc(var(--tg-safe-area-inset-bottom, 0px) + env(safe-area-inset-bottom, 0px));
+
+      --header-h:56px;
+      --chrome-h:168px; /* Stats + Filters total height (kept fixed) */
+
+      /* viewport fixes */
+      --vh: 100dvh;
+
+      /* Bottom sheet */
+      --sheet-head-h:56px;
+      --footer-h:86px; /* fixed footer with button */
+      --sheet-top-gap: calc(12px + var(--safe-top));
+    }
+
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%}
+
+    /* Root lock; only our custom containers scroll */
+    body{
+      position:fixed; inset:0;
+      width:100%; height:var(--vh);
+      overflow:hidden;
+      font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Inter,Roboto,system-ui,sans-serif;
+      background:var(--tg-theme-bg-color, var(--bg));
+      color:var(--tg-theme-text-color, var(--text));
+      line-height:1.5;
+      -webkit-user-select:none; user-select:none;
+    }
+
+    .app{
+      height:var(--vh);
+      display:flex; flex-direction:column;
+      background:var(--tg-theme-bg-color, var(--bg));
+    }
+
+    /* ===== Fixed TOP BAR (header) ===== */
+    .header{
+      position:relative;
+      height:var(--header-h);
+      padding:8px 16px;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px;
+      background:rgba(255,255,255,.92);
+      backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+      border-bottom:1px solid var(--border-2);
+      margin-top:calc(var(--safe-top) + 6px);
+      z-index:5;
+    }
+    .left,.right{display:flex;align-items:center;gap:10px}
+    .profile-btn{
+      width:44px;height:44px;border:none;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;overflow:hidden;
+      background:#0A0A0A; color:#fff; font-size:20px; cursor:pointer;
+      box-shadow:var(--shadow);
+    }
+    .profile-btn img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+    .title{
+      font-weight:800; font-size:16px; letter-spacing:.2px;
+      color:#0f172a; background:#F3F4F6; border:1px solid var(--border);
+      padding:8px 12px; border-radius:12px; cursor:pointer;
+    }
+    .refresh{
+      width:44px;height:44px;border:none;border-radius:50%;
+      background:#0F172A; color:#fff; cursor:pointer;
+      display:flex;align-items:center;justify-content:center;font-size:18px;
+    }
+    .refresh.loading{animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .lang{display:flex;gap:4px;padding:2px;border-radius:999px;background:#F3F4F6;border:1px solid var(--border)}
+    .lang button{border:none;background:transparent;padding:8px 14px;border-radius:999px;font-weight:800;font-size:13px;color:#6b7280;cursor:pointer}
+    .lang button.active{background:#000;color:#fff}
+
+    /* ===== FIXED CHROME (Stats + Filters) ===== */
+    .chrome{
+      position:relative; /* not scrolling */
+      z-index:4;
+      background:var(--tg-theme-bg-color, var(--bg));
+      border-bottom:1px solid var(--border-2);
+    }
+    .stats{
+      display:grid; grid-template-columns:repeat(3,1fr); gap:12px;
+      padding:14px 16px;
+      background:var(--bg-2);
+    }
+    .stat{
+      background:var(--card); border:1px solid var(--border);
+      border-radius:16px; box-shadow:var(--shadow);
+      padding:12px; text-align:center;
+    }
+    .stat .v{font-size:22px;font-weight:900;color:#0f172a}
+    .stat .l{font-size:11px;color:#9CA3AF;letter-spacing:.6px;text-transform:uppercase}
+
+    .filters{
+      display:flex; gap:10px; padding:12px 16px;
+      background:#fff; border-top:1px solid var(--border-2);
+      overflow:hidden; /* no horizontal scroll in “fixed chrome” */
+    }
+    .chip{
+      padding:10px 16px;
+      background:#F3F4F6; color:#111827; border:1px solid var(--border);
+      border-radius:999px; font-weight:800; white-space:nowrap; cursor:pointer;
+    }
+    .chip.active{background:#000;color:#fff;border-color:#000}
+
+    /* ===== SCROLL AREA (only the list scrolls) ===== */
+    .scroll{
+      flex:1 1 auto;
+      min-height:0;
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
+      overscroll-behavior-y:contain;
+      padding:12px 16px calc(20px + var(--safe-bottom));
+      background:transparent;
+    }
+
+    .list{
+      display:grid; grid-template-columns:1fr; gap:12px;
+      contain:content;
+    }
+    @media (min-width:1024px){
+      .list{grid-template-columns:repeat(auto-fit,minmax(420px,1fr)); gap:20px}
+    }
+
+    .card{
+      position:relative; background:#fff; border:1px solid var(--border);
+      border-radius:16px; box-shadow:var(--shadow); padding:16px; cursor:pointer;
+      transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+    .card:hover{transform:translateY(-2px); box-shadow:var(--shadow-lg); border-color:#000}
+    .badge-distance{
+      position:absolute; top:14px; right:14px;
+      background:#16A34A; color:#fff; font-weight:800; font-size:11px;
+      padding:6px 10px; border-radius:12px;
+    }
+    .time{display:flex;gap:8px;align-items:center;color:#9CA3AF;font-weight:700;margin-bottom:10px}
+
+    .route{display:flex;flex-direction:column;gap:12px;margin:10px 0 14px}
+    .point{display:flex;gap:12px}
+    .marker{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;box-shadow:var(--shadow)}
+    .marker.a{background:#000}
+    .marker.b{background:#0B63F6}
+    .addr-wrap{flex:1;min-width:0}
+    .label{font-size:11px;color:#9CA3AF;letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px}
+    .addr{font-weight:900;color:#0f172a;line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+
+    .dets{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+    .d{background:#F3F4F6;border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center}
+    .d .v{font-weight:900;color:#0f172a}
+    .d .l{font-size:11px;color:#9CA3AF;text-transform:uppercase;letter-spacing:.5px}
+    .price{color:#000;font-size:18px}
+
+    .foot{display:flex;gap:8px;align-items:center;margin-top:10px}
+    .comment{flex:1;color:#6b7280;font-style:italic;overflow:hidden;-webkit-line-clamp:2;display:-webkit-box;-webkit-box-orient:vertical}
+    .truck{white-space:nowrap;background:#F3F4F6;border:1px solid var(--border);color:#111827;font-weight:800;padding:6px 10px;border-radius:10px}
+
+    .empty{padding:14vh 16px;text-align:center;color:#9CA3AF}
+
+    /* Toast */
+    .toast{
+      position:fixed; left:12px; right:12px; bottom:calc(12px + var(--safe-bottom));
+      background:#111827; color:#fff; border:1px solid rgba(255,255,255,.08);
+      border-radius:16px; padding:14px 16px; display:none; gap:12px; align-items:center; z-index:50;
+      box-shadow:var(--shadow-lg);
+    }
+    .toast.show{display:flex;animation:fadein .2s ease}
+    @keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+    /* ======= BOTTOM SHEET (modal) ======= */
+    .modal{position:fixed; inset:0; display:none; z-index:100; background:rgba(0,0,0,.72); backdrop-filter:blur(10px)}
+    .modal.show{display:flex; align-items:flex-end}
+    @media (min-width:1024px){.modal.show{align-items:center; justify-content:center}}
+
+    .sheet{
+      width:100%;
+      margin-top:var(--sheet-top-gap);
+      max-height:calc(var(--vh) - var(--sheet-top-gap));
+      background:#fff; border-radius:20px 20px 0 0; overflow:hidden;
+      display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,.28);
+    }
+    @media (min-width:1024px){.sheet{width:92vw; max-width:1400px; height:calc(var(--vh) - 14vh); border-radius:24px}}
+
+    .sheet-head{
+      height:var(--sheet-head-h);
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:14px 16px; border-bottom:1px solid var(--border-2); background:#fff; z-index:1;
+    }
+    .sheet-title{font-weight:900;color:#0f172a}
+    .close{width:40px;height:40px;border-radius:50%;border:none;background:#F3F4F6;color:#111827;font-size:22px;cursor:pointer}
+
+    /* SCROLL only inside body; extra space for footer so nothing is cut */
+    .sheet-body{
+      position:relative; overflow:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+      min-height:0;
+      max-height:calc(var(--vh) - var(--sheet-top-gap) - var(--sheet-head-h) - var(--footer-h) - var(--safe-bottom));
+      padding-bottom:16px; background:#fff;
+    }
+
+    .map-wrap{position:relative;width:100%;height:40vh;min-height:240px;border-bottom:1px solid var(--border-2)}
+    #detailMap{width:100%;height:100%}
+    .map-overlay{
+      position:absolute; top:12px; left:12px;
+      background:#111827; color:#fff; border:1px solid rgba(255,255,255,.12);
+      padding:10px 12px; border-radius:12px; font-weight:900; box-shadow:var(--shadow-lg);
+    }
+
+    .photo{display:none; padding:14px 16px; border-bottom:1px solid var(--border-2); background:#fff}
+    .photo img{width:100%; height:auto; max-height:360px; object-fit:cover; border-radius:14px; border:1px solid var(--border); box-shadow:var(--shadow)}
+    .photo .cap{margin-top:8px; text-align:center; color:#9CA3AF; font-size:13px}
+
+    .info{padding:16px; display:flex; flex-direction:column; gap:16px}
+    .price-box{text-align:center}
+    .price-val{font-size:40px;font-weight:900;color:#000}
+    .price-l{color:#9CA3AF;letter-spacing:1px;text-transform:uppercase;font-weight:900}
+
+    .route-box{background:#F3F4F6;border:1px solid var(--border);border-radius:16px;padding:14px}
+    .step{display:flex;gap:14px;align-items:flex-start}
+    .step + .step{margin-top:12px}
+    .step .m{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;box-shadow:var(--shadow)}
+    .m.a{background:#000}
+    .m.b{background:#0B63F6}
+    .s-addr{font-size:16px;font-weight:900;color:#0f172a}
+    .s-l{font-size:12px;color:#9CA3AF;text-transform:uppercase;letter-spacing:.5px}
+
+    .meta{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .meta .it{background:#F3F4F6;border:1px solid var(--border);border-radius:14px;padding:12px;text-align:center}
+    .meta .v{font-weight:900;color:#0f172a}
+    .meta .l{font-size:12px;color:#9CA3AF;text-transform:uppercase;letter-spacing:.5px}
+
+    /* Client comment */
+    .comment-box{background:#F3F4F6;border:1px solid var(--border);border-radius:14px;padding:14px}
+    .comment-label{font-size:12px;color:#9CA3AF;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+    .comment-val{font-weight:700;color:#111827}
+
+    /* Centered contact section */
+    .contact{
+      background:#fff; border-radius:16px; padding:8px 0 0; text-align:center;
+    }
+    .ct{font-size:18px; font-weight:900; margin-bottom:6px}
+    .cp{opacity:.95; font-weight:900; margin-bottom:12px}
+    .cb{display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 16px 2px}
+    .cbtn{
+      border:none; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:10px;
+      padding:14px 16px; border-radius:14px; font-weight:900;
+      border:1px solid var(--border);
+      background:#fff; color:#0f172a;
+    }
+    .cbtn.call{background:var(--gradient); color:#fff; border:none}
+    .cbtn.wa{background:#F5F5F5; color:#0f172a}
+    .contact small{display:block; color:#9CA3AF; margin-top:10px}
+
+    /* Fixed footer button */
+    .sheet-footer{
+      height:var(--footer-h);
+      display:flex; align-items:center; justify-content:center;
+      padding:10px 16px calc(12px + var(--safe-bottom));
+      background:#fff; border-top:1px solid var(--border-2); box-shadow:0 -12px 24px rgba(0,0,0,.04);
+    }
+    .accept{
+      width:100%; min-height:56px;
+      background:var(--gradient); color:#fff; border:none; border-radius:16px;
+      font-weight:900; font-size:18px; cursor:pointer; box-shadow:var(--shadow-lg);
+    }
+
+    /* Leaflet cosmetics */
+    .leaflet-control-attribution,.leaflet-control-zoom,.leaflet-control{display:none!important}
+    .leaflet-container{background:#fff!important; font-family:inherit!important}
+  </style>
 </head>
 <body>
-  <div class="app-container">
-    <!-- Header -->
-    <div class="header">
-      <div class="header-left">
-        <button class="profile-btn no-photo" id="profileBtn" onclick="openProfile()" tabindex="0">
-          👤
-        </button>
-        <div class="header-title" data-ru="Профиль" data-kz="Профиль" onclick="openProfile()" tabindex="0">Профиль</div>
+  <div class="app">
+    <!-- Fixed Header -->
+    <header class="header">
+      <div class="left">
+        <button id="profileBtn" class="profile-btn" onclick="openProfile()" aria-label="Профиль">👤</button>
+        <div class="title" onclick="openProfile()" data-ru="Профиль" data-kz="Профиль">Профиль</div>
       </div>
-      <div class="header-right">
-        <button class="refresh-btn" id="refreshBtn" onclick="refreshOrders()" tabindex="0" aria-label="Обновить заказы">🔄</button>
-        <div class="lang-switch">
-          <button class="lang-btn active" onclick="setLang('ru')" id="lang-ru" tabindex="0">RU</button>
-          <button class="lang-btn" onclick="setLang('kz')" id="lang-kz" tabindex="0">KZ</button>
+      <div class="right">
+        <button id="refreshBtn" class="refresh" onclick="refreshOrders()" aria-label="Обновить заказы">🔄</button>
+        <div class="lang">
+          <button id="lang-ru" class="active" onclick="setLang('ru')">RU</button>
+          <button id="lang-kz" onclick="setLang('kz')">KZ</button>
         </div>
       </div>
-    </div>
+    </header>
 
-    <!-- New Order Notification -->
-    <div class="new-order-notification" id="newOrderNotification">
-      <div class="notification-content">
-        <div class="notification-icon">🚚</div>
-        <div class="notification-text">
-          <div class="notification-title" data-ru="Новый заказ!" data-kz="Жаңа тапсырыс!">Новый заказ!</div>
-          <div class="notification-subtitle" id="notificationSubtitle" data-ru="У вас есть новые заказы" data-kz="Сізде жаңа тапсырыстар бар">У вас есть новые заказы</div>
+    <!-- Fixed Chrome: Stats + Filters (does NOT scroll) -->
+    <section class="chrome" aria-hidden="false">
+      <div class="stats">
+        <div class="stat">
+          <div id="totalOrders" class="v">0</div>
+          <div class="l" data-ru="Всего" data-kz="Барлық">Всего</div>
+        </div>
+        <div class="stat">
+          <div id="nearbyOrders" class="v">0</div>
+          <div class="l" data-ru="Рядом" data-kz="Жақын">Рядом</div>
+        </div>
+        <div class="stat">
+          <div id="avgPrice" class="v">0₸</div>
+          <div class="l" data-ru="Средняя" data-kz="Орташа">Средняя</div>
         </div>
       </div>
-    </div>
+      <nav class="filters">
+        <div class="chip active" data-filter="all" onclick="setFilter('all')"><span data-ru="Все" data-kz="Барлық">Все</span></div>
+        <div class="chip" data-filter="new" onclick="setFilter('new')"><span data-ru="Новые" data-kz="Жаңа">Новые</span></div>
+        <div class="chip" data-filter="nearby" onclick="setFilter('nearby')"><span data-ru="Рядом" data-kz="Жақын">Рядом</span></div>
+        <div class="chip" data-filter="expensive" onclick="setFilter('expensive')"><span data-ru="Дорогие" data-kz="Қымбат">Дорогие</span></div>
+      </nav>
+    </section>
 
-    <!-- Stats Bar -->
-    <div class="stats-bar">
-      <div class="stat-item">
-        <div class="stat-value" id="totalOrders">0</div>
-        <div class="stat-label" data-ru="Всего" data-kz="Барлық">Всего</div>
+    <!-- Scroll area: ONLY the list scrolls -->
+    <div class="scroll" id="scrollArea" style="padding-top:8px;">
+      <!-- New order toast (floating) -->
+      <div id="newOrderToast" class="toast" role="status" aria-live="polite">
+        <div style="font-size:20px">🚚</div>
+        <div>
+          <div style="font-weight:900" data-ru="Новый заказ!" data-kz="Жаңа тапсырыс!">Новый заказ!</div>
+          <div id="toastSubtitle" style="opacity:.9" data-ru="У вас есть новые заказы" data-kz="Сізде жаңа тапсырыстар бар">У вас есть новые заказы</div>
+        </div>
       </div>
-      <div class="stat-item">
-        <div class="stat-value" id="nearbyOrders">0</div>
-        <div class="stat-label" data-ru="Рядом" data-kz="Жақын">Рядом</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="avgPrice">0₸</div>
-        <div class="stat-label" data-ru="Средняя" data-kz="Орташа">Средняя</div>
-      </div>
-    </div>
 
-    <!-- Filter Bar -->
-    <div class="filter-bar">
-      <div class="filter-chip active" data-filter="all" onclick="setFilter('all')" tabindex="0" role="button">
-        <span data-ru="Все" data-kz="Барлық">Все</span>
-      </div>
-      <div class="filter-chip" data-filter="new" onclick="setFilter('new')" tabindex="0" role="button">
-        <span data-ru="Новые" data-kz="Жаңа">Новые</span>
-      </div>
-      <div class="filter-chip" data-filter="nearby" onclick="setFilter('nearby')" tabindex="0" role="button">
-        <span data-ru="Рядом" data-kz="Жақын">Рядом</span>
-      </div>
-      <div class="filter-chip" data-filter="expensive" onclick="setFilter('expensive')" tabindex="0" role="button">
-        <span data-ru="Дорогие" data-kz="Қымбат">Дорогие</span>
-      </div>
-    </div>
-
-    <!-- Order List -->
-    <div class="order-list" id="orderList">
-      <div class="loading-state">
-        <div class="loading-spinner"></div>
-        <div class="loading-text" data-ru="Загрузка заказов..." data-kz="Тапсырыстарды жүктеу...">Загрузка заказов...</div>
-      </div>
+      <!-- List -->
+      <main id="orderList" class="list">
+        <div class="empty">
+          <div style="font-size:54px; opacity:.28">📦</div>
+          <div style="font-weight:900; margin-top:8px">Загрузка заказов...</div>
+        </div>
+      </main>
     </div>
   </div>
 
-  <!-- UBER-STYLE Order Detail Modal - OPTIMIZED FOR TELEGRAM -->
-  <div class="detail-modal" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
-    <div class="detail-sheet">
-      <div class="detail-header">
-        <div class="detail-title" id="detailTitle" data-ru="Детали заказа" data-kz="Тапсырыс мәліметтері">Детали заказа</div>
-        <button class="close-btn" onclick="closeDetail()" tabindex="0" aria-label="Закрыть">×</button>
+  <!-- Detail Modal -->
+  <div id="detailModal" class="modal" role="dialog" aria-modal="true">
+    <div class="sheet" role="document">
+      <div class="sheet-head">
+        <div class="sheet-title" id="detailTitle" data-ru="Детали заказа" data-kz="Тапсырыс мәліметтері">Детали заказа</div>
+        <button class="close" onclick="closeDetail()" aria-label="Закрыть">×</button>
       </div>
-      
-      <div class="detail-content">
-        <div class="detail-map">
+
+      <div id="sheetBody" class="sheet-body">
+        <!-- Map -->
+        <section class="map-wrap">
           <div id="detailMap"></div>
-          <div class="map-overlay" id="mapOverlay">
-            <div class="route-eta">
-              <span>🚗</span>
-              <span id="routeEta">Загрузка...</span>
-            </div>
-          </div>
-        </div>
-        
-        <div class="detail-info" id="detailInfo">
-          <div class="price-highlight">
-            <div class="price-amount" id="detailPrice">0₸</div>
-            <div class="price-label" data-ru="За доставку" data-kz="Жеткізу үшін">За доставку</div>
+          <div id="mapOverlay" class="map-overlay"><span id="routeEta">Загрузка...</span></div>
+        </section>
+
+        <!-- Photo -->
+        <section id="detailPhotoSection" class="photo" aria-live="polite">
+          <img id="cargoPhoto" alt="Фото груза" loading="lazy" />
+          <div class="cap" data-ru="Фото груза" data-kz="Жүк суреті">Фото груза</div>
+        </section>
+
+        <!-- Info -->
+        <section id="detailInfo" class="info">
+          <div class="price-box">
+            <div id="detailPrice" class="price-val">0₸</div>
+            <div class="price-l" data-ru="За доставку" data-kz="Жеткізу үшін">За доставку</div>
           </div>
 
-          <div class="route-details">
-            <div class="route-step">
-              <div class="step-marker pickup">A</div>
-              <div class="step-info">
-                <div class="step-address" id="pickupAddress">Загрузка...</div>
-                <div class="step-label" data-ru="Забрать" data-kz="Алып кету">Забрать</div>
+          <div class="route-box">
+            <div class="step">
+              <div class="m a">A</div>
+              <div>
+                <div id="pickupAddress" class="s-addr">Загрузка...</div>
+                <div class="s-l" data-ru="Забрать" data-kz="Алып кету">Забрать</div>
               </div>
             </div>
-            
-            <div class="route-step">
-              <div class="step-marker dropoff">B</div>
-              <div class="step-info">
-                <div class="step-address" id="dropoffAddress">Загрузка...</div>
-                <div class="step-label" data-ru="Доставить" data-kz="Жеткізу">Доставить</div>
+            <div class="step">
+              <div class="m b">B</div>
+              <div>
+                <div id="dropoffAddress" class="s-addr">Загрузка...</div>
+                <div class="s-l" data-ru="Доставить" data-kz="Жеткізу">Доставить</div>
               </div>
             </div>
           </div>
 
-          <div class="order-meta">
-            <div class="meta-item">
-              <div class="meta-value" id="detailTruck">--</div>
-              <div class="meta-label" data-ru="Транспорт" data-kz="Көлік">Транспорт</div>
+          <div class="meta">
+            <div class="it">
+              <div id="detailTruck" class="v">--</div>
+              <div class="l" data-ru="Транспорт" data-kz="Көлік">Транспорт</div>
             </div>
-            <div class="meta-item">
-              <div class="meta-value" id="detailTime">--</div>
-              <div class="meta-label" data-ru="Время" data-kz="Уақыт">Время</div>
-            </div>
-          </div>
-
-          <div class="contact-section" id="contactSection">
-            <div class="contact-title" data-ru="Контакт клиента" data-kz="Клиент байланысы">Контакт клиента</div>
-            <div class="contact-phone" id="contactPhone">+7 (___) ___-__-__</div>
-            
-            <div class="contact-buttons">
-              <a href="#" class="contact-btn" id="callBtn" tabindex="0">
-                <span>📞</span>
-                <span data-ru="Звонок" data-kz="Қоңырау">Звонок</span>
-              </a>
-              <a href="#" class="contact-btn" id="whatsappBtn" tabindex="0">
-                <span>💬</span>
-                <span>WhatsApp</span>
-              </a>
+            <div class="it">
+              <div id="detailTime" class="v">--</div>
+              <div class="l" data-ru="Время" data-kz="Уақыт">Время</div>
             </div>
           </div>
 
-          <button class="accept-button" onclick="acceptOrder()" id="acceptOrderBtn" tabindex="0">
-            <span data-ru="Принять заказ" data-kz="Тапсырысты қабылдау">Принять заказ</span>
-          </button>
-        </div>
+          <!-- Client comment -->
+          <div class="comment-box" id="commentBox" style="display:none">
+            <div class="comment-label" data-ru="Комментарий клиента" data-kz="Клиенттің пікірі">Комментарий клиента</div>
+            <div class="comment-val" id="clientComment"></div>
+          </div>
+
+          <!-- Centered contact -->
+          <div class="contact">
+            <div class="ct" data-ru="Контакт клиента" data-kz="Клиент байланысы">Контакт клиента</div>
+            <div id="contactPhone" class="cp">+7 (___) ___-__-__</div>
+            <div class="cb">
+              <a id="callBtn" class="cbtn call" href="#"><span>📞</span><span data-ru="Звонок" data-kz="Қоңырау">Звонок</span></a>
+              <a id="whatsappBtn" class="cbtn wa" href="#"><span>💬</span><span>WhatsApp</span></a>
+            </div>
+            <small data-ru="Нажмите, чтобы связаться" data-kz="Хабарласу үшін басыңыз">Нажмите, чтобы связаться</small>
+          </div>
+        </section>
+      </div>
+
+      <!-- Fixed footer -->
+      <div class="sheet-footer">
+        <button id="acceptOrderBtn" class="accept" onclick="acceptOrder()">
+          <span data-ru="Принять заказ" data-kz="Тапсырысты қабылдау">Принять заказ</span>
+        </button>
       </div>
     </div>
   </div>
 
   <script>
-    // Global variables
-    let currentLang = 'ru';
-    let currentFilter = 'all';
-    let orders = [];
-    let driverLocation = null;
-    let refreshInterval = null;
-    let detailMap = null;
-    let driverData = null;
-    let currentOrder = null;
-    
-    // Auto-sound notification system (always enabled)
-    let audioContext = null;
-    let previousOrderCount = 0;
-    let lastOrderIds = new Set();
+    /* ====== STATE ====== */
+    let currentLang='ru';
+    let currentFilter='all';
+    let orders=[];
+    let driverLocation=null;
+    let refreshInterval=null;
+    let detailMap=null;
+    let currentOrder=null;
+    let lastOrderIds=new Set();
+    let previousOrderCount=0;
 
-    // Enhanced Auto-Sound Notification System
-    class AutoSoundNotification {
-      constructor() {
-        this.audioContext = null;
-        this.enabled = true;
-        this.initAudioContext();
-        console.log('🔊 Auto-sound notifications always enabled');
-      }
-
-      async initAudioContext() {
-        try {
-          this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-          console.log('🔊 Audio context initialized for auto-notifications');
-        } catch (error) {
-          console.warn('⚠️ Audio context not supported:', error);
-        }
-      }
-
-      async playNotificationSound() {
-        if (!this.audioContext) {
-          return;
-        }
-
-        try {
-          if (this.audioContext.state === 'suspended') {
-            await this.audioContext.resume();
-          }
-
-          const oscillator1 = this.audioContext.createOscillator();
-          const oscillator2 = this.audioContext.createOscillator();
-          const oscillator3 = this.audioContext.createOscillator();
-          const gainNode = this.audioContext.createGain();
-
-          oscillator1.connect(gainNode);
-          oscillator2.connect(gainNode);
-          oscillator3.connect(gainNode);
-          gainNode.connect(this.audioContext.destination);
-
-          oscillator1.frequency.setValueAtTime(800, this.audioContext.currentTime);
-          oscillator2.frequency.setValueAtTime(1000, this.audioContext.currentTime);
-          oscillator3.frequency.setValueAtTime(1200, this.audioContext.currentTime);
-
-          gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
-          gainNode.gain.linearRampToValueAtTime(0.3, this.audioContext.currentTime + 0.1);
-          gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.8);
-
-          oscillator1.start(this.audioContext.currentTime);
-          oscillator2.start(this.audioContext.currentTime + 0.1);
-          oscillator3.start(this.audioContext.currentTime + 0.2);
-          
-          oscillator1.stop(this.audioContext.currentTime + 0.3);
-          oscillator2.stop(this.audioContext.currentTime + 0.5);
-          oscillator3.stop(this.audioContext.currentTime + 0.8);
-
-          console.log('🔊 Enhanced notification sound played');
-        } catch (error) {
-          console.error('❌ Error playing notification sound:', error);
-        }
-      }
-
-      isEnabled() {
-        return this.enabled;
-      }
+    /* ====== VIEWPORT FIX ====== */
+    function applyViewportVars(){
+      try{
+        const h = (window.Telegram?.WebApp?.viewportStableHeight) || window.innerHeight;
+        document.documentElement.style.setProperty('--vh', h + 'px');
+      }catch(_){}
+    }
+    function bindViewportListener(){
+      try{ Telegram.WebApp.onEvent('viewportChanged', applyViewportVars); }catch(_){}
     }
 
-    const autoSoundNotification = new AutoSoundNotification();
+    /* ====== TELEGRAM INIT ====== */
+    function initTelegram(){
+      try{
+        if(window.Telegram && Telegram.WebApp){
+          Telegram.WebApp.ready();
+          Telegram.WebApp.expand();
+          Telegram.WebApp.disableVerticalSwipes?.();
+          Telegram.WebApp.setHeaderColor?.('secondary_bg_color');
+          Telegram.WebApp.setBackgroundColor?.('#ffffff');
 
-    // Translations
-    const translations = {
-      ru: {
-        orders: 'Всего',
-        nearby: 'Рядом',
-        avgPrice: 'Средняя',
-        all: 'Все',
-        new: 'Новые',
-        expensive: 'Дорогие',
-        loading: 'Загрузка заказов...',
-        noOrders: 'Нет доступных заказов',
-        noOrdersDesc: 'Заказы появятся автоматически',
-        from: 'Откуда',
-        to: 'Куда',
-        price: 'Цена',
-        distance: 'Расстояние',
-        time: 'Время',
-        comment: 'Комментарий',
-        truck: 'Транспорт',
-        contact: 'Связаться',
-        call: 'Звонок',
-        orderDetails: 'Детали заказа',
-        clientInfo: 'Контакт клиента',
-        km: 'км',
-        min: 'мин',
-        small: 'Малый',
-        medium: 'Средний', 
-        large: 'Большой',
-        refrigerator: 'Рефрижератор',
-        tow: 'Эвакуатор',
-        any: 'Любой',
-        acceptOrder: 'Принять заказ',
-        calculating: 'Расчет...',
-        pickup: 'Забрать',
-        deliver: 'Доставить',
-        now: 'Сейчас',
-        new_order: 'НОВЫЙ',
-        newOrderTitle: 'Новый заказ!',
-        newOrderSubtitle: 'У вас есть новые заказы'
-      },
-      kz: {
-        orders: 'Барлық',
-        nearby: 'Жақын',
-        avgPrice: 'Орташа',
-        all: 'Барлық',
-        new: 'Жаңа',
-        expensive: 'Қымбат',
-        loading: 'Тапсырыстарды жүктеу...',
-        noOrders: 'Қол жетімді тапсырыстар жоқ',
-        noOrdersDesc: 'Тапсырыстар автоматты түрде пайда болады',
-        from: 'Қайдан',
-        to: 'Қайда',
-        price: 'Бағасы',
-        distance: 'Қашықтық',
-        time: 'Уақыт',
-        comment: 'Түсініктеме',
-        truck: 'Көлік',
-        contact: 'Байланысу',
-        call: 'Қоңырау',
-        orderDetails: 'Тапсырыс мәліметтері',
-        clientInfo: 'Клиент байланысы',
-        km: 'км',
-        min: 'мин',
-        small: 'Кіші',
-        medium: 'Орта',
-        large: 'Үлкен',
-        refrigerator: 'Рефрижератор',
-        tow: 'Эвакуатор',
-        any: 'Кез келген',
-        acceptOrder: 'Тапсырысты қабылдау',
-        calculating: 'Есептеу...',
-        pickup: 'Алып кету',
-        deliver: 'Жеткізу',
-        now: 'Қазір',
-        new_order: 'ЖАҢА',
-        newOrderTitle: 'Жаңа тапсырыс!',
-        newOrderSubtitle: 'Сізде жаңа тапсырыстар бар'
-      }
-    };
-
-    // Initialize Telegram WebApp
-    function initTelegram() {
-      if (window.Telegram && Telegram.WebApp) {
-        console.log('📱 Initializing Telegram WebApp for delivery list');
-        
-        Telegram.WebApp.ready();
-        Telegram.WebApp.expand();
-        Telegram.WebApp.disableVerticalSwipes();
-        
-        if (Telegram.WebApp.colorScheme === 'dark') {
-          document.documentElement.style.setProperty('--tg-theme-bg-color', '#1c1c1e');
-          document.documentElement.style.setProperty('--tg-theme-text-color', '#ffffff');
-        }
-
-        const user = Telegram.WebApp.initDataUnsafe?.user;
-        if (user) {
-          window.telegramUserId = user.id;
-          console.log('👤 Got Telegram user ID:', user.id);
-        }
-
-        Telegram.WebApp.MainButton.hide();
-        
-        console.log('✅ Telegram WebApp initialized for delivery list');
-      } else {
-        console.log('⚠️ Telegram WebApp not available - running in browser mode');
-        window.telegramUserId = 12345;
-      }
-    }
-
-    // Load driver profile with profile photo from ./ava directory
-    async function loadDriverProfile() {
-      try {
-        const telegramId = window.telegramUserId;
-        if (!telegramId) {
-          console.log('⚠️ No Telegram ID available for profile loading');
-          return;
-        }
-
-        console.log('👤 Loading driver profile for ID:', telegramId);
-
-        const response = await fetch('/api/check/who', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            telegram_id: parseInt(telegramId)
-          })
-        });
-
-        const result = await response.json();
-        console.log('📊 Driver profile response:', result);
-        
-        if (result.success && result.data.exists && result.data.user_type === 'driver') {
-          driverData = result.data.driver_data;
-          console.log('🚗 Driver data loaded:', driverData);
-          
-          const profileBtn = document.getElementById('profileBtn');
-          
-          if (driverData.profile_photo && driverData.profile_photo.trim() !== '') {
-            console.log('📸 Loading profile photo:', driverData.profile_photo);
-            
-            const avatarPath = `./ava/${driverData.profile_photo}`;
-            
-            const img = new Image();
-            
-            img.onload = function() {
-              console.log('✅ Profile photo loaded successfully from ./ava directory:', avatarPath);
-              profileBtn.innerHTML = `<img src="${avatarPath}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-              profileBtn.classList.remove('no-photo');
-              profileBtn.title = `${driverData.first_name || ''} ${driverData.last_name || ''}`.trim();
-            };
-            
-            img.onerror = function() {
-              console.warn('❌ Failed to load profile photo from ./ava directory:', avatarPath);
-              
-              const fallbackPaths = [
-                `/ava/${driverData.profile_photo}`,
-                `/files/${driverData.profile_photo}`,
-                `/static/ava/${driverData.profile_photo}`
-              ];
-              
-              let loaded = false;
-              fallbackPaths.forEach((path, index) => {
-                if (loaded) return;
-                
-                const fallbackImg = new Image();
-                fallbackImg.onload = function() {
-                  if (!loaded) {
-                    loaded = true;
-                    console.log(`✅ Profile photo loaded from fallback path ${index + 1}:`, path);
-                    profileBtn.innerHTML = `<img src="${path}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-                    profileBtn.classList.remove('no-photo');
-                  }
-                };
-                fallbackImg.onerror = function() {
-                  console.warn(`❌ Fallback path ${index + 1} failed:`, path);
-                };
-                fallbackImg.src = path;
-              });
-              
-              setTimeout(() => {
-                if (!loaded) {
-                  console.log('👤 Using default profile icon - all photo paths failed');
-                  profileBtn.innerHTML = '👤';
-                  profileBtn.classList.add('no-photo');
-                  profileBtn.title = `${driverData.first_name || ''} ${driverData.last_name || ''}`.trim();
-                }
-              }, 3000);
-            };
-            
-            img.src = avatarPath;
-            
-          } else {
-            console.log('👤 No profile photo available - using default icon');
-            profileBtn.innerHTML = '👤';
-            profileBtn.classList.add('no-photo');
-            profileBtn.title = `${driverData.first_name || ''} ${driverData.last_name || ''}`.trim();
+          if(Telegram.WebApp?.colorScheme==='dark'){
+            document.documentElement.style.setProperty('--tg-theme-bg-color','#0b0b0b');
+            document.documentElement.style.setProperty('--tg-theme-text-color','#f9fafb');
           }
-          
+          const user=Telegram.WebApp?.initDataUnsafe?.user;
+          if(user){ window.telegramUserId=user.id; }
+          Telegram.WebApp.MainButton?.hide?.();
         } else {
-          console.log('⚠️ Not a valid driver or no driver data');
-          const profileBtn = document.getElementById('profileBtn');
-          profileBtn.innerHTML = '👤';
-          profileBtn.classList.add('no-photo');
+          window.telegramUserId=12345; // dev fallback
         }
-      } catch (error) {
-        console.error('❌ Error loading driver profile:', error);
-        const profileBtn = document.getElementById('profileBtn');
-        profileBtn.innerHTML = '👤';
-        profileBtn.classList.add('no-photo');
-      }
+      }catch(e){}
     }
 
-    // Open profile page
-    function openProfile() {
-      console.log('🔧 Profile button clicked - navigating to driver update page');
-      
-      const telegramId = window.telegramUserId;
-      if (!telegramId) {
-        console.error('❌ No Telegram ID available for profile update');
-        alert('Ошибка: не удалось получить ID пользователя');
-        return;
-      }
-
-      const updateUrl = `/driver-update?telegram_id=${telegramId}`;
-      console.log('🔗 Navigating to:', updateUrl);
-      
-      if (window.Telegram && Telegram.WebApp) {
-        window.location.href = updateUrl;
-      } else {
-        window.location.href = updateUrl;
-      }
+    /* ====== TOAST ====== */
+    function showToast(count=1){
+      const t=document.getElementById('newOrderToast');
+      const sub=document.getElementById('toastSubtitle');
+      sub.textContent = (currentLang==='ru')
+        ? `У вас ${count===1 ? 'новый заказ' : count+' новых заказа'}`
+        : `Сізде ${count===1 ? 'жаңа тапсырыс' : count+' жаңа тапсырыс'} бар`;
+      t.classList.add('show');
+      setTimeout(()=> t.classList.remove('show'), 3200);
     }
 
-    // Get driver location
-    function getDriverLocation() {
-      return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) {
-          reject(new Error('Geolocation not supported'));
-          return;
-        }
+    /* ====== PROFILE AVATAR ====== */
+    async function loadDriverProfile(){
+      try{
+        const telegramId=window.telegramUserId; if(!telegramId) return;
+        const resp=await fetch('/api/check/who',{method:'POST',headers:{'Content-Type':'application/json'}, body:JSON.stringify({telegram_id:parseInt(telegramId)})});
+        const result=await resp.json();
+        const btn=document.getElementById('profileBtn');
 
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            driverLocation = {
-              lat: position.coords.latitude,
-              lon: position.coords.longitude
+        if(result.success && result.data?.exists && result.data.user_type==='driver'){
+          const d=result.data.driver_data;
+          if(d?.profile_photo?.trim()){
+            const avatarPath=`./ava/${d.profile_photo}`;
+            const img=new Image();
+            img.onload=()=>{ btn.innerHTML=`<img src="${avatarPath}" alt="Avatar" />`; };
+            img.onerror=()=>{
+              const tries=[`/ava/${d.profile_photo}`,`/files/${d.profile_photo}`,`/static/ava/${d.profile_photo}`];
+              (function tryNext(i){
+                if(i>=tries.length){ btn.textContent='👤'; return; }
+                const t=new Image();
+                t.onload=()=> btn.innerHTML=`<img src="${tries[i]}" alt="Avatar" />`;
+                t.onerror=()=> tryNext(i+1);
+                t.src=tries[i];
+              })(0);
             };
-            console.log('📍 Driver location obtained:', driverLocation);
-            resolve(driverLocation);
-          },
-          (error) => {
-            console.warn('⚠️ Geolocation error:', error);
-            driverLocation = { lat: 43.238949, lon: 76.889709 };
-            resolve(driverLocation);
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 60000
-          }
+            img.src=avatarPath;
+          }else btn.textContent='👤';
+        }else btn.textContent='👤';
+      }catch(_){ document.getElementById('profileBtn').textContent='👤'; }
+    }
+    function openProfile(){
+      const telegramId=window.telegramUserId;
+      if(!telegramId){ alert('Ошибка: не удалось получить ID пользователя'); return; }
+      window.location.href=`/driver-update?telegram_id=${telegramId}`;
+    }
+
+    /* ====== GEO ====== */
+    function getDriverLocation(){
+      return new Promise((resolve)=>{
+        if(!navigator.geolocation){
+          driverLocation={lat:43.238949, lon:76.889709}; return resolve(driverLocation);
+        }
+        navigator.geolocation.getCurrentPosition(
+          pos=>{ driverLocation={lat:pos.coords.latitude, lon:pos.coords.longitude}; resolve(driverLocation); },
+          _=>{ driverLocation={lat:43.238949, lon:76.889709}; resolve(driverLocation); },
+          {enableHighAccuracy:true,timeout:10000,maximumAge:60000}
         );
       });
     }
 
-    // Calculate distance between two points
-    function calculateDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon/2) * Math.sin(dLon/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c;
+    function haversine(lat1,lon1,lat2,lon2){
+      const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180;
+      const a=Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+      return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
     }
 
-    // Check for new orders with auto-sound
-    function checkForNewOrders(newOrders) {
-      if (!newOrders || newOrders.length === 0) {
-        return;
+    /* ====== LIST ====== */
+    function checkNewOrders(list){
+      if(!list?.length) return;
+      const ids=new Set(list.map(o=>o.id));
+      const hasNew=list.some(o=>!lastOrderIds.has(o.id));
+      lastOrderIds=ids;
+      if(hasNew && previousOrderCount>0){
+        const count=list.length-previousOrderCount;
+        showToast(count>0?count:1);
       }
-
-      const currentOrderIds = new Set(newOrders.map(order => order.id));
-      const hasNewOrders = newOrders.some(order => !lastOrderIds.has(order.id));
-      
-      lastOrderIds = currentOrderIds;
-
-      if (hasNewOrders && previousOrderCount > 0) {
-        const newOrderCount = newOrders.length - previousOrderCount;
-        console.log('🆕 New orders detected:', newOrderCount);
-        
-        autoSoundNotification.playNotificationSound();
-        
-        showNewOrderVisualNotification(newOrderCount);
-      }
-
-      previousOrderCount = newOrders.length;
+      previousOrderCount=list.length;
     }
 
-    // Show visual notification for new orders
-    function showNewOrderVisualNotification(count = 1) {
-      const notification = document.getElementById('newOrderNotification');
-      const subtitle = document.getElementById('notificationSubtitle');
-      
-      if (notification && subtitle) {
-        const countText = count > 1 ? ` (${count})` : '';
-        if (currentLang === 'ru') {
-          subtitle.textContent = `У вас ${count === 1 ? 'новый заказ' : `${count} новых заказа`}`;
-        } else {
-          subtitle.textContent = `Сізде ${count === 1 ? 'жаңа тапсырыс' : `${count} жаңа тапсырыс`} бар`;
-        }
-
-        notification.classList.add('show');
-
-        setTimeout(() => {
-          notification.classList.remove('show');
-        }, 4000);
-      }
-    }
-
-    // Load orders
-    async function loadOrders() {
-      try {
-        console.log('📦 Loading orders from API...');
-        
-        if (!driverLocation) {
-          await getDriverLocation();
-        }
-
-        const requestData = {
-          telegram_id: window.telegramUserId || 0,
-          driver_lat: driverLocation?.lat || 43.238949,
-          driver_lon: driverLocation?.lon || 76.889709,
-          radius: 50
+    async function loadOrders(){
+      try{
+        if(!driverLocation) await getDriverLocation();
+        const payload={
+          telegram_id:window.telegramUserId||0,
+          driver_lat:driverLocation?.lat||43.238949,
+          driver_lon:driverLocation?.lon||76.889709,
+          radius:50
         };
+        const r=await fetch('/api/delivery-list',{method:'POST',headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        const json=await r.json();
+        if(!(json.success && json.data)) throw new Error(json.message||'bad response');
 
-        console.log('🔍 Requesting orders with data:', requestData);
+        const list=json.data.orders||[];
+        checkNewOrders(list);
 
-        const response = await fetch('/api/delivery-list', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(requestData)
-        });
+        orders=list.map(o=>{
+          const distance=haversine((driverLocation?.lat||0),(driverLocation?.lon||0), o.from_lat, o.from_lon);
+          const diffMin=(Date.now()-new Date(o.created_at).getTime())/(1000*60);
+          return {...o, distance, isNew: diffMin<10};
+        }).sort((a,b)=> new Date(b.created_at)-new Date(a.created_at));
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const result = await response.json();
-        console.log('📊 Orders API response:', result);
-        
-        if (result.success && result.data) {
-          const newOrders = result.data.orders || [];
-          console.log('📦 Loaded orders count:', newOrders.length);
-          
-          checkForNewOrders(newOrders);
-          
-          orders = newOrders;
-          
-          if (driverLocation) {
-            orders.forEach(order => {
-              order.distance = calculateDistance(
-                driverLocation.lat, driverLocation.lon,
-                order.from_lat, order.from_lon
-              );
-              
-              const createdAt = new Date(order.created_at);
-              const now = new Date();
-              const diffMinutes = (now - createdAt) / (1000 * 60);
-              order.isNew = diffMinutes < 10;
-            });
-          }
-          
-          orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-          
-          updateStats();
-          displayOrders();
-        } else {
-          throw new Error(result.message || 'Failed to load orders');
-        }
-      } catch (error) {
-        console.error('❌ Error loading orders:', error);
-        showEmptyState();
+        updateStats(); renderList();
+      }catch(e){
+        renderEmpty();
       }
     }
 
-    // Update statistics
-    function updateStats() {
-      const nearbyOrders = orders.filter(order => (order.distance || 999) <= 5).length;
-      const avgPrice = orders.length > 0 ? 
-        Math.round(orders.reduce((sum, order) => sum + (order.price || 0), 0) / orders.length) : 0;
-
-      document.getElementById('totalOrders').textContent = orders.length;
-      document.getElementById('nearbyOrders').textContent = nearbyOrders;
-      document.getElementById('avgPrice').textContent = avgPrice + '₸';
-      
-      console.log('📊 Stats updated - Total:', orders.length, 'Nearby:', nearbyOrders, 'Avg price:', avgPrice);
+    function updateStats(){
+      const nearby=orders.filter(o=> (o.distance||999)<=5).length;
+      const avg=orders.length ? Math.round(orders.reduce((s,o)=>s+(o.price||0),0)/orders.length) : 0;
+      document.getElementById('totalOrders').textContent=orders.length;
+      document.getElementById('nearbyOrders').textContent=nearby;
+      document.getElementById('avgPrice').textContent=avg+'₸';
     }
 
-    // Display orders
-    function displayOrders() {
-      const container = document.getElementById('orderList');
-      
-      let filteredOrders = [...orders];
-      
-      switch (currentFilter) {
-        case 'new':
-          filteredOrders = orders.filter(order => order.isNew);
-          break;
-        case 'nearby':
-          filteredOrders = orders.filter(order => (order.distance || 999) <= 5);
-          break;
-        case 'expensive':
-          filteredOrders = orders.filter(order => (order.price || 0) >= 5000);
-          break;
-      }
-
-      console.log('🔍 Filtered orders count:', filteredOrders.length, 'Filter:', currentFilter);
-
-      if (filteredOrders.length === 0) {
-        showEmptyState();
-        return;
-      }
-
-      const fragment = document.createDocumentFragment();
-      
-      filteredOrders.forEach((order, index) => {
-        const orderElement = createOrderCard(order, index);
-        fragment.appendChild(orderElement);
-      });
-
-      container.innerHTML = '';
-      container.appendChild(fragment);
-      
-      const cards = container.querySelectorAll('.order-card');
-      cards.forEach((card, index) => {
-        setTimeout(() => {
-          card.classList.add('fade-in');
-        }, index * 50);
-      });
+    function setFilter(f){
+      currentFilter=f;
+      document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+      document.querySelector(`.chip[data-filter="${f}"]`)?.classList.add('active');
+      renderList();
     }
 
-    // Create order card - NO ORDER ID DISPLAY FOR SECURITY
-    function createOrderCard(order, index) {
-      const createdAt = new Date(order.created_at);
-      const timeText = formatTime(createdAt);
-      const distanceText = order.distance ? `${order.distance.toFixed(1)} ${translations[currentLang].km}` : '';
-      const truckType = formatTruckType(order.truck_type);
-      
-      const cardElement = document.createElement('div');
-      cardElement.className = `order-card ${order.isNew ? 'new' : ''}`;
-      cardElement.onclick = () => showOrderDetail(order.id);
-      cardElement.setAttribute('tabindex', '0');
-      cardElement.setAttribute('role', 'button');
-      cardElement.setAttribute('aria-label', `Заказ от ${timeText}`);
-      
-      cardElement.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          showOrderDetail(order.id);
-        }
-      });
-      
-      cardElement.innerHTML = `
-        ${order.distance && order.distance <= 5 ? `<div class="distance-badge nearby">${distanceText}</div>` : 
-          order.distance ? `<div class="distance-badge">${distanceText}</div>` : ''}
-        
-        <div class="order-header">
-          <div class="order-time">
-            <span>⏰</span>
-            <span>${timeText}</span>
-            ${order.isNew ? `<span class="new-badge">${translations[currentLang].new_order}</span>` : ''}
-          </div>
-        </div>
-        
-        <div class="order-route">
-          <div class="route-point">
-            <div class="route-marker from">A</div>
-            <div class="route-info">
-              <div class="route-label">${translations[currentLang].from}</div>
-              <div class="route-address">${order.from_address}</div>
+    function formatTime(dt){
+      const now=new Date();
+      const diff=Math.abs(dt-now)/(1000*60);
+      if(diff<60) return currentLang==='ru'?'Сейчас':'Қазір';
+      return dt.toLocaleTimeString(currentLang==='ru'?'ru-RU':'kk-KZ',{hour:'2-digit',minute:'2-digit'});
+    }
+
+    function t(key){
+      const map={
+        ru:{from:'Откуда',to:'Куда',price:'Цена',distance:'Расстояние',time:'Время',new:'НОВЫЙ'},
+        kz:{from:'Қайдан',to:'Қайда',price:'Бағасы',distance:'Қашықтық',time:'Уақыт',new:'ЖАҢА'}
+      };
+      return map[currentLang][key]||key;
+    }
+
+    function truckLabel(v){
+      const map={
+        ru:{small:'Малый',medium:'Средний',large:'Большой',refrigerator:'Рефрижератор',tow:'Эвакуатор',any:'Любой'},
+        kz:{small:'Кіші',medium:'Орта',large:'Үлкен',refrigerator:'Рефрижератор',tow:'Эвакуатор',any:'Кез келген'}
+      };
+      return map[currentLang][v] || v || map[currentLang].any;
+    }
+
+    function renderEmpty(){
+      document.getElementById('orderList').innerHTML=`
+        <div class="empty">
+          <div style="font-size:54px; opacity:.28">📦</div>
+          <div style="font-weight:900; margin-top:8px">${currentLang==='ru'?'Нет доступных заказов':'Қол жетімді тапсырыстар жоқ'}</div>
+          <div style="color:#9CA3AF">${currentLang==='ru'?'Заказы появятся автоматически':'Тапсырыстар автоматты түрде пайда болады'}</div>
+        </div>`;
+    }
+
+    function renderList(){
+      const c=document.getElementById('orderList');
+      let list=[...orders];
+      if(currentFilter==='new') list=list.filter(o=>o.isNew);
+      if(currentFilter==='nearby') list=list.filter(o=>(o.distance||999)<=5);
+      if(currentFilter==='expensive') list=list.filter(o=>(o.price||0)>=5000);
+
+      if(!list.length) { renderEmpty(); return; }
+
+      const frag=document.createDocumentFragment();
+      list.forEach(o=>{
+        const card=document.createElement('div');
+        card.className='card';
+        card.setAttribute('tabindex','0');
+        card.onclick=()=> showOrderDetail(o.id);
+        card.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault(); showOrderDetail(o.id);} });
+
+        const time=formatTime(new Date(o.created_at));
+        const distText=o.distance ? `${o.distance.toFixed(1)} км` : '';
+        const truck=truckLabel(o.truck_type);
+
+        card.innerHTML=`
+          ${o.distance ? `<div class="badge-distance">${distText}</div>`:''}
+          <div class="time"><span>⏰</span><span>${time}</span></div>
+
+          <div class="route">
+            <div class="point">
+              <div class="marker a">A</div>
+              <div class="addr-wrap">
+                <div class="label">${t('from')}</div>
+                <div class="addr">${o.from_address}</div>
+              </div>
+            </div>
+            <div class="point">
+              <div class="marker b">B</div>
+              <div class="addr-wrap">
+                <div class="label">${t('to')}</div>
+                <div class="addr">${o.to_address}</div>
+              </div>
             </div>
           </div>
-          
-          <div class="route-point">
-            <div class="route-marker to">B</div>
-            <div class="route-info">
-              <div class="route-label">${translations[currentLang].to}</div>
-              <div class="route-address">${order.to_address}</div>
+
+          <div class="dets">
+            <div class="d">
+              <div class="v price">${o.price}₸</div>
+              <div class="l">${t('price')}</div>
+            </div>
+            <div class="d">
+              <div class="v">${distText || '--'}</div>
+              <div class="l">${t('distance')}</div>
+            </div>
+            <div class="d">
+              <div class="v">${formatTime(new Date(o.time_start || o.created_at))}</div>
+              <div class="l">${t('time')}</div>
             </div>
           </div>
-        </div>
-        
-        <div class="order-details">
-          <div class="detail-item">
-            <div class="detail-value price">${order.price}₸</div>
-            <div class="detail-label">${translations[currentLang].price}</div>
-          </div>
-          
-          <div class="detail-item">
-            <div class="detail-value">${distanceText || '--'}</div>
-            <div class="detail-label">${translations[currentLang].distance}</div>
-          </div>
-          
-          <div class="detail-item">
-            <div class="detail-value">${formatTime(new Date(order.time_start || order.created_at))}</div>
-            <div class="detail-label">${translations[currentLang].time}</div>
-          </div>
-        </div>
-        
-        ${order.comment || order.truck_type ? `
-          <div class="order-footer">
-            <div class="order-comment">${order.comment || ''}</div>
-            <div class="truck-type">${truckType}</div>
-          </div>
-        ` : ''}
-      `;
-      
-      return cardElement;
+
+          ${(o.comment || o.truck_type) ? `
+          <div class="foot">
+            <div class="comment">${o.comment||''}</div>
+            <div class="truck">${truck}</div>
+          </div>`:''}
+        `;
+        frag.appendChild(card);
+      });
+      c.innerHTML='';
+      c.appendChild(frag);
     }
 
-    // Show order detail with bigger modal
-    function showOrderDetail(orderId) {
-      const order = orders.find(o => o.id === orderId);
-      if (!order) return;
+    /* ====== DETAIL ====== */
+    function normalizePhotoFilename(raw){
+      if(!raw) return '';
+      const clean=String(raw).trim();
+      if(/^https?:\/\//i.test(clean)) return clean;
+      return clean.split('?')[0].split('#')[0].split('/').pop().split('\\').pop();
+    }
+    function setCargoPhoto(rawValue){
+      const section=document.getElementById('detailPhotoSection');
+      const img=document.getElementById('cargoPhoto');
+      const hide=()=>{ section.style.display='none'; img.removeAttribute('src'); };
+      if(!rawValue){ hide(); return; }
+      const raw=String(rawValue).trim();
+      const isAbs=/^https?:\/\//i.test(raw);
+      let candidates=[];
+      if(isAbs){ candidates=[raw]; }
+      else{
+        const name=normalizePhotoFilename(raw);
+        candidates=[
+          `./delivery-photo/${name}`, `/delivery-photo/${name}`,
+          `./cargo/${name}`, `/cargo/${name}`,
+          `./uploads/cargo/${name}`, `/uploads/cargo/${name}`,
+          `/files/${name}`, `/static/cargo/${name}`
+        ];
+      }
+      let done=false;
+      section.style.display='none'; img.removeAttribute('src');
+      (function tryNext(i){
+        if(done || i>=candidates.length){ hide(); return; }
+        const probe=new Image();
+        probe.onload=()=>{ if(!done){ done=true; img.src=candidates[i]; section.style.display='block'; } };
+        probe.onerror=()=> tryNext(i+1);
+        probe.src=candidates[i];
+      })(0);
+    }
 
-      console.log('📋 Showing order detail for ID:', orderId);
-      currentOrder = order;
-      
+    function showOrderDetail(orderId){
+      const order=orders.find(o=>o.id===orderId); if(!order) return;
+      currentOrder=order;
+
+      document.getElementById('detailPrice').textContent=`${order.price}₸`;
+      document.getElementById('pickupAddress').textContent=order.from_address;
+      document.getElementById('dropoffAddress').textContent=order.to_address;
+      document.getElementById('detailTruck').textContent=truckLabel(order.truck_type);
+      document.getElementById('detailTime').textContent=formatTime(new Date(order.time_start || order.created_at));
+
+      const cmEl=document.getElementById('commentBox');
+      const cmVal=document.getElementById('clientComment');
+      const comment=(order.comment||'').toString().trim();
+      if(comment){ cmVal.textContent=comment; cmEl.style.display='block'; } else { cmEl.style.display='none'; cmVal.textContent=''; }
+
+      const phone = (order.contact || '').toString();
+      document.getElementById('contactPhone').textContent = phone || '';
+      document.getElementById('callBtn').href=`tel:${phone}`;
+      document.getElementById('whatsappBtn').href=`https://wa.me/${phone.replace(/\D/g,'')}`;
+
+      const rawPhoto=(order.cargo_photo ?? order.item_photo_path ?? order.photo ?? order.item_photo ?? '').toString().trim();
+      setCargoPhoto(rawPhoto);
+
       document.getElementById('detailModal').classList.add('show');
-      
-      document.getElementById('detailPrice').textContent = `${order.price}₸`;
-      document.getElementById('pickupAddress').textContent = order.from_address;
-      document.getElementById('dropoffAddress').textContent = order.to_address;
-      
-      document.getElementById('detailTruck').textContent = formatTruckType(order.truck_type);
-      document.getElementById('detailTime').textContent = formatTime(new Date(order.time_start || order.created_at));
-      
-      document.getElementById('contactPhone').textContent = order.contact;
-      document.getElementById('callBtn').href = `tel:${order.contact}`;
-      document.getElementById('whatsappBtn').href = `https://wa.me/${order.contact.replace(/\D/g, '')}`;
-      
-      setTimeout(() => {
-        initDetailMap(order);
-      }, 300);
+      setTimeout(()=> initDetailMap(order), 200);
     }
 
-    // Initialize detail map
-    async function initDetailMap(order) {
-      if (detailMap) {
-        detailMap.remove();
-      }
+    function closeDetail(){
+      document.getElementById('detailModal').classList.remove('show');
+      currentOrder=null;
+      const sec=document.getElementById('detailPhotoSection');
+      const img=document.getElementById('cargoPhoto');
+      sec.style.display='none'; img.removeAttribute('src');
+      if(detailMap){ detailMap.remove(); detailMap=null; }
+    }
 
-      try {
-        console.log('🗺️ Initializing map for order:', order.id);
-        
-        const centerLat = (order.from_lat + order.to_lat) / 2;
-        const centerLon = (order.from_lon + order.to_lon) / 2;
-
-        detailMap = L.map('detailMap', {
-          zoomControl: false,
-          attributionControl: false,
-          scrollWheelZoom: true,
-          touchZoom: true,
-          doubleClickZoom: false,
-          boxZoom: false,
-          keyboard: false,
-          fadeAnimation: true,
-          zoomAnimation: true,
-          markerZoomAnimation: true
+    async function initDetailMap(order){
+      if(detailMap){ detailMap.remove(); }
+      try{
+        const centerLat=(order.from_lat+order.to_lat)/2;
+        const centerLon=(order.from_lon+order.to_lon)/2;
+        detailMap=L.map('detailMap',{
+          zoomControl:false, attributionControl:false,
+          scrollWheelZoom:true, touchZoom:true, doubleClickZoom:false, keyboard:false
         }).setView([centerLat, centerLon], 13);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-          maxZoom: 19,
-          attribution: '',
-          subdomains: 'abcd'
-        }).addTo(detailMap);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19, attribution:'', subdomains:'abcd'}).addTo(detailMap);
 
-        const pickupIcon = L.divIcon({
-          html: '<div class="uber-marker pickup">A</div>',
-          className: 'uber-marker-container',
-          iconSize: [36, 44],
-          iconAnchor: [18, 44]
-        });
+        const iconA=L.divIcon({html:'<div style="width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;background:#000;border:4px solid #fff;box-shadow:0 6px 20px rgba(0,0,0,.25)">A</div>', className:'', iconSize:[42,42], iconAnchor:[21,42]});
+        const iconB=L.divIcon({html:'<div style="width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;background:#0B63F6;border:4px solid #fff;box-shadow:0 6px 20px rgba(0,0,0,.25)">B</div>', className:'', iconSize:[42,42], iconAnchor:[21,42]});
 
-        const dropoffIcon = L.divIcon({
-          html: '<div class="uber-marker dropoff">B</div>',
-          className: 'uber-marker-container',
-          iconSize: [36, 44],
-          iconAnchor: [18, 44]
-        });
-
-        L.marker([order.from_lat, order.from_lon], { icon: pickupIcon }).addTo(detailMap);
-        L.marker([order.to_lat, order.to_lon], { icon: dropoffIcon }).addTo(detailMap);
+        L.marker([order.from_lat, order.from_lon], {icon:iconA}).addTo(detailMap);
+        L.marker([order.to_lat, order.to_lon], {icon:iconB}).addTo(detailMap);
 
         await drawRoute(order);
 
-        const bounds = L.latLngBounds([
-          [order.from_lat, order.from_lon],
-          [order.to_lat, order.to_lon]
-        ]);
-        
-        detailMap.fitBounds(bounds, {
-          padding: [40, 40],
-          maxZoom: 16
-        });
+        const bounds=L.latLngBounds([[order.from_lat,order.from_lon],[order.to_lat,order.to_lon]]);
+        detailMap.fitBounds(bounds,{padding:[36,36], maxZoom:16});
+      }catch(e){ console.error('Map init error', e); }
+    }
 
-      } catch (error) {
-        console.error('❌ Error initializing map:', error);
+    async function drawRoute(order){
+      const etaEl=document.getElementById('routeEta');
+      try{
+        etaEl.textContent=currentLang==='ru'?'Расчет...':'Есептеу...';
+        const url=`https://router.project-osrm.org/route/v1/driving/${order.from_lon},${order.from_lat};${order.to_lon},${order.to_lat}?overview=full&geometries=geojson&steps=true`;
+        const r=await fetch(url);
+        if(!r.ok) throw new Error('OSRM');
+        const data=await r.json();
+        if(!(data.routes?.length)) throw new Error('No route');
+
+        const route=data.routes[0];
+        const coords=route.geometry.coordinates.map(c=>[c[1],c[0]]);
+        L.polyline(coords,{color:'#000',weight:5,opacity:.9}).addTo(detailMap);
+        const shadow=L.polyline(coords,{color:'#00000030',weight:7,opacity:.3}).addTo(detailMap);
+        shadow.bringToBack();
+
+        const km=(route.distance/1000).toFixed(1);
+        const min=Math.round(route.duration/60);
+        etaEl.textContent=`${km} км • ${min} мин`;
+      }catch(e){
+        const dist=haversine(order.from_lat,order.from_lon,order.to_lat,order.to_lon);
+        const t=Math.round((dist/40)*60);
+        L.polyline([[order.from_lat,order.from_lon],[order.to_lat,order.to_lon]],{color:'#000',weight:4,opacity:.75,dashArray:'10,5'}).addTo(detailMap);
+        etaEl.textContent=`${dist.toFixed(1)} км • ${t} мин`;
       }
     }
 
-    // Draw route
-    async function drawRoute(order) {
-      try {
-        console.log('🛣️ Drawing route...');
-        
-        document.getElementById('routeEta').innerHTML = `
-          <span>🚗</span>
-          <span>${translations[currentLang].calculating}</span>
-        `;
-
-        const url = `https://router.project-osrm.org/route/v1/driving/${order.from_lon},${order.from_lat};${order.to_lon},${order.to_lat}?overview=full&geometries=geojson&steps=true`;
-        
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-          throw new Error('OSRM API request failed');
+    async function acceptOrder(){
+      if(!currentOrder) return;
+      const btn=document.getElementById('acceptOrderBtn');
+      try{
+        btn.disabled=true; btn.innerHTML='<span>⏳ Принимаем...</span>';
+        const r=await fetch('/api/driver/accept-order',{method:'POST',headers:{'Content-Type':'application/json'}, body:JSON.stringify({telegram_id:window.telegramUserId, order_id:currentOrder.id})});
+        const j=await r.json();
+        if(j.success){
+          btn.innerHTML='<span>✅ Готово!</span>';
+          btn.style.background='#16A34A';
+          setTimeout(()=>{ closeDetail(); loadOrders(); }, 1100);
+        }else{
+          throw new Error(j.message||'fail');
         }
-        
-        const data = await response.json();
-        
-        if (data.routes && data.routes.length > 0) {
-          const route = data.routes[0];
-          const geometry = route.geometry;
-          
-          const coordinates = geometry.coordinates.map(coord => [coord[1], coord[0]]);
-          
-          const routeLine = L.polyline(coordinates, {
-            color: '#000000',
-            weight: 5,
-            opacity: 0.9,
-            smoothFactor: 1,
-            lineCap: 'round',
-            lineJoin: 'round'
-          }).addTo(detailMap);
-
-          const shadowLine = L.polyline(coordinates, {
-            color: '#00000030',
-            weight: 7,
-            opacity: 0.3,
-            smoothFactor: 1,
-            lineCap: 'round',
-            lineJoin: 'round'
-          });
-          
-          shadowLine.addTo(detailMap);
-          shadowLine.bringToBack();
-
-          const distanceKm = (route.distance / 1000).toFixed(1);
-          const durationMin = Math.round(route.duration / 60);
-          
-          document.getElementById('routeEta').innerHTML = `
-            <span>🚗</span>
-            <span>${distanceKm} ${translations[currentLang].km} • ${durationMin} ${translations[currentLang].min}</span>
-          `;
-          
-          console.log('✅ Route drawn successfully');
-          
-        } else {
-          throw new Error('No route found');
-        }
-        
-      } catch (error) {
-        console.error('❌ Error drawing route:', error);
-        
-        const straightLine = L.polyline([
-          [order.from_lat, order.from_lon],
-          [order.to_lat, order.to_lon]
-        ], {
-          color: '#000000',
-          weight: 4,
-          opacity: 0.7,
-          dashArray: '10, 5',
-          lineCap: 'round'
-        }).addTo(detailMap);
-
-        const distance = calculateDistance(order.from_lat, order.from_lon, order.to_lat, order.to_lon);
-        const time = Math.round((distance / 40) * 60);
-        
-        document.getElementById('routeEta').innerHTML = `
-          <span>🚗</span>
-          <span>${distance.toFixed(1)} ${translations[currentLang].km} • ${time} ${translations[currentLang].min}</span>
-        `;
+      }catch(e){
+        btn.disabled=false; btn.innerHTML='<span>❌ Ошибка! Повторите</span>';
+        btn.style.background='#D32F2F';
+        setTimeout(()=>{ btn.innerHTML = (currentLang==='ru')?'<span>Принять заказ</span>':'<span>Тапсырысты қабылдау</span>'; btn.style.background=''; }, 1500);
       }
     }
 
-    // Accept order function
-    async function acceptOrder() {
-      if (!currentOrder) return;
-      
-      try {
-        console.log('✅ Accepting order:', currentOrder.id);
-        
-        const acceptBtn = document.getElementById('acceptOrderBtn');
-        acceptBtn.disabled = true;
-        acceptBtn.innerHTML = '<span>⏳ Принимаем...</span>';
-        
-        const response = await fetch('/api/driver/accept-order', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            telegram_id: window.telegramUserId,
-            order_id: currentOrder.id
-          })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-          acceptBtn.innerHTML = '<span>✅ Заказ принят!</span>';
-          acceptBtn.style.background = '#388E3C';
-          
-          setTimeout(() => {
-            closeDetail();
-            loadOrders();
-          }, 2000);
-          
-        } else {
-          throw new Error(result.message || 'Failed to accept order');
-        }
-        
-      } catch (error) {
-        console.error('❌ Error accepting order:', error);
-        
-        const acceptBtn = document.getElementById('acceptOrderBtn');
-        acceptBtn.disabled = false;
-        acceptBtn.innerHTML = `<span>❌ Ошибка! Попробуйте снова</span>`;
-        acceptBtn.style.background = '#D32F2F';
-        
-        setTimeout(() => {
-          acceptBtn.innerHTML = `<span>${translations[currentLang].acceptOrder}</span>`;
-          acceptBtn.style.background = '';
-        }, 3000);
-      }
+    /* ====== LANG ====== */
+    function setLang(lang){
+      currentLang=lang;
+      document.querySelectorAll('.lang button').forEach(b=>b.classList.remove('active'));
+      document.getElementById('lang-'+lang).classList.add('active');
+      document.querySelectorAll('[data-ru]').forEach(el=>{ const txt=el.getAttribute('data-'+lang); if(txt) el.textContent=txt; });
+      updateStats(); renderList();
     }
 
-    // Close detail modal
-    function closeDetail() {
-      document.getElementById('detailModal').classList.remove('show');
-      currentOrder = null;
-      
-      if (detailMap) {
-        detailMap.remove();
-        detailMap = null;
-      }
+    /* ====== REFRESH ====== */
+    function refreshOrders(){
+      const b=document.getElementById('refreshBtn');
+      b.classList.add('loading');
+      loadOrders().finally(()=> b.classList.remove('loading'));
     }
+    function startAutoRefresh(){ refreshInterval=setInterval(loadOrders, 8000); }
+    function stopAutoRefresh(){ if(refreshInterval){ clearInterval(refreshInterval); refreshInterval=null; } }
 
-    // Show empty state
-    function showEmptyState() {
-      const container = document.getElementById('orderList');
-      container.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-icon">📦</div>
-          <div class="empty-title">${translations[currentLang].noOrders}</div>
-          <div class="empty-message">${translations[currentLang].noOrdersDesc}</div>
-        </div>
-      `;
-    }
-
-    // Format time
-    function formatTime(date) {
-      const now = new Date();
-      const diffMs = date - now;
-      const diffMinutes = Math.abs(diffMs) / (1000 * 60);
-      
-      if (diffMinutes < 60) {
-        return translations[currentLang].now;
-      } else {
-        return date.toLocaleTimeString(currentLang === 'ru' ? 'ru-RU' : 'kk-KZ', {
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-      }
-    }
-
-    // Format truck type
-    function formatTruckType(type) {
-      const types = {
-        small: translations[currentLang].small,
-        medium: translations[currentLang].medium,
-        large: translations[currentLang].large,
-        refrigerator: translations[currentLang].refrigerator,
-        tow: translations[currentLang].tow,
-        any: translations[currentLang].any,
-        '': translations[currentLang].any
-      };
-      return types[type] || type || translations[currentLang].any;
-    }
-
-    // Set filter
-    function setFilter(filter) {
-      currentFilter = filter;
-      console.log('🔍 Filter changed to:', filter);
-      
-      document.querySelectorAll('.filter-chip').forEach(chip => {
-        chip.classList.remove('active');
-      });
-      document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
-      
-      displayOrders();
-    }
-
-    // Refresh orders
-    function refreshOrders() {
-      console.log('🔄 Manual refresh triggered');
-      const btn = document.getElementById('refreshBtn');
-      btn.classList.add('loading');
-      
-      loadOrders().finally(() => {
-        btn.classList.remove('loading');
-      });
-    }
-
-    // Set language
-    function setLang(lang) {
-      currentLang = lang;
-      console.log('🌐 Language changed to:', lang);
-      
-      document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
-      document.getElementById(`lang-${lang}`).classList.add('active');
-      
-      document.querySelectorAll('[data-ru]').forEach(el => {
-        const text = el.getAttribute(`data-${lang}`);
-        if (text) {
-          el.textContent = text;
-        }
-      });
-
-      updateStats();
-      displayOrders();
-    }
-
-    // Auto-refresh
-    function startAutoRefresh() {
-      console.log('🔄 Starting auto-refresh (8 seconds interval)');
-      refreshInterval = setInterval(() => {
-        loadOrders();
-      }, 8000);
-    }
-
-    function stopAutoRefresh() {
-      if (refreshInterval) {
-        console.log('🛑 Stopping auto-refresh');
-        clearInterval(refreshInterval);
-        refreshInterval = null;
-      }
-    }
-
-    // Initialize app
-    document.addEventListener('DOMContentLoaded', () => {
-      console.log('🚀 Uber-Style Minimal Delivery List App initializing...');
-      
+    /* ====== LIFECYCLE ====== */
+    document.addEventListener('DOMContentLoaded', async ()=>{
       initTelegram();
+      applyViewportVars(); bindViewportListener();
       setLang('ru');
-      
-      loadDriverProfile();
-      loadOrders();
+      await loadDriverProfile();
+      await getDriverLocation();
+      await loadOrders();
       startAutoRefresh();
-      
-      console.log('✅ Uber-Style Minimal Delivery List App initialized with Telegram WebApp optimization');
     });
 
-    // Handle page visibility changes
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        console.log('👁️ Page hidden - stopping auto-refresh');
-        stopAutoRefresh();
-      } else {
-        console.log('👁️ Page visible - restarting auto-refresh');
-        loadOrders();
-        startAutoRefresh();
-      }
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.hidden) stopAutoRefresh(); else { loadOrders(); startAutoRefresh(); }
     });
 
-    // Cleanup on page unload
-    window.addEventListener('beforeunload', () => {
-      console.log('🧹 Page unloading - cleaning up');
-      stopAutoRefresh();
-      if (detailMap) {
-        detailMap.remove();
-      }
-    });
+    window.addEventListener('resize', applyViewportVars);
+    window.addEventListener('beforeunload', ()=>{ stopAutoRefresh(); if(detailMap) detailMap.remove(); });
 
-    // Close modal on backdrop click
-    document.getElementById('detailModal').addEventListener('click', (e) => {
-      if (e.target === e.currentTarget) {
-        closeDetail();
-      }
-    });
+    // Modal close on backdrop / Esc
+    document.getElementById('detailModal').addEventListener('click', (e)=>{ if(e.target===e.currentTarget) closeDetail(); });
+    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && document.getElementById('detailModal').classList.contains('show')) closeDetail(); });
 
-    // ESC key to close modal
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && document.getElementById('detailModal').classList.contains('show')) {
-        closeDetail();
-      }
-    });
-
-    // Make functions globally available
-    window.openProfile = openProfile;
-    window.refreshOrders = refreshOrders;
-    window.setFilter = setFilter;
-    window.setLang = setLang;
-    window.showOrderDetail = showOrderDetail;
-    window.closeDetail = closeDetail;
-    window.acceptOrder = acceptOrder;
-
-    console.log('📋 Uber-Style Minimal Delivery List with Telegram WebApp optimization loaded successfully');
+    // Expose
+    window.openProfile=openProfile;
+    window.refreshOrders=refreshOrders;
+    window.setFilter=setFilter;
+    window.setLang=setLang;
+    window.showOrderDetail=showOrderDetail;
+    window.closeDetail=closeDetail;
+    window.acceptOrder=acceptOrder;
   </script>
 </body>
 </html>
