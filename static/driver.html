@@ -71,8 +71,10 @@
       background: var(--background);
       color: var(--text-primary);
       min-height: 100vh;
+      height: var(--tg-viewport-stable-height, 100vh);
       overflow-x: hidden;
       padding: 0;
+      padding-top: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px) + 15px);
       margin: 0;
       user-select: none;
       -webkit-user-select: none;
@@ -390,10 +392,12 @@
       outline: none;
       color: var(--text-primary);
       font-family: inherit;
-      resize: none;
-      min-height: 60px;
-      line-height: 1.4;
+      resize: vertical;
+      min-height: 90px;
+      max-height: 200px;
+      line-height: 1.5;
       transition: color 0.3s ease;
+      padding: 8px 0;
     }
 
     .textarea-field::placeholder {
@@ -450,6 +454,8 @@
     .modal {
       position: fixed;
       inset: 0;
+      top: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px));
+      bottom: var(--tg-safe-area-inset-bottom, 0px);
       background: var(--surface);
       display: none;
       z-index: 1000;
@@ -468,7 +474,8 @@
     }
 
     .modal-header {
-      padding: env(safe-area-inset-top, 16px) var(--spacing-md) var(--spacing-md);
+      padding: var(--spacing-md);
+      padding-top: calc(var(--spacing-md) + env(safe-area-inset-top, 0px));
       border-bottom: 1px solid var(--border-light);
       display: flex;
       align-items: center;
@@ -567,6 +574,7 @@
     #locationMap {
       width: 100%;
       height: 100%;
+      touch-action: none;
     }
 
     .map-pin {
@@ -666,11 +674,11 @@
 
     .modal-actions {
       padding: var(--spacing-md);
+      padding-bottom: calc(var(--spacing-md) + var(--tg-safe-area-inset-bottom, 0px) + env(safe-area-inset-bottom, 0px));
       border-top: 1px solid var(--border-light);
       display: flex;
       gap: var(--spacing-md);
       background: var(--surface);
-      padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0px));
       transition: all 0.3s ease;
     }
 
@@ -687,7 +695,7 @@
       align-items: center;
       justify-content: center;
       gap: var(--spacing-sm);
-      min-height: 48px;
+      min-height: 54px;
     }
 
     .modal-btn-secondary {
@@ -748,7 +756,7 @@
     /* Status FAB */
     .status-fab {
       position: fixed;
-      bottom: env(safe-area-inset-bottom, 24px);
+      bottom: calc(var(--tg-safe-area-inset-bottom, 0px) + env(safe-area-inset-bottom, 24px));
       right: var(--spacing-md);
       width: 48px;
       height: 48px;
@@ -937,7 +945,7 @@
           <div class="input-icon">💬</div>
           <div class="input-content">
             <div class="input-label" data-ru="КОММЕНТАРИЙ" data-kz="ТҮСІНІКТЕМЕ">ТҮСІНІКТЕМЕ</div>
-            <textarea id="commentInput" class="textarea-field" data-ru="Дополнительная информация" data-kz="Қосымша ақпарат" placeholder="Қосымша ақпарат"></textarea>
+            <textarea id="commentInput" class="textarea-field" data-ru="Дополнительная информация (размер груза, особые требования, контактные данные и т.д.)" data-kz="Қосымша ақпарат (жүк өлшемі, ерекше талаптар, байланыс деректері және т.б.)" placeholder="Қосымша ақпарат (жүк өлшемі, ерекше талаптар, байланыс деректері және т.б.)"></textarea>
           </div>
         </div>
       </div>
@@ -1023,7 +1031,9 @@
     let searchTimer = null;
     let userLocationMarker = null;
     let gpsWatcher = null;
+    let gpsUpdateInterval = null;
     let telegramApp = null;
+    let hasInitialGpsFix = false;
 
     // Translations
     const translations = {
@@ -1042,7 +1052,9 @@
         tripCreated: 'Поездка создана',
         openingApp: 'Открываю приложение...',
         createTrip: 'Создать поездку',
-        minPrice: 'Минимальная цена 2000 ₸'
+        minPrice: 'Минимальная цена 2000 ₸',
+        gpsSearching: 'Поиск GPS...',
+        gpsActive: 'GPS активен'
       },
       kz: {
         offline: 'Желіде емес',
@@ -1059,7 +1071,9 @@
         tripCreated: 'Саяхат жасалды',
         openingApp: 'Қосымшаны ашу...',
         createTrip: 'Саяхат жасау',
-        minPrice: 'Ең төмен бағасы 2000 ₸'
+        minPrice: 'Ең төмен бағасы 2000 ₸',
+        gpsSearching: 'GPS іздеу...',
+        gpsActive: 'GPS белсенді'
       }
     };
 
@@ -1146,13 +1160,15 @@
       return luminance < 0.5;
     }
 
-    // Language Management
+    // Language Management - FIXED: No longer relies on global event
     function setLanguage(lang) {
       currentLanguage = lang;
       
+      // Update active button
       document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
       document.getElementById(`lang-${lang}`).classList.add('active');
       
+      // Update all translatable elements
       document.querySelectorAll('[data-ru]').forEach(element => {
         const text = element.getAttribute(`data-${lang}`);
         if (text) {
@@ -1212,27 +1228,58 @@
       });
     }
 
-    // Location Tracking
+    // Location Tracking - FIXED: Removed strict accuracy filter, proper interval
     function startLocationTracking() {
       if (!navigator.geolocation) return;
 
+      // Watch position with less strict accuracy requirements
       gpsWatcher = navigator.geolocation.watchPosition(
         (position) => {
+          hasInitialGpsFix = true;
           userPosition = [position.coords.latitude, position.coords.longitude];
           
+          // Update user location on first fix if not set
           if (!fromCoordinates && !fromAddressText) {
             setFromCurrentLocation();
           }
           
-          updateUserLocationMarker();
+          // Update marker if map is open
+          if (map) {
+            updateUserLocationMarker();
+          }
         },
-        (error) => console.warn('GPS error:', error),
+        (error) => {
+          console.warn('GPS error:', error);
+          hasInitialGpsFix = false;
+        },
         {
           enableHighAccuracy: true,
-          maximumAge: 1000,
+          maximumAge: 0, // Always get fresh location
           timeout: 10000
         }
       );
+
+      // Interval-based updates every 1 second
+      gpsUpdateInterval = setInterval(() => {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            hasInitialGpsFix = true;
+            userPosition = [position.coords.latitude, position.coords.longitude];
+            
+            if (map) {
+              updateUserLocationMarker();
+            }
+          },
+          (error) => {
+            console.warn('GPS interval error:', error);
+          },
+          {
+            enableHighAccuracy: true,
+            maximumAge: 0,
+            timeout: 5000
+          }
+        );
+      }, 1000); // 1 second interval
     }
 
     function setFromCurrentLocation() {
@@ -1280,11 +1327,15 @@
       if (map) {
         map.remove();
         map = null;
+        userLocationMarker = null;
       }
     }
 
     function initializeMap() {
-      if (map) map.remove();
+      if (map) {
+        map.remove();
+        userLocationMarker = null;
+      }
 
       const center = userPosition || [43.238949, 76.889709]; // Default to Almaty
       
@@ -1292,7 +1343,14 @@
         center: center,
         zoom: 15,
         zoomControl: false,
-        attributionControl: false
+        attributionControl: false,
+        touchZoom: true,
+        scrollWheelZoom: true,
+        doubleClickZoom: true,
+        boxZoom: true,
+        tap: true,
+        tapTolerance: 15,
+        dragging: true
       });
 
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
@@ -1301,8 +1359,10 @@
 
       map.on('moveend', () => {
         const pin = document.querySelector('.pin-icon');
-        pin.style.animation = 'pinBounce 0.6s ease-out';
-        setTimeout(() => pin.style.animation = '', 600);
+        if (pin) {
+          pin.style.animation = 'pinBounce 0.6s ease-out';
+          setTimeout(() => pin.style.animation = '', 600);
+        }
         
         // Auto-geocode center position
         const center = map.getCenter();
@@ -1312,9 +1372,13 @@
         });
       });
 
-      updateUserLocationMarker();
+      // Add user location marker if position is available
+      if (userPosition) {
+        updateUserLocationMarker();
+      }
     }
 
+    // FIXED: Create marker if it doesn't exist
     function updateUserLocationMarker() {
       if (!map || !userPosition) return;
 
@@ -1691,10 +1755,13 @@
     // Periodic status check
     setInterval(checkDriverStatus, 30000);
 
-    // Cleanup on unload
+    // Cleanup on unload - FIXED: Clear both watchers
     window.addEventListener('beforeunload', () => {
       if (gpsWatcher) {
         navigator.geolocation.clearWatch(gpsWatcher);
+      }
+      if (gpsUpdateInterval) {
+        clearInterval(gpsUpdateInterval);
       }
       if (map) {
         map.remove();

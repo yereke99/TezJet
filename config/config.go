@@ -28,6 +28,8 @@ type Config struct {
 	MaxOpenConns    int           `json:"max_open_conns"`
 	MaxIdleConns    int           `json:"max_idle_conns"`
 	ConnMaxLifetime time.Duration `json:"conn_max_lifetime"`
+	CargoPhoto      string
+	MaxUploadSize   int64
 
 	// File upload configuration
 	UploadDir   string   `json:"upload_dir"`
@@ -74,6 +76,9 @@ func NewConfig() (*Config, error) {
 		UploadDir:   "./uploads",
 		MaxFileSize: 10 * 1024 * 1024, // 10MB
 		AllowedExts: []string{".jpg", ".jpeg", ".png", ".pdf"},
+
+		CargoPhoto:    "./delivery-photo",
+		MaxUploadSize: 20 << 20,
 
 		// App defaults
 		Environment: "development",

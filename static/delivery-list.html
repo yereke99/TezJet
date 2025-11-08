@@ -613,10 +613,11 @@
       font-style: italic;
       margin-right: 8px;
       display: -webkit-box;
-      -webkit-line-clamp: 1;
+      -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
       min-width: 0;
+      line-height: 1.4;
     }
 
     .truck-type {
@@ -708,84 +709,98 @@
       }
     }
 
-    /* UBER-STYLE Detail Modal - BIGGER AND FRAMELESS */
-    .detail-modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      z-index: 2000;
-      display: none;
-      align-items: flex-end;
-    }
+    /* UBER-STYLE Detail Modal - FIXED VERSION WITH TOP MARGIN */
+.detail-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 2000;
+  display: none;
+  align-items: flex-end;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-top: 30px;
+}
 
-    .detail-modal.show {
-      display: flex;
-      animation: fadeIn 0.3s ease;
-    }
+.detail-modal.show {
+  display: flex;
+  animation: fadeIn 0.3s ease;
+}
 
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 
-    .detail-sheet {
-      background: var(--card);
-      border-radius: 20px 20px 0 0;
-      width: 100%;
-      height: 98vh; /* BIGGER - Almost full screen */
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      animation: slideUp 0.3s ease;
-      position: relative;
-    }
+.detail-sheet {
+  background: var(--card);
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  height: 88vh;
+  max-height: calc(100vh - 40px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease;
+  position: relative;
+  margin-top: auto;
+  margin-bottom: 0;
+}
 
-    @keyframes slideUp {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
-    }
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
 
-    /* Desktop Modal - FRAMELESS BIGGER */
-    @media (min-width: 1024px) {
-      .detail-modal {
-        align-items: center;
-        justify-content: center;
-      }
-      
-      .detail-sheet {
-        width: 95vw; /* BIGGER */
-        max-width: none; /* Remove max-width limit */
-        height: 95vh; /* BIGGER */
-        border-radius: 24px; /* More rounded */
-        animation: scaleIn 0.3s ease;
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25); /* Stronger shadow */
-      }
-      
-      @keyframes scaleIn {
-        from { 
-          opacity: 0;
-          transform: scale(0.95);
-        }
-        to { 
-          opacity: 1;
-          transform: scale(1);
-        }
-      }
+/* Desktop Modal - OPTIMIZED */
+@media (min-width: 1024px) {
+  .detail-modal {
+    align-items: center;
+    justify-content: center;
+    padding-top: 0;
+  }
+  
+  .detail-sheet {
+    width: 90vw;
+    max-width: 1400px;
+    height: 85vh;
+    max-height: 900px;
+    border-radius: 24px;
+    animation: scaleIn 0.3s ease;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+    margin-top: 0;
+  }
+  
+  @keyframes scaleIn {
+    from { 
+      opacity: 0;
+      transform: scale(0.95);
     }
-
-    /* Tablet Modal */
-    @media (min-width: 768px) and (max-width: 1023px) {
-      .detail-sheet {
-        height: 96vh; /* BIGGER */
-        border-radius: 24px 24px 0 0;
-      }
+    to { 
+      opacity: 1;
+      transform: scale(1);
     }
+  }
+}
 
-    /* MINIMAL Header for modal */
+/* Tablet Modal */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .detail-modal {
+    padding-top: 20px;
+  }
+  
+  .detail-sheet {
+    height: 88vh;
+    max-height: calc(100vh - 30px);
+    border-radius: 24px 24px 0 0;
+  }
+}
+    /* MINIMAL Header for modal with safe areas */
     .detail-header {
       padding: clamp(20px, 5vw, 32px);
+      padding-top: clamp(16px, 4vw, 24px);
       border-bottom: 1px solid var(--border-light);
       display: flex;
       align-items: center;
@@ -793,6 +808,7 @@
       background: white;
       z-index: 10;
       position: relative;
+      flex-shrink: 0;
     }
 
     .detail-title {
@@ -828,15 +844,17 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      min-height: 0;
     }
 
-    /* Responsive Map Layout - BIGGER */
+    /* Responsive Map Layout */
     .detail-map {
-      height: 55%; /* BIGGER map area */
+      height: 50%;
       position: relative;
       overflow: hidden;
       background: #ffffff;
       border-bottom: 1px solid var(--border-light);
+      flex-shrink: 0;
     }
 
     @media (min-width: 1024px) {
@@ -845,14 +863,14 @@
       }
       
       .detail-map {
-        width: 65%; /* BIGGER map width */
+        width: 60%;
         height: 100%;
         border-bottom: none;
         border-right: 1px solid var(--border-light);
       }
       
       .detail-info {
-        width: 35%; /* Smaller info panel */
+        width: 40%;
         height: 100%;
       }
     }
@@ -860,6 +878,7 @@
     #detailMap {
       width: 100%;
       height: 100%;
+      touch-action: none;
     }
 
     .map-overlay {
@@ -894,12 +913,14 @@
 
     /* Order Info Panel - MINIMAL */
     .detail-info {
-      height: 45%; /* Adjusted for bigger map */
+      height: 50%;
       background: white;
       padding: clamp(20px, 5vw, 32px);
+      padding-bottom: calc(clamp(20px, 5vw, 32px) + var(--tg-safe-area-inset-bottom, 0px) + env(safe-area-inset-bottom, 0px));
       overflow-y: auto;
       display: flex;
       flex-direction: column;
+      -webkit-overflow-scrolling: touch;
     }
 
     .price-highlight {
@@ -1081,6 +1102,7 @@
       box-shadow: var(--shadow-lg);
       touch-action: manipulation;
       min-height: 56px;
+      margin-top: auto;
     }
 
     .accept-button:hover {
@@ -1265,7 +1287,7 @@
     </div>
   </div>
 
-  <!-- UBER-STYLE Order Detail Modal - BIGGER AND FRAMELESS -->
+  <!-- UBER-STYLE Order Detail Modal - OPTIMIZED FOR TELEGRAM -->
   <div class="detail-modal" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
     <div class="detail-sheet">
       <div class="detail-header">

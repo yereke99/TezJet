@@ -1,0 +1,1008 @@
+<script>
+    // Global variables
+    let currentLang = 'ru';
+    let currentFilter = 'all';
+    let orders = [];
+    let driverLocation = null;
+    let refreshInterval = null;
+    let detailMap = null;
+    let driverData = null;
+    let currentOrder = null;
+    
+    // Auto-sound notification system (always enabled)
+    let audioContext = null;
+    let previousOrderCount = 0;
+    let lastOrderIds = new Set();
+
+    // Enhanced Auto-Sound Notification System
+    class AutoSoundNotification {
+      constructor() {
+        this.audioContext = null;
+        this.enabled = true;
+        this.initAudioContext();
+        console.log('🔊 Auto-sound notifications always enabled');
+      }
+
+      async initAudioContext() {
+        try {
+          this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          console.log('🔊 Audio context initialized for auto-notifications');
+        } catch (error) {
+          console.warn('⚠️ Audio context not supported:', error);
+        }
+      }
+
+      async playNotificationSound() {
+        if (!this.audioContext) {
+          return;
+        }
+
+        try {
+          if (this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
+          }
+
+          const oscillator1 = this.audioContext.createOscillator();
+          const oscillator2 = this.audioContext.createOscillator();
+          const oscillator3 = this.audioContext.createOscillator();
+          const gainNode = this.audioContext.createGain();
+
+          oscillator1.connect(gainNode);
+          oscillator2.connect(gainNode);
+          oscillator3.connect(gainNode);
+          gainNode.connect(this.audioContext.destination);
+
+          oscillator1.frequency.setValueAtTime(800, this.audioContext.currentTime);
+          oscillator2.frequency.setValueAtTime(1000, this.audioContext.currentTime);
+          oscillator3.frequency.setValueAtTime(1200, this.audioContext.currentTime);
+
+          gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+          gainNode.gain.linearRampToValueAtTime(0.3, this.audioContext.currentTime + 0.1);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.8);
+
+          oscillator1.start(this.audioContext.currentTime);
+          oscillator2.start(this.audioContext.currentTime + 0.1);
+          oscillator3.start(this.audioContext.currentTime + 0.2);
+          
+          oscillator1.stop(this.audioContext.currentTime + 0.3);
+          oscillator2.stop(this.audioContext.currentTime + 0.5);
+          oscillator3.stop(this.audioContext.currentTime + 0.8);
+
+          console.log('🔊 Enhanced notification sound played');
+        } catch (error) {
+          console.error('❌ Error playing notification sound:', error);
+        }
+      }
+
+      isEnabled() {
+        return this.enabled;
+      }
+    }
+
+    const autoSoundNotification = new AutoSoundNotification();
+
+    // Translations
+    const translations = {
+      ru: {
+        orders: 'Всего',
+        nearby: 'Рядом',
+        avgPrice: 'Средняя',
+        all: 'Все',
+        new: 'Новые',
+        expensive: 'Дорогие',
+        loading: 'Загрузка заказов...',
+        noOrders: 'Нет доступных заказов',
+        noOrdersDesc: 'Заказы появятся автоматически',
+        from: 'Откуда',
+        to: 'Куда',
+        price: 'Цена',
+        distance: 'Расстояние',
+        time: 'Время',
+        comment: 'Комментарий',
+        truck: 'Транспорт',
+        contact: 'Связаться',
+        call: 'Звонок',
+        orderDetails: 'Детали заказа',
+        clientInfo: 'Контакт клиента',
+        km: 'км',
+        min: 'мин',
+        small: 'Малый',
+        medium: 'Средний', 
+        large: 'Большой',
+        refrigerator: 'Рефрижератор',
+        tow: 'Эвакуатор',
+        any: 'Любой',
+        acceptOrder: 'Принять заказ',
+        calculating: 'Расчет...',
+        pickup: 'Забрать',
+        deliver: 'Доставить',
+        now: 'Сейчас',
+        new_order: 'НОВЫЙ',
+        newOrderTitle: 'Новый заказ!',
+        newOrderSubtitle: 'У вас есть новые заказы'
+      },
+      kz: {
+        orders: 'Барлық',
+        nearby: 'Жақын',
+        avgPrice: 'Орташа',
+        all: 'Барлық',
+        new: 'Жаңа',
+        expensive: 'Қымбат',
+        loading: 'Тапсырыстарды жүктеу...',
+        noOrders: 'Қол жетімді тапсырыстар жоқ',
+        noOrdersDesc: 'Тапсырыстар автоматты түрде пайда болады',
+        from: 'Қайдан',
+        to: 'Қайда',
+        price: 'Бағасы',
+        distance: 'Қашықтық',
+        time: 'Уақыт',
+        comment: 'Түсініктеме',
+        truck: 'Көлік',
+        contact: 'Байланысу',
+        call: 'Қоңырау',
+        orderDetails: 'Тапсырыс мәліметтері',
+        clientInfo: 'Клиент байланысы',
+        km: 'км',
+        min: 'мин',
+        small: 'Кіші',
+        medium: 'Орта',
+        large: 'Үлкен',
+        refrigerator: 'Рефрижератор',
+        tow: 'Эвакуатор',
+        any: 'Кез келген',
+        acceptOrder: 'Тапсырысты қабылдау',
+        calculating: 'Есептеу...',
+        pickup: 'Алып кету',
+        deliver: 'Жеткізу',
+        now: 'Қазір',
+        new_order: 'ЖАҢА',
+        newOrderTitle: 'Жаңа тапсырыс!',
+        newOrderSubtitle: 'Сізде жаңа тапсырыстар бар'
+      }
+    };
+
+    // Initialize Telegram WebApp
+    function initTelegram() {
+      if (window.Telegram && Telegram.WebApp) {
+        console.log('📱 Initializing Telegram WebApp for delivery list');
+        
+        Telegram.WebApp.ready();
+        Telegram.WebApp.expand();
+        Telegram.WebApp.disableVerticalSwipes();
+        
+        if (Telegram.WebApp.colorScheme === 'dark') {
+          document.documentElement.style.setProperty('--tg-theme-bg-color', '#1c1c1e');
+          document.documentElement.style.setProperty('--tg-theme-text-color', '#ffffff');
+        }
+
+        const user = Telegram.WebApp.initDataUnsafe?.user;
+        if (user) {
+          window.telegramUserId = user.id;
+          console.log('👤 Got Telegram user ID:', user.id);
+        }
+
+        Telegram.WebApp.MainButton.hide();
+        
+        console.log('✅ Telegram WebApp initialized for delivery list');
+      } else {
+        console.log('⚠️ Telegram WebApp not available - running in browser mode');
+        window.telegramUserId = 12345;
+      }
+    }
+
+    // Load driver profile with profile photo from ./ava directory
+    async function loadDriverProfile() {
+      try {
+        const telegramId = window.telegramUserId;
+        if (!telegramId) {
+          console.log('⚠️ No Telegram ID available for profile loading');
+          return;
+        }
+
+        console.log('👤 Loading driver profile for ID:', telegramId);
+
+        const response = await fetch('/api/check/who', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            telegram_id: parseInt(telegramId)
+          })
+        });
+
+        const result = await response.json();
+        console.log('📊 Driver profile response:', result);
+        
+        if (result.success && result.data.exists && result.data.user_type === 'driver') {
+          driverData = result.data.driver_data;
+          console.log('🚗 Driver data loaded:', driverData);
+          
+          const profileBtn = document.getElementById('profileBtn');
+          
+          if (driverData.profile_photo && driverData.profile_photo.trim() !== '') {
+            console.log('📸 Loading profile photo:', driverData.profile_photo);
+            
+            const avatarPath = `./ava/${driverData.profile_photo}`;
+            
+            const img = new Image();
+            
+            img.onload = function() {
+              console.log('✅ Profile photo loaded successfully from ./ava directory:', avatarPath);
+              profileBtn.innerHTML = `<img src="${avatarPath}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+              profileBtn.classList.remove('no-photo');
+              profileBtn.title = `${driverData.first_name || ''} ${driverData.last_name || ''}`.trim();
+            };
+            
+            img.onerror = function() {
+              console.warn('❌ Failed to load profile photo from ./ava directory:', avatarPath);
+              
+              const fallbackPaths = [
+                `/ava/${driverData.profile_photo}`,
+                `/files/${driverData.profile_photo}`,
+                `/static/ava/${driverData.profile_photo}`
+              ];
+              
+              let loaded = false;
+              fallbackPaths.forEach((path, index) => {
+                if (loaded) return;
+                
+                const fallbackImg = new Image();
+                fallbackImg.onload = function() {
+                  if (!loaded) {
+                    loaded = true;
+                    console.log(`✅ Profile photo loaded from fallback path ${index + 1}:`, path);
+                    profileBtn.innerHTML = `<img src="${path}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                    profileBtn.classList.remove('no-photo');
+                  }
+                };
+                fallbackImg.onerror = function() {
+                  console.warn(`❌ Fallback path ${index + 1} failed:`, path);
+                };
+                fallbackImg.src = path;
+              });
+              
+              setTimeout(() => {
+                if (!loaded) {
+                  console.log('👤 Using default profile icon - all photo paths failed');
+                  profileBtn.innerHTML = '👤';
+                  profileBtn.classList.add('no-photo');
+                  profileBtn.title = `${driverData.first_name || ''} ${driverData.last_name || ''}`.trim();
+                }
+              }, 3000);
+            };
+            
+            img.src = avatarPath;
+            
+          } else {
+            console.log('👤 No profile photo available - using default icon');
+            profileBtn.innerHTML = '👤';
+            profileBtn.classList.add('no-photo');
+            profileBtn.title = `${driverData.first_name || ''} ${driverData.last_name || ''}`.trim();
+          }
+          
+        } else {
+          console.log('⚠️ Not a valid driver or no driver data');
+          const profileBtn = document.getElementById('profileBtn');
+          profileBtn.innerHTML = '👤';
+          profileBtn.classList.add('no-photo');
+        }
+      } catch (error) {
+        console.error('❌ Error loading driver profile:', error);
+        const profileBtn = document.getElementById('profileBtn');
+        profileBtn.innerHTML = '👤';
+        profileBtn.classList.add('no-photo');
+      }
+    }
+
+    // Open profile page
+    function openProfile() {
+      console.log('🔧 Profile button clicked - navigating to driver update page');
+      
+      const telegramId = window.telegramUserId;
+      if (!telegramId) {
+        console.error('❌ No Telegram ID available for profile update');
+        alert('Ошибка: не удалось получить ID пользователя');
+        return;
+      }
+
+      const updateUrl = `/driver-update?telegram_id=${telegramId}`;
+      console.log('🔗 Navigating to:', updateUrl);
+      
+      if (window.Telegram && Telegram.WebApp) {
+        window.location.href = updateUrl;
+      } else {
+        window.location.href = updateUrl;
+      }
+    }
+
+    // Get driver location
+    function getDriverLocation() {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error('Geolocation not supported'));
+          return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            driverLocation = {
+              lat: position.coords.latitude,
+              lon: position.coords.longitude
+            };
+            console.log('📍 Driver location obtained:', driverLocation);
+            resolve(driverLocation);
+          },
+          (error) => {
+            console.warn('⚠️ Geolocation error:', error);
+            driverLocation = { lat: 43.238949, lon: 76.889709 };
+            resolve(driverLocation);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000
+          }
+        );
+      });
+    }
+
+    // Calculate distance between two points
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    // Check for new orders with auto-sound
+    function checkForNewOrders(newOrders) {
+      if (!newOrders || newOrders.length === 0) {
+        return;
+      }
+
+      const currentOrderIds = new Set(newOrders.map(order => order.id));
+      const hasNewOrders = newOrders.some(order => !lastOrderIds.has(order.id));
+      
+      lastOrderIds = currentOrderIds;
+
+      if (hasNewOrders && previousOrderCount > 0) {
+        const newOrderCount = newOrders.length - previousOrderCount;
+        console.log('🆕 New orders detected:', newOrderCount);
+        
+        autoSoundNotification.playNotificationSound();
+        
+        showNewOrderVisualNotification(newOrderCount);
+      }
+
+      previousOrderCount = newOrders.length;
+    }
+
+    // Show visual notification for new orders
+    function showNewOrderVisualNotification(count = 1) {
+      const notification = document.getElementById('newOrderNotification');
+      const subtitle = document.getElementById('notificationSubtitle');
+      
+      if (notification && subtitle) {
+        const countText = count > 1 ? ` (${count})` : '';
+        if (currentLang === 'ru') {
+          subtitle.textContent = `У вас ${count === 1 ? 'новый заказ' : `${count} новых заказа`}`;
+        } else {
+          subtitle.textContent = `Сізде ${count === 1 ? 'жаңа тапсырыс' : `${count} жаңа тапсырыс`} бар`;
+        }
+
+        notification.classList.add('show');
+
+        setTimeout(() => {
+          notification.classList.remove('show');
+        }, 4000);
+      }
+    }
+
+    // Load orders
+    async function loadOrders() {
+      try {
+        console.log('📦 Loading orders from API...');
+        
+        if (!driverLocation) {
+          await getDriverLocation();
+        }
+
+        const requestData = {
+          telegram_id: window.telegramUserId || 0,
+          driver_lat: driverLocation?.lat || 43.238949,
+          driver_lon: driverLocation?.lon || 76.889709,
+          radius: 50
+        };
+
+        console.log('🔍 Requesting orders with data:', requestData);
+
+        const response = await fetch('/api/delivery-list', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestData)
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('📊 Orders API response:', result);
+        
+        if (result.success && result.data) {
+          const newOrders = result.data.orders || [];
+          console.log('📦 Loaded orders count:', newOrders.length);
+          
+          checkForNewOrders(newOrders);
+          
+          orders = newOrders;
+          
+          if (driverLocation) {
+            orders.forEach(order => {
+              order.distance = calculateDistance(
+                driverLocation.lat, driverLocation.lon,
+                order.from_lat, order.from_lon
+              );
+              
+              const createdAt = new Date(order.created_at);
+              const now = new Date();
+              const diffMinutes = (now - createdAt) / (1000 * 60);
+              order.isNew = diffMinutes < 10;
+            });
+          }
+          
+          orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          
+          updateStats();
+          displayOrders();
+        } else {
+          throw new Error(result.message || 'Failed to load orders');
+        }
+      } catch (error) {
+        console.error('❌ Error loading orders:', error);
+        showEmptyState();
+      }
+    }
+
+    // Update statistics
+    function updateStats() {
+      const nearbyOrders = orders.filter(order => (order.distance || 999) <= 5).length;
+      const avgPrice = orders.length > 0 ? 
+        Math.round(orders.reduce((sum, order) => sum + (order.price || 0), 0) / orders.length) : 0;
+
+      document.getElementById('totalOrders').textContent = orders.length;
+      document.getElementById('nearbyOrders').textContent = nearbyOrders;
+      document.getElementById('avgPrice').textContent = avgPrice + '₸';
+      
+      console.log('📊 Stats updated - Total:', orders.length, 'Nearby:', nearbyOrders, 'Avg price:', avgPrice);
+    }
+
+    // Display orders
+    function displayOrders() {
+      const container = document.getElementById('orderList');
+      
+      let filteredOrders = [...orders];
+      
+      switch (currentFilter) {
+        case 'new':
+          filteredOrders = orders.filter(order => order.isNew);
+          break;
+        case 'nearby':
+          filteredOrders = orders.filter(order => (order.distance || 999) <= 5);
+          break;
+        case 'expensive':
+          filteredOrders = orders.filter(order => (order.price || 0) >= 5000);
+          break;
+      }
+
+      console.log('🔍 Filtered orders count:', filteredOrders.length, 'Filter:', currentFilter);
+
+      if (filteredOrders.length === 0) {
+        showEmptyState();
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+      
+      filteredOrders.forEach((order, index) => {
+        const orderElement = createOrderCard(order, index);
+        fragment.appendChild(orderElement);
+      });
+
+      container.innerHTML = '';
+      container.appendChild(fragment);
+      
+      const cards = container.querySelectorAll('.order-card');
+      cards.forEach((card, index) => {
+        setTimeout(() => {
+          card.classList.add('fade-in');
+        }, index * 50);
+      });
+    }
+
+    // Create order card - NO ORDER ID DISPLAY FOR SECURITY
+    function createOrderCard(order, index) {
+      const createdAt = new Date(order.created_at);
+      const timeText = formatTime(createdAt);
+      const distanceText = order.distance ? `${order.distance.toFixed(1)} ${translations[currentLang].km}` : '';
+      const truckType = formatTruckType(order.truck_type);
+      
+      const cardElement = document.createElement('div');
+      cardElement.className = `order-card ${order.isNew ? 'new' : ''}`;
+      cardElement.onclick = () => showOrderDetail(order.id);
+      cardElement.setAttribute('tabindex', '0');
+      cardElement.setAttribute('role', 'button');
+      cardElement.setAttribute('aria-label', `Заказ от ${timeText}`);
+      
+      cardElement.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          showOrderDetail(order.id);
+        }
+      });
+      
+      cardElement.innerHTML = `
+        ${order.distance && order.distance <= 5 ? `<div class="distance-badge nearby">${distanceText}</div>` : 
+          order.distance ? `<div class="distance-badge">${distanceText}</div>` : ''}
+        
+        <div class="order-header">
+          <div class="order-time">
+            <span>⏰</span>
+            <span>${timeText}</span>
+            ${order.isNew ? `<span class="new-badge">${translations[currentLang].new_order}</span>` : ''}
+          </div>
+        </div>
+        
+        <div class="order-route">
+          <div class="route-point">
+            <div class="route-marker from">A</div>
+            <div class="route-info">
+              <div class="route-label">${translations[currentLang].from}</div>
+              <div class="route-address">${order.from_address}</div>
+            </div>
+          </div>
+          
+          <div class="route-point">
+            <div class="route-marker to">B</div>
+            <div class="route-info">
+              <div class="route-label">${translations[currentLang].to}</div>
+              <div class="route-address">${order.to_address}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="order-details">
+          <div class="detail-item">
+            <div class="detail-value price">${order.price}₸</div>
+            <div class="detail-label">${translations[currentLang].price}</div>
+          </div>
+          
+          <div class="detail-item">
+            <div class="detail-value">${distanceText || '--'}</div>
+            <div class="detail-label">${translations[currentLang].distance}</div>
+          </div>
+          
+          <div class="detail-item">
+            <div class="detail-value">${formatTime(new Date(order.time_start || order.created_at))}</div>
+            <div class="detail-label">${translations[currentLang].time}</div>
+          </div>
+        </div>
+        
+        ${order.comment || order.truck_type ? `
+          <div class="order-footer">
+            <div class="order-comment">${order.comment || ''}</div>
+            <div class="truck-type">${truckType}</div>
+          </div>
+        ` : ''}
+      `;
+      
+      return cardElement;
+    }
+
+    // Show order detail with bigger modal
+    function showOrderDetail(orderId) {
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      console.log('📋 Showing order detail for ID:', orderId);
+      currentOrder = order;
+      
+      document.getElementById('detailModal').classList.add('show');
+      
+      document.getElementById('detailPrice').textContent = `${order.price}₸`;
+      document.getElementById('pickupAddress').textContent = order.from_address;
+      document.getElementById('dropoffAddress').textContent = order.to_address;
+      
+      document.getElementById('detailTruck').textContent = formatTruckType(order.truck_type);
+      document.getElementById('detailTime').textContent = formatTime(new Date(order.time_start || order.created_at));
+      
+      document.getElementById('contactPhone').textContent = order.contact;
+      document.getElementById('callBtn').href = `tel:${order.contact}`;
+      document.getElementById('whatsappBtn').href = `https://wa.me/${order.contact.replace(/\D/g, '')}`;
+      
+      setTimeout(() => {
+        initDetailMap(order);
+      }, 300);
+    }
+
+    // Initialize detail map
+    async function initDetailMap(order) {
+      if (detailMap) {
+        detailMap.remove();
+      }
+
+      try {
+        console.log('🗺️ Initializing map for order:', order.id);
+        
+        const centerLat = (order.from_lat + order.to_lat) / 2;
+        const centerLon = (order.from_lon + order.to_lon) / 2;
+
+        detailMap = L.map('detailMap', {
+          zoomControl: false,
+          attributionControl: false,
+          scrollWheelZoom: true,
+          touchZoom: true,
+          doubleClickZoom: false,
+          boxZoom: false,
+          keyboard: false,
+          fadeAnimation: true,
+          zoomAnimation: true,
+          markerZoomAnimation: true
+        }).setView([centerLat, centerLon], 13);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+          maxZoom: 19,
+          attribution: '',
+          subdomains: 'abcd'
+        }).addTo(detailMap);
+
+        const pickupIcon = L.divIcon({
+          html: '<div class="uber-marker pickup">A</div>',
+          className: 'uber-marker-container',
+          iconSize: [36, 44],
+          iconAnchor: [18, 44]
+        });
+
+        const dropoffIcon = L.divIcon({
+          html: '<div class="uber-marker dropoff">B</div>',
+          className: 'uber-marker-container',
+          iconSize: [36, 44],
+          iconAnchor: [18, 44]
+        });
+
+        L.marker([order.from_lat, order.from_lon], { icon: pickupIcon }).addTo(detailMap);
+        L.marker([order.to_lat, order.to_lon], { icon: dropoffIcon }).addTo(detailMap);
+
+        await drawRoute(order);
+
+        const bounds = L.latLngBounds([
+          [order.from_lat, order.from_lon],
+          [order.to_lat, order.to_lon]
+        ]);
+        
+        detailMap.fitBounds(bounds, {
+          padding: [40, 40],
+          maxZoom: 16
+        });
+
+      } catch (error) {
+        console.error('❌ Error initializing map:', error);
+      }
+    }
+
+    // Draw route
+    async function drawRoute(order) {
+      try {
+        console.log('🛣️ Drawing route...');
+        
+        document.getElementById('routeEta').innerHTML = `
+          <span>🚗</span>
+          <span>${translations[currentLang].calculating}</span>
+        `;
+
+        const url = `https://router.project-osrm.org/route/v1/driving/${order.from_lon},${order.from_lat};${order.to_lon},${order.to_lat}?overview=full&geometries=geojson&steps=true`;
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error('OSRM API request failed');
+        }
+        
+        const data = await response.json();
+        
+        if (data.routes && data.routes.length > 0) {
+          const route = data.routes[0];
+          const geometry = route.geometry;
+          
+          const coordinates = geometry.coordinates.map(coord => [coord[1], coord[0]]);
+          
+          const routeLine = L.polyline(coordinates, {
+            color: '#000000',
+            weight: 5,
+            opacity: 0.9,
+            smoothFactor: 1,
+            lineCap: 'round',
+            lineJoin: 'round'
+          }).addTo(detailMap);
+
+          const shadowLine = L.polyline(coordinates, {
+            color: '#00000030',
+            weight: 7,
+            opacity: 0.3,
+            smoothFactor: 1,
+            lineCap: 'round',
+            lineJoin: 'round'
+          });
+          
+          shadowLine.addTo(detailMap);
+          shadowLine.bringToBack();
+
+          const distanceKm = (route.distance / 1000).toFixed(1);
+          const durationMin = Math.round(route.duration / 60);
+          
+          document.getElementById('routeEta').innerHTML = `
+            <span>🚗</span>
+            <span>${distanceKm} ${translations[currentLang].km} • ${durationMin} ${translations[currentLang].min}</span>
+          `;
+          
+          console.log('✅ Route drawn successfully');
+          
+        } else {
+          throw new Error('No route found');
+        }
+        
+      } catch (error) {
+        console.error('❌ Error drawing route:', error);
+        
+        const straightLine = L.polyline([
+          [order.from_lat, order.from_lon],
+          [order.to_lat, order.to_lon]
+        ], {
+          color: '#000000',
+          weight: 4,
+          opacity: 0.7,
+          dashArray: '10, 5',
+          lineCap: 'round'
+        }).addTo(detailMap);
+
+        const distance = calculateDistance(order.from_lat, order.from_lon, order.to_lat, order.to_lon);
+        const time = Math.round((distance / 40) * 60);
+        
+        document.getElementById('routeEta').innerHTML = `
+          <span>🚗</span>
+          <span>${distance.toFixed(1)} ${translations[currentLang].km} • ${time} ${translations[currentLang].min}</span>
+        `;
+      }
+    }
+
+    // Accept order function
+    async function acceptOrder() {
+      if (!currentOrder) return;
+      
+      try {
+        console.log('✅ Accepting order:', currentOrder.id);
+        
+        const acceptBtn = document.getElementById('acceptOrderBtn');
+        acceptBtn.disabled = true;
+        acceptBtn.innerHTML = '<span>⏳ Принимаем...</span>';
+        
+        const response = await fetch('/api/driver/accept-order', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            telegram_id: window.telegramUserId,
+            order_id: currentOrder.id
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          acceptBtn.innerHTML = '<span>✅ Заказ принят!</span>';
+          acceptBtn.style.background = '#388E3C';
+          
+          setTimeout(() => {
+            closeDetail();
+            loadOrders();
+          }, 2000);
+          
+        } else {
+          throw new Error(result.message || 'Failed to accept order');
+        }
+        
+      } catch (error) {
+        console.error('❌ Error accepting order:', error);
+        
+        const acceptBtn = document.getElementById('acceptOrderBtn');
+        acceptBtn.disabled = false;
+        acceptBtn.innerHTML = `<span>❌ Ошибка! Попробуйте снова</span>`;
+        acceptBtn.style.background = '#D32F2F';
+        
+        setTimeout(() => {
+          acceptBtn.innerHTML = `<span>${translations[currentLang].acceptOrder}</span>`;
+          acceptBtn.style.background = '';
+        }, 3000);
+      }
+    }
+
+    // Close detail modal
+    function closeDetail() {
+      document.getElementById('detailModal').classList.remove('show');
+      currentOrder = null;
+      
+      if (detailMap) {
+        detailMap.remove();
+        detailMap = null;
+      }
+    }
+
+    // Show empty state
+    function showEmptyState() {
+      const container = document.getElementById('orderList');
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📦</div>
+          <div class="empty-title">${translations[currentLang].noOrders}</div>
+          <div class="empty-message">${translations[currentLang].noOrdersDesc}</div>
+        </div>
+      `;
+    }
+
+    // Format time
+    function formatTime(date) {
+      const now = new Date();
+      const diffMs = date - now;
+      const diffMinutes = Math.abs(diffMs) / (1000 * 60);
+      
+      if (diffMinutes < 60) {
+        return translations[currentLang].now;
+      } else {
+        return date.toLocaleTimeString(currentLang === 'ru' ? 'ru-RU' : 'kk-KZ', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+    }
+
+    // Format truck type
+    function formatTruckType(type) {
+      const types = {
+        small: translations[currentLang].small,
+        medium: translations[currentLang].medium,
+        large: translations[currentLang].large,
+        refrigerator: translations[currentLang].refrigerator,
+        tow: translations[currentLang].tow,
+        any: translations[currentLang].any,
+        '': translations[currentLang].any
+      };
+      return types[type] || type || translations[currentLang].any;
+    }
+
+    // Set filter
+    function setFilter(filter) {
+      currentFilter = filter;
+      console.log('🔍 Filter changed to:', filter);
+      
+      document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.classList.remove('active');
+      });
+      document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
+      
+      displayOrders();
+    }
+
+    // Refresh orders
+    function refreshOrders() {
+      console.log('🔄 Manual refresh triggered');
+      const btn = document.getElementById('refreshBtn');
+      btn.classList.add('loading');
+      
+      loadOrders().finally(() => {
+        btn.classList.remove('loading');
+      });
+    }
+
+    // Set language
+    function setLang(lang) {
+      currentLang = lang;
+      console.log('🌐 Language changed to:', lang);
+      
+      document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`lang-${lang}`).classList.add('active');
+      
+      document.querySelectorAll('[data-ru]').forEach(el => {
+        const text = el.getAttribute(`data-${lang}`);
+        if (text) {
+          el.textContent = text;
+        }
+      });
+
+      updateStats();
+      displayOrders();
+    }
+
+    // Auto-refresh
+    function startAutoRefresh() {
+      console.log('🔄 Starting auto-refresh (8 seconds interval)');
+      refreshInterval = setInterval(() => {
+        loadOrders();
+      }, 8000);
+    }
+
+    function stopAutoRefresh() {
+      if (refreshInterval) {
+        console.log('🛑 Stopping auto-refresh');
+        clearInterval(refreshInterval);
+        refreshInterval = null;
+      }
+    }
+
+    // Initialize app
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('🚀 Uber-Style Minimal Delivery List App initializing...');
+      
+      initTelegram();
+      setLang('ru');
+      
+      loadDriverProfile();
+      loadOrders();
+      startAutoRefresh();
+      
+      console.log('✅ Uber-Style Minimal Delivery List App initialized with Telegram WebApp optimization');
+    });
+
+    // Handle page visibility changes
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        console.log('👁️ Page hidden - stopping auto-refresh');
+        stopAutoRefresh();
+      } else {
+        console.log('👁️ Page visible - restarting auto-refresh');
+        loadOrders();
+        startAutoRefresh();
+      }
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      console.log('🧹 Page unloading - cleaning up');
+      stopAutoRefresh();
+      if (detailMap) {
+        detailMap.remove();
+      }
+    });
+
+    // Close modal on backdrop click
+    document.getElementById('detailModal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        closeDetail();
+      }
+    });
+
+    // ESC key to close modal
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('detailModal').classList.contains('show')) {
+        closeDetail();
+      }
+    });
+
+    // Make functions globally available
+    window.openProfile = openProfile;
+    window.refreshOrders = refreshOrders;
+    window.setFilter = setFilter;
+    window.setLang = setLang;
+    window.showOrderDetail = showOrderDetail;
+    window.closeDetail = closeDetail;
+    window.acceptOrder = acceptOrder;
+
+    console.log('📋 Uber-Style Minimal Delivery List with Telegram WebApp optimization loaded successfully');
+  </script>

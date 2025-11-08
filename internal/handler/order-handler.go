@@ -5,9 +5,13 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"math"
 	"net/http"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -109,6 +113,7 @@ type DeliveryRequest struct {
 	Contact     string    `json:"contact"`
 	TimeStart   string    `json:"time_start"`
 	Comment     string    `json:"comment"`
+	CargoPhoto  string    `json:"cargo_photo"`
 	TelegramID  int64     `json:"telegram_id"`
 	Status      string    `json:"status"`
 	CreatedAt   time.Time `json:"created_at"`
@@ -1414,30 +1419,25 @@ func (h *Handler) isValidCoordinates(lat, lon float64) bool {
 func (h *Handler) handleDelivery(ctx context.Context, b *bot.Bot) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-
 		h.logger.Info("Received delivery request",
 			zap.String("method", r.Method),
 			zap.String("content_type", r.Header.Get("Content-Type")),
-			zap.String("user_agent", r.Header.Get("User-Agent")))
+			zap.String("user_agent", r.Header.Get("User-Agent")),
+		)
 
-		// Parse form data - handle both form-urlencoded and multipart
 		var err error
 		if strings.Contains(r.Header.Get("Content-Type"), "multipart/form-data") {
-			err = r.ParseMultipartForm(32 << 20) // 32 MB max
+			err = r.ParseMultipartForm(32 << 20) // 32Mb
 		} else {
 			err = r.ParseForm()
 		}
-
 		if err != nil {
 			h.logger.Error("Failed to parse form", zap.Error(err))
 			h.sendErrorResponse(w, "Ошибка обработки данных", http.StatusBadRequest)
 			return
 		}
 
-		// Log all form values for debugging
 		h.logger.Info("Form values received", zap.Any("form", r.Form))
-
-		// Extract and validate data
 		req, err := h.parseDeliveryRequest(r)
 		if err != nil {
 			h.logger.Error("Failed to parse delivery request", zap.Error(err))
@@ -1445,7 +1445,18 @@ func (h *Handler) handleDelivery(ctx context.Context, b *bot.Bot) http.HandlerFu
 			return
 		}
 
-		// Calculate route distance and time if not provided
+		requestId := uuid.New().String()
+		req.ID = requestId
+
+		if strings.Contains(r.Header.Get("Content-Type"), "multipart/form-data") {
+			if path, err := h.saveUploadedPhoto(r, requestId); err != nil {
+				h.logger.Error("Photo save failed", zap.Error(err))
+			} else if path != "" {
+				req.CargoPhoto = path
+			}
+		}
+
+		// Если дистанция/ETA не посчитаны — посчитаем
 		if req.DistanceKm == 0 || req.EtaMin == 0 {
 			distance, duration := h.calculateRoute(req.FromLat, req.FromLon, req.ToLat, req.ToLon)
 			if req.DistanceKm == 0 {
@@ -1464,35 +1475,114 @@ func (h *Handler) handleDelivery(ctx context.Context, b *bot.Bot) http.HandlerFu
 			zap.Int("eta", req.EtaMin),
 			zap.String("truck_type", req.TruckType),
 			zap.String("time_start", req.TimeStart),
-			zap.Int64("telegram_id", req.TelegramID))
+			zap.Int64("telegram_id", req.TelegramID),
+			zap.String("photo_path", req.CargoPhoto),
+		)
 
-		// Save delivery request to database
-		requestID, err := h.saveDeliveryRequest(req)
-		if err != nil {
+		// Сохраняем в БД
+		if _, err := h.saveDeliveryRequest(req); err != nil {
 			h.logger.Error("Failed to save delivery request", zap.Error(err))
 			h.sendErrorResponse(w, "Ошибка сохранения заявки", http.StatusInternalServerError)
 			return
 		}
 
-		req.ID = requestID
 		req.Status = "pending"
 		req.CreatedAt = time.Now()
 
-		h.logger.Info("Delivery request saved successfully", zap.String("request_id", requestID))
+		h.logger.Info("Delivery request saved successfully", zap.String("request_id", req.ID))
 
-		// Send confirmation message to user
-		go h.sendConfirmationMessage(b, req, requestID)
-		// Send to client order to driver
+		go h.sendConfirmationMessage(b, req, req.ID)
 		go h.SendToDriver(ctx, b, req)
 
-		// Send success response
 		h.sendSuccessResponse(w, "Заявка успешно создана", map[string]interface{}{
-			"request_id": requestID,
+			"request_id": req.ID,
 			"status":     "pending",
 			"distance":   req.DistanceKm,
 			"eta":        req.EtaMin,
+			"photo":      req.CargoPhoto,
 		})
 	}
+}
+
+func (h *Handler) saveUploadedPhoto(r *http.Request, requestID string) (string, error) {
+	file, header, err := r.FormFile("cargo_photo")
+	if err != nil {
+		if errors.Is(err, http.ErrMissingFile) {
+			return "", nil // фото не прислали — ок
+		}
+		return "", fmt.Errorf("не удалось прочитать файл: %w", err)
+	}
+	defer file.Close()
+
+	head := make([]byte, 512)
+	n, err := io.ReadFull(file, head)
+	if err != nil && err != io.ErrUnexpectedEOF {
+		return "", fmt.Errorf("ошибка чтения файла: %w", err)
+	}
+	head = head[:n]
+
+	ctype := http.DetectContentType(head)
+	if !strings.HasPrefix(ctype, "image/") {
+		return "", fmt.Errorf("недопустимый тип файла: %s (ожидается image/*)", ctype)
+	}
+
+	ext := strings.ToLower(filepath.Ext(header.Filename))
+	if ext == "" {
+		switch ctype {
+		case "image/jpeg":
+			ext = ".jpg"
+		case "image/png":
+			ext = ".png"
+		case "image/webp":
+			ext = ".webp"
+		default:
+			ext = ".img"
+		}
+	}
+
+	fname := requestID + ext
+	dstPath := filepath.Join(h.cfg.CargoPhoto, fname)
+	dst, err := os.Create(dstPath)
+	if err != nil {
+		return "", fmt.Errorf("не удалось создать файл: %w", err)
+	}
+	defer func() {
+		_ = dst.Close()
+	}()
+
+	if _, err := dst.Write(head); err != nil {
+		return "", fmt.Errorf("ошибка записи файла: %w", err)
+	}
+
+	// Копируем остаток, строго ограничив 20MB-уже-пришедшие-байты
+	remaining := h.cfg.MaxUploadSize - int64(len(head))
+	if remaining < 0 {
+		return "", fmt.Errorf("файл превышает 20MB")
+	}
+	written, err := io.Copy(dst, io.LimitReader(file, remaining))
+	if err != nil {
+		return "", fmt.Errorf("ошибка копирования файла: %w", err)
+	}
+
+	// Если реальный размер вообще известен от клиента — проверим быстро
+	if header.Size > 0 && header.Size > h.cfg.MaxUploadSize {
+		// удалим частично записанный файл
+		_ = os.Remove(dstPath)
+		return "", fmt.Errorf("файл слишком большой (>20MB)")
+	}
+
+	// Если мы уперлись в лимит ровно и есть еще данные в исходном ридере — значит переросли лимит
+	if header.Size == 0 && written == remaining {
+		// попробуем прочесть 1 байт — если есть, то перерос
+		buf := make([]byte, 1)
+		if _, err := file.Read(buf); err == nil {
+			_ = os.Remove(dstPath)
+			return "", fmt.Errorf("файл слишком большой (>20MB)")
+		}
+	}
+
+	// Вернем относительный путь (его можно отдать в API/DB)
+	return dstPath, nil
 }
 
 func (h *Handler) SendToDriver(ctx context.Context, b *bot.Bot, request *DeliveryRequest) {
@@ -1678,33 +1768,46 @@ func (h *Handler) getOSRMRoute(fromLat, fromLon, toLat, toLon float64) (float64,
 	return distanceKm, durationMin
 }
 
-// saveDeliveryRequest saves the delivery request to database
+// saveDeliveryRequest сохраняет заявку (включая путь к фото)
 func (h *Handler) saveDeliveryRequest(req *DeliveryRequest) (string, error) {
-	// Generate UUID for the delivery request
-	requestID := uuid.New().String()
+	// Если ID уже сгенерирован ранее — используем его
+	requestID := req.ID
+	if requestID == "" {
+		requestID = uuid.New().String()
+		req.ID = requestID
+	}
 
 	query := `
-		INSERT INTO delivery_requests (
-			id, telegram_id, from_address, from_lat, from_lon, 
-			to_address, to_lat, to_lon, distance_km, eta_min,
-			price, truck_type, contact, time_start, comment, 
-			status, created_at
-		) VALUES (
-			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP
-		)`
+        INSERT INTO delivery_requests (
+            id, telegram_id, from_address, from_lat, from_lon,
+            to_address, to_lat, to_lon, distance_km, eta_min,
+            price, truck_type, contact, time_start, comment,
+            item_photo_path, status, created_at
+        ) VALUES (
+            ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?,
+            ?, 'pending', CURRENT_TIMESTAMP
+        )`
 
 	_, err := h.db.Exec(
 		query,
 		requestID, req.TelegramID, req.FromAddress, req.FromLat, req.FromLon,
 		req.ToAddress, req.ToLat, req.ToLon, req.DistanceKm, req.EtaMin,
 		req.Price, req.TruckType, req.Contact, req.TimeStart, req.Comment,
+		nullableString(req.CargoPhoto),
 	)
-
 	if err != nil {
 		return "", err
 	}
-
 	return requestID, nil
+}
+
+func nullableString(s string) interface{} {
+	if strings.TrimSpace(s) == "" {
+		return sql.NullString{Valid: false}
+	}
+	return s
 }
 
 // sendConfirmationMessage sends confirmation message to client
@@ -1764,6 +1867,36 @@ func (h *Handler) sendConfirmationMessage(b *bot.Bot, req *DeliveryRequest, requ
 	}
 
 	ctx := context.Background()
+
+	if req.CargoPhoto != "" {
+		file, err := os.Open(req.CargoPhoto)
+		if err != nil {
+			h.logger.Error("Failed to send confirmation message", zap.Error(err))
+		}
+		defer file.Close()
+
+		_, err = b.SendPhoto(ctx, &bot.SendPhotoParams{
+			ChatID: req.TelegramID,
+			Photo: &models.InputFileUpload{
+				Filename: file.Name(),
+				Data:     file,
+			},
+			Caption:     message,
+			ParseMode:   models.ParseModeHTML,
+			ReplyMarkup: keyboard,
+		})
+		if err != nil {
+			h.logger.Error("Failed to send confirmation message",
+				zap.Error(err),
+				zap.Int64("telegram_id", req.TelegramID),
+				zap.String("request_id", requestID))
+		} else {
+			h.logger.Info("Confirmation message sent",
+				zap.Int64("telegram_id", req.TelegramID),
+				zap.String("request_id", requestID))
+		}
+		return
+	}
 
 	_, err := b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:      req.TelegramID,

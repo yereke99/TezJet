@@ -36,6 +36,7 @@ type DeliveryRequest struct {
 	Price           int        `json:"price" db:"price"`
 	Contact         string     `json:"contact" db:"contact"`
 	Comment         string     `json:"comment" db:"comment"`
+	CargoPhoto      string     `json:"cargo_photo"`
 	TruckType       string     `json:"truck_type" db:"truck_type"`
 	DistanceKm      float64    `json:"distance_km" db:"distance_km"`
 	Status          string     `json:"status" db:"status"` // pending, matched, completed, cancelled

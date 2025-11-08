@@ -78,6 +78,7 @@ func NewHandler(cfg *config.Config, logger *zap.Logger, db *sql.DB, userRepo *re
 	// Create directories for file uploads
 	os.MkdirAll("./ava", 0755)
 	os.MkdirAll("./documents", 0755)
+	os.MkdirAll("./delivery-photo", 0755)
 
 	return &Handler{
 		cfg:        cfg,
@@ -1352,6 +1353,7 @@ func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 	r.PathPrefix("/ava/").Handler(http.StripPrefix("/ava/", http.FileServer(http.Dir("./ava/"))))
 	r.PathPrefix("/documents/").Handler(http.StripPrefix("/documents/", http.FileServer(http.Dir("./documents/"))))
 	r.PathPrefix("/files/").Handler(http.StripPrefix("/files/", http.FileServer(http.Dir("./files/"))))
+	r.PathPrefix("/delivery-photo/").Handler(http.StripPrefix("/delivery-photo/", http.FileServer(http.Dir("./delivery-photo/"))))
 
 	// Main pages
 	r.HandleFunc("/", h.welcomeHandler).Methods("GET") // NEW - Welcome as default
