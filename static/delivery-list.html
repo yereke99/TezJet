@@ -41,21 +41,20 @@
       --shadow:0 6px 18px rgba(0,0,0,.08);
       --shadow-lg:0 14px 28px rgba(0,0,0,.14);
 
-      --gradient:linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 100%); /* black */
+      --gradient:linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 100%);
       --gradient-2:linear-gradient(135deg, #0B63F6 0%, #155EF1 100%);
 
       --safe-top:calc(var(--tg-safe-area-inset-top, 0px) + env(safe-area-inset-top, 0px));
       --safe-bottom:calc(var(--tg-safe-area-inset-bottom, 0px) + env(safe-area-inset-bottom, 0px));
 
       --header-h:56px;
-      --chrome-h:168px; /* Stats + Filters total height (kept fixed) */
 
       /* viewport fixes */
       --vh: 100dvh;
 
       /* Bottom sheet */
       --sheet-head-h:56px;
-      --footer-h:86px; /* fixed footer with button */
+      --footer-h:86px;
       --sheet-top-gap: calc(12px + var(--safe-top));
     }
 
@@ -119,7 +118,7 @@
 
     /* ===== FIXED CHROME (Stats + Filters) ===== */
     .chrome{
-      position:relative; /* not scrolling */
+      position:relative;
       z-index:4;
       background:var(--tg-theme-bg-color, var(--bg));
       border-bottom:1px solid var(--border-2);
@@ -140,7 +139,7 @@
     .filters{
       display:flex; gap:10px; padding:12px 16px;
       background:#fff; border-top:1px solid var(--border-2);
-      overflow:hidden; /* no horizontal scroll in “fixed chrome” */
+      overflow:hidden;
     }
     .chip{
       padding:10px 16px;
@@ -234,11 +233,12 @@
     .sheet-title{font-weight:900;color:#0f172a}
     .close{width:40px;height:40px;border-radius:50%;border:none;background:#F3F4F6;color:#111827;font-size:22px;cursor:pointer}
 
-    /* SCROLL only inside body; extra space for footer so nothing is cut */
+    /* SCROLL only inside body (footer is sticky) */
     .sheet-body{
       position:relative; overflow:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
       min-height:0;
-      max-height:calc(var(--vh) - var(--sheet-top-gap) - var(--sheet-head-h) - var(--footer-h) - var(--safe-bottom));
+      /* важная правка: убран лишний safe-bottom из формулы */
+      max-height:calc(var(--vh) - var(--sheet-top-gap) - var(--sheet-head-h) - var(--footer-h));
       padding-bottom:16px; background:#fff;
     }
 
@@ -282,8 +282,8 @@
     .contact{
       background:#fff; border-radius:16px; padding:8px 0 0; text-align:center;
     }
-    .ct{font-size:18px; font-weight:900; margin-bottom:6px}
-    .cp{opacity:.95; font-weight:900; margin-bottom:12px}
+    .ct{font-size:18px; font-weight:900; margin-bottom:6px; color:#0f172a !important;}
+    .cp{opacity:.95; font-weight:900; margin-bottom:12px; color:#0f172a !important;}
     .cb{display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 16px 2px}
     .cbtn{
       border:none; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:10px;
@@ -295,9 +295,10 @@
     .cbtn.wa{background:#F5F5F5; color:#0f172a}
     .contact small{display:block; color:#9CA3AF; margin-top:10px}
 
-    /* Fixed footer button */
+    /* Fixed footer button (sticky + safe-area) */
     .sheet-footer{
-      height:var(--footer-h);
+      position:sticky; bottom:0; z-index:2;
+      min-height:var(--footer-h);
       display:flex; align-items:center; justify-content:center;
       padding:10px 16px calc(12px + var(--safe-bottom));
       background:#fff; border-top:1px solid var(--border-2); box-shadow:0 -12px 24px rgba(0,0,0,.04);
@@ -349,8 +350,8 @@
       <nav class="filters">
         <div class="chip active" data-filter="all" onclick="setFilter('all')"><span data-ru="Все" data-kz="Барлық">Все</span></div>
         <div class="chip" data-filter="new" onclick="setFilter('new')"><span data-ru="Новые" data-kz="Жаңа">Новые</span></div>
-        <div class="chip" data-filter="nearby" onclick="setFilter('nearby')"><span data-ru="Рядом" data-kz="Жақын">Рядом</span></div>
-        <div class="chip" data-filter="expensive" onclick="setFilter('expensive')"><span data-ru="Дорогие" data-kz="Қымбат">Дорогие</span></div>
+        <div class="chip" data-filter="nearby" onclick="setFilter('nearby')"><span data-ru="Рядом" data-kз="Жақын">Рядом</span></div>
+        <div class="chip" data-filter="expensive" onclick="setFilter('expensive')"><span data-ru="Дорогие" data-kз="Қымбат">Дорогие</span></div>
       </nav>
     </section>
 
@@ -360,8 +361,8 @@
       <div id="newOrderToast" class="toast" role="status" aria-live="polite">
         <div style="font-size:20px">🚚</div>
         <div>
-          <div style="font-weight:900" data-ru="Новый заказ!" data-kz="Жаңа тапсырыс!">Новый заказ!</div>
-          <div id="toastSubtitle" style="opacity:.9" data-ru="У вас есть новые заказы" data-kz="Сізде жаңа тапсырыстар бар">У вас есть новые заказы</div>
+          <div style="font-weight:900" data-ru="Новый заказ!" data-kз="Жаңа тапсырыс!">Новый заказ!</div>
+          <div id="toastSubtitle" style="opacity:.9" data-ru="У вас есть новые заказы" data-kз="Сізде жаңа тапсырыстар бар">У вас есть новые заказы</div>
         </div>
       </div>
 
@@ -400,7 +401,7 @@
         <section id="detailInfo" class="info">
           <div class="price-box">
             <div id="detailPrice" class="price-val">0₸</div>
-            <div class="price-l" data-ru="За доставку" data-kz="Жеткізу үшін">За доставку</div>
+            <div class="price-l" data-ru="За доставку" data-kз="Жеткізу үшін">За доставку</div>
           </div>
 
           <div class="route-box">
@@ -408,14 +409,14 @@
               <div class="m a">A</div>
               <div>
                 <div id="pickupAddress" class="s-addr">Загрузка...</div>
-                <div class="s-l" data-ru="Забрать" data-kz="Алып кету">Забрать</div>
+                <div class="s-l" data-ru="Забрать" data-kз="Алып кету">Забрать</div>
               </div>
             </div>
             <div class="step">
               <div class="m b">B</div>
               <div>
                 <div id="dropoffAddress" class="s-addr">Загрузка...</div>
-                <div class="s-l" data-ru="Доставить" data-kz="Жеткізу">Доставить</div>
+                <div class="s-l" data-ru="Доставить" data-kз="Жеткізу">Доставить</div>
               </div>
             </div>
           </div>
@@ -423,29 +424,29 @@
           <div class="meta">
             <div class="it">
               <div id="detailTruck" class="v">--</div>
-              <div class="l" data-ru="Транспорт" data-kz="Көлік">Транспорт</div>
+              <div class="l" data-ru="Транспорт" data-kз="Көлік">Транспорт</div>
             </div>
             <div class="it">
               <div id="detailTime" class="v">--</div>
-              <div class="l" data-ru="Время" data-kz="Уақыт">Время</div>
+              <div class="l" data-ru="Время" data-kз="Уақыт">Время</div>
             </div>
           </div>
 
           <!-- Client comment -->
           <div class="comment-box" id="commentBox" style="display:none">
-            <div class="comment-label" data-ru="Комментарий клиента" data-kz="Клиенттің пікірі">Комментарий клиента</div>
+            <div class="comment-label" data-ru="Комментарий клиента" data-kз="Клиенттің пікірі">Комментарий клиента</div>
             <div class="comment-val" id="clientComment"></div>
           </div>
 
           <!-- Centered contact -->
           <div class="contact">
-            <div class="ct" data-ru="Контакт клиента" data-kz="Клиент байланысы">Контакт клиента</div>
+            <div class="ct" data-ru="Контакт клиента" data-kз="Клиент байланысы">Контакт клиента</div>
             <div id="contactPhone" class="cp">+7 (___) ___-__-__</div>
             <div class="cb">
-              <a id="callBtn" class="cbtn call" href="#"><span>📞</span><span data-ru="Звонок" data-kz="Қоңырау">Звонок</span></a>
+              <a id="callBtn" class="cbtn call" href="#"><span>📞</span><span data-ru="Звонок" data-kз="Қоңырау">Звонок</span></a>
               <a id="whatsappBtn" class="cbtn wa" href="#"><span>💬</span><span>WhatsApp</span></a>
             </div>
-            <small data-ru="Нажмите, чтобы связаться" data-kz="Хабарласу үшін басыңыз">Нажмите, чтобы связаться</small>
+            <small data-ru="Нажмите, чтобы связаться" data-kз="Хабарласу үшін басыңыз">Нажмите, чтобы связаться</small>
           </div>
         </section>
       </div>
@@ -453,7 +454,7 @@
       <!-- Fixed footer -->
       <div class="sheet-footer">
         <button id="acceptOrderBtn" class="accept" onclick="acceptOrder()">
-          <span data-ru="Принять заказ" data-kz="Тапсырысты қабылдау">Принять заказ</span>
+          <span data-ru="Принять заказ" data-kз="Тапсырысты қабылдау">Принять заказ</span>
         </button>
       </div>
     </div>
@@ -765,6 +766,32 @@
       })(0);
     }
 
+    function bindContactActions(phoneRaw){
+      const digits = (phoneRaw || '').toString().replace(/\D/g,'');
+      const tel = `tel:${digits || phoneRaw}`;
+      const wa  = `https://wa.me/${digits}`;
+
+      const callA = document.getElementById('callBtn');
+      const waA   = document.getElementById('whatsappBtn');
+
+      callA.setAttribute('href', tel);
+      waA.setAttribute('href', wa);
+
+      callA.onclick = (e) => {
+        e.preventDefault();
+        try { window.location.href = tel; }
+        catch(_) {
+          try { Telegram.WebApp.openLink(tel, { try_instant_view:false }); } catch(__){}
+        }
+      };
+
+      waA.onclick = (e) => {
+        e.preventDefault();
+        try { Telegram.WebApp.openLink(wa, { try_instant_view:false }); }
+        catch(_) { window.open(wa, '_blank'); }
+      };
+    }
+
     function showOrderDetail(orderId){
       const order=orders.find(o=>o.id===orderId); if(!order) return;
       currentOrder=order;
@@ -782,8 +809,7 @@
 
       const phone = (order.contact || '').toString();
       document.getElementById('contactPhone').textContent = phone || '';
-      document.getElementById('callBtn').href=`tel:${phone}`;
-      document.getElementById('whatsappBtn').href=`https://wa.me/${phone.replace(/\D/g,'')}`;
+      bindContactActions(phone);
 
       const rawPhoto=(order.cargo_photo ?? order.item_photo_path ?? order.photo ?? order.item_photo ?? '').toString().trim();
       setCargoPhoto(rawPhoto);
