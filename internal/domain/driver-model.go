@@ -22,6 +22,7 @@ type Driver struct {
 	LicenseFrontPath string     `json:"license_front_path" db:"license_front_path"`
 	LicenseBackPath  string     `json:"license_back_path" db:"license_back_path"`
 	TruckPhotoPath   string     `json:"truck_photo_path" db:"truck_photo_path"`
+	TruckType        string     `json:"truck_type" db:"truck_photo_path"`
 	Status           string     `json:"status" db:"status"` // pending, approved, rejected, suspended
 	IsApproved       bool       `json:"is_approved" db:"is_approved"`
 	IsActive         bool       `json:"is_active" db:"is_active"`
@@ -35,16 +36,16 @@ type Driver struct {
 	LastActiveAt     *time.Time `json:"last_active_at" db:"last_active_at"`
 	CreatedAt        time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt        time.Time  `json:"updated_at" db:"updated_at"`
-	
-	FromLat    float64 `json:"from_lat" db:"from_lat"`
-    FromLon    float64 `json:"from_lon" db:"from_lon"` 
-    ToLat      float64 `json:"to_lat" db:"to_lat"`
-    ToLon      float64 `json:"to_lon" db:"to_lon"`
-    // Alternative field names
-    PickupLat  float64 `json:"pickup_lat" db:"pickup_lat"`
-    PickupLon  float64 `json:"pickup_lon" db:"pickup_lon"`
-    DropoffLat float64 `json:"dropoff_lat" db:"dropoff_lat"`  
-    DropoffLon float64 `json:"dropoff_lon" db:"dropoff_lon"`
+
+	FromLat float64 `json:"from_lat" db:"from_lat"`
+	FromLon float64 `json:"from_lon" db:"from_lon"`
+	ToLat   float64 `json:"to_lat" db:"to_lat"`
+	ToLon   float64 `json:"to_lon" db:"to_lon"`
+	// Alternative field names
+	PickupLat  float64 `json:"pickup_lat" db:"pickup_lat"`
+	PickupLon  float64 `json:"pickup_lon" db:"pickup_lon"`
+	DropoffLat float64 `json:"dropoff_lat" db:"dropoff_lat"`
+	DropoffLon float64 `json:"dropoff_lon" db:"dropoff_lon"`
 }
 
 // DriverRoute represents a route offered by a driver
@@ -177,6 +178,13 @@ type MatchedDriver struct {
 	FromLon          float64   `json:"from_lon"`
 	ToLat            float64   `json:"to_lat"`
 	ToLon            float64   `json:"to_lon"`
+}
+
+type NearADriver struct {
+	MinLat  float64
+	MaxLat  float64
+	MinLong float64
+	MaxLong float64
 }
 
 // Driver Status constants

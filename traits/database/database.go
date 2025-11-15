@@ -1,3 +1,4 @@
+// traits/database/database.go
 package database
 
 import (
@@ -10,6 +11,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
 )
+
+var _ = time.Second
 
 // InitDatabase initializes the SQLite database
 func InitDatabase(cfg *config.Config, logger *zap.Logger) (*sql.DB, error) {
@@ -265,8 +268,3 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 	logger.Info("Database schema created/verified successfully")
 	return nil
 }
-
-// Optional: helper to parse go duration into conn lifetime if needed
-func toPtr[T any](v T) *T { return &v }
-
-var _ = time.Second

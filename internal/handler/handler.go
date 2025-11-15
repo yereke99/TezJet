@@ -24,6 +24,7 @@ import (
 	"go.uber.org/zap"
 
 	"tezjet/config"
+	"tezjet/internal/domain"
 	"tezjet/internal/repository"
 )
 
@@ -1338,6 +1339,23 @@ func (h *Handler) welcomeHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, path)
 }
 
+// adminHandler serves the admin panel page (only for admin telegram_id)
+func (h *Handler) adminHandler(w http.ResponseWriter, r *http.Request) {
+	path := "./static/admin-panel.html"
+	w.Header().Set("Content-Type", "text/html")
+
+	// Просто отдаём HTML — проверка прав происходит на фронте через Telegram WebApp.id
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		h.logger.Error("Admin panel page not found", zap.String("path", path))
+		http.Error(w, "Admin panel page not found", http.StatusNotFound)
+		return
+	}
+
+	h.logger.Info("Serving admin panel page",
+		zap.String("user_agent", r.Header.Get("User-Agent")))
+	http.ServeFile(w, r, path)
+}
+
 // Updated StartWebServer function with welcome page as default
 func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 	go h.ChangeDriverStatus(ctx, b)
@@ -1360,6 +1378,7 @@ func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 	r.HandleFunc("/delivery", h.deliveryHandler).Methods("GET")
 	r.HandleFunc("/register", h.registerDriverHandler).Methods("GET")
 	r.HandleFunc("/driver-update", h.driverUpdateHandler).Methods("GET")
+	r.HandleFunc("/admin", h.adminHandler).Methods("GET")
 
 	r.HandleFunc("/driver", h.driverHandler).Methods("GET")
 	r.HandleFunc("/api/driver/start", h.handleDriverStart(b)).Methods("POST", "OPTIONS")
@@ -1370,6 +1389,12 @@ func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 	r.HandleFunc("/api/driver/register", h.handleDriverRegister(b)).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/driver/update", h.handleDriverUpdate(b)).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/check/who", h.handleCheckWho).Methods("GET", "POST", "OPTIONS")
+
+	// ADMIN API
+	r.HandleFunc("/api/admin/summary", h.handleAdminSummary).Methods("GET", "POST", "OPTIONS")
+	r.HandleFunc("/api/admin/drivers", h.handleAdminDrivers).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/admin/drivers/{id}", h.handleAdminDriverDetail).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/admin/orders", h.handleAdminOrders).Methods("GET", "OPTIONS")
 
 	// Delivery list routes
 	r.HandleFunc("/delivery-list", h.deliveryListHandler).Methods("GET")
@@ -1477,7 +1502,7 @@ func (h *Handler) handleDeliveryList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get delivery orders within radius
-	orders, err := h.getDeliveryOrdersInRadius(reqData.DriverLat, reqData.DriverLon, reqData.Radius)
+	orders, err := h.getDeliveryOrdersInRadius(r.Context(), reqData.DriverLat, reqData.DriverLon, reqData.Radius)
 	if err != nil {
 		h.logger.Error("Failed to get delivery orders", zap.Error(err))
 		h.sendErrorResponse(w, "Ошибка получения заказов", http.StatusInternalServerError)
@@ -1552,7 +1577,7 @@ func publicPhotoURL(baseURL, p string) string {
 }
 
 // FIXED: getDeliveryOrdersInRadius - Better filtering and debugging
-func (h *Handler) getDeliveryOrdersInRadius(driverLat, driverLon, radiusKm float64) ([]DeliveryRequest, error) {
+func (h *Handler) getDeliveryOrdersInRadius(ctx context.Context, driverLat, driverLon, radiusKm float64) ([]domain.DeliveryRequest, error) {
 	h.logger.Info("Getting delivery orders in radius",
 		zap.Float64("driver_lat", driverLat),
 		zap.Float64("driver_lon", driverLon),
@@ -1560,30 +1585,44 @@ func (h *Handler) getDeliveryOrdersInRadius(driverLat, driverLon, radiusKm float
 
 	// Get all pending orders first (with more relaxed time filter)
 	query := `
-		SELECT 
-			id, telegram_id, from_address, from_lat, from_lon, 
-			to_address, to_lat, to_lon, distance_km, eta_min,
-			price, truck_type, contact, time_start, comment, 
-			item_photo_path, status, created_at
-		FROM delivery_requests 
-		WHERE status = 'pending'
-		AND created_at >= datetime('now', '-72 hours')
-		ORDER BY created_at DESC
-		LIMIT 200`
-
-	rows, err := h.db.Query(query)
+SELECT 
+  id,
+  telegram_id,
+  from_address,
+  from_lat,
+  from_lon,
+  to_address,
+  to_lat,
+  to_lon,
+  distance_km,
+  eta_min,
+  price,
+  COALESCE(truck_type, ''),   -- может быть NULL
+  COALESCE(contact, ''),      -- может быть NULL
+  COALESCE(time_start, ''),   -- может быть NULL (если TEXT)
+  COALESCE(comment, ''),      -- может быть NULL
+  COALESCE(item_photo_path, ''), -- <-- ключевая правка
+  status,
+  created_at
+FROM delivery_requests
+WHERE status = 'pending'
+  AND created_at >= datetime('now', '-72 hours')
+ORDER BY created_at DESC
+LIMIT 200;
+`
+	rows, err := h.db.QueryContext(ctx, query)
 	if err != nil {
 		h.logger.Error("Database query failed", zap.Error(err))
 		return nil, err
 	}
 	defer rows.Close()
 
-	var allOrders []DeliveryRequest
+	var allOrders []domain.DeliveryRequest
 	ordersProcessed := 0
 	ordersInRadius := 0
 
 	for rows.Next() {
-		var order DeliveryRequest
+		var order domain.DeliveryRequest
 		err := rows.Scan(
 			&order.ID, &order.TelegramID, &order.FromAddress, &order.FromLat, &order.FromLon,
 			&order.ToAddress, &order.ToLat, &order.ToLon, &order.DistanceKm, &order.EtaMin,
@@ -1638,7 +1677,7 @@ func (h *Handler) getDeliveryOrdersInRadius(driverLat, driverLon, radiusKm float
 	// If no orders found with current radius, try with expanded radius
 	if len(allOrders) == 0 && radiusKm < 50 {
 		h.logger.Info("No orders found, expanding search radius")
-		return h.getDeliveryOrdersInRadius(driverLat, driverLon, 50.0)
+		return h.getDeliveryOrdersInRadius(ctx, driverLat, driverLon, 50.0)
 	}
 
 	return allOrders, nil
@@ -1759,7 +1798,7 @@ func (h *Handler) handleDriverAcceptOrder(b *bot.Bot) http.HandlerFunc {
 }
 
 // FIXED: getDeliveryOrderById retrieves a delivery order by ID
-func (h *Handler) getDeliveryOrderById(orderID string) (*DeliveryRequest, error) {
+func (h *Handler) getDeliveryOrderById(orderID string) (*domain.DeliveryRequest, error) {
 	query := `
 		SELECT 
 			id, telegram_id, from_address, from_lat, from_lon, 
@@ -1769,7 +1808,7 @@ func (h *Handler) getDeliveryOrderById(orderID string) (*DeliveryRequest, error)
 		FROM delivery_requests 
 		WHERE id = ?`
 
-	var order DeliveryRequest
+	var order domain.DeliveryRequest
 	err := h.db.QueryRow(query, orderID).Scan(
 		&order.ID, &order.TelegramID, &order.FromAddress, &order.FromLat, &order.FromLon,
 		&order.ToAddress, &order.ToLat, &order.ToLon, &order.DistanceKm, &order.EtaMin,
@@ -1844,7 +1883,7 @@ func (h *Handler) updateOrderStatus(orderID string, status string, driverID stri
 }
 
 // FIXED: sendOrderAcceptedNotifications sends notifications when order is accepted
-func (h *Handler) sendOrderAcceptedNotifications(b *bot.Bot, order *DeliveryRequest, driver *DriverRegistration) {
+func (h *Handler) sendOrderAcceptedNotifications(b *bot.Bot, order *domain.DeliveryRequest, driver *DriverRegistration) {
 	// Send notification to client
 	if order.TelegramID != 0 {
 		// FIXED: Using %s for string UUID
@@ -2341,26 +2380,34 @@ func (h *Handler) DefaultHandler(ctx context.Context, b *bot.Bot, update *models
 		return
 	}
 
-	// Create inline keyboard with welcome page
-	keyboard := &models.InlineKeyboardMarkup{
-		InlineKeyboard: [][]models.InlineKeyboardButton{
-			{
+	var keyboard interface{}
+	if update.Message.From.ID == h.cfg.AdminTelegramID {
+		keyboard = &models.InlineKeyboardMarkup{
+			InlineKeyboard: [][]models.InlineKeyboardButton{
 				{
-					Text:   "🚀 Ашу | Открыть QazLine",
-					WebApp: &models.WebAppInfo{URL: h.cfg.BaseURL + "/"},
-				},
-				/*
 					{
-										Text:   "🚀 Driver",
-										WebApp: &models.WebAppInfo{URL: h.cfg.BaseURL + "/driver"},
-									},
-									{
-										Text:   "🚀 Orders",
-										WebApp: &models.WebAppInfo{URL: h.cfg.BaseURL + "/delivery-list"},
-									},
-				*/
+						Text:   "🚀 Ашу | Открыть QazLine",
+						WebApp: &models.WebAppInfo{URL: h.cfg.BaseURL + "/"},
+					},
+					{
+						Text:   "👤 Admin",
+						WebApp: &models.WebAppInfo{URL: h.cfg.BaseURL + "/admin"},
+					},
+				},
 			},
-		},
+		}
+	} else {
+		// Create inline keyboard with welcome page
+		keyboard = &models.InlineKeyboardMarkup{
+			InlineKeyboard: [][]models.InlineKeyboardButton{
+				{
+					{
+						Text:   "🚀 Ашу | Открыть QazLine",
+						WebApp: &models.WebAppInfo{URL: h.cfg.BaseURL + "/"},
+					},
+				},
+			},
+		}
 	}
 
 	// Bilingual welcome message

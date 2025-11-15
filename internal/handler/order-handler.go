@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"tezjet/internal/domain"
 	"time"
 
 	"github.com/go-telegram/bot"
@@ -97,28 +98,6 @@ type DriverWithTrip struct {
 	ResponseTimeMin     int     `json:"response_time_min,omitempty"`
 }
 
-// DeliveryRequest represents the delivery request data
-type DeliveryRequest struct {
-	ID          string    `json:"id"`
-	FromAddress string    `json:"from_address"`
-	FromLat     float64   `json:"from_lat"`
-	FromLon     float64   `json:"from_lon"`
-	ToAddress   string    `json:"to_address"`
-	ToLat       float64   `json:"to_lat"`
-	ToLon       float64   `json:"to_lon"`
-	DistanceKm  float64   `json:"distance_km"`
-	EtaMin      int       `json:"eta_min"`
-	Price       int       `json:"price"`
-	TruckType   string    `json:"truck_type"`
-	Contact     string    `json:"contact"`
-	TimeStart   string    `json:"time_start"`
-	Comment     string    `json:"comment"`
-	CargoPhoto  string    `json:"cargo_photo"`
-	TelegramID  int64     `json:"telegram_id"`
-	Status      string    `json:"status"`
-	CreatedAt   time.Time `json:"created_at"`
-}
-
 // DeliveryListRequest represents the request for getting delivery orders
 type DeliveryListRequest struct {
 	TelegramID int64   `json:"telegram_id"`
@@ -129,10 +108,10 @@ type DeliveryListRequest struct {
 
 // DeliveryListResponse represents the response with orders
 type DeliveryListResponse struct {
-	Orders      []DeliveryRequest `json:"orders"`
-	TotalCount  int               `json:"total_count"`
-	NearbyCount int               `json:"nearby_count"`
-	AvgPrice    float64           `json:"avg_price"`
+	Orders      []domain.DeliveryRequest `json:"orders"`
+	TotalCount  int                      `json:"total_count"`
+	NearbyCount int                      `json:"nearby_count"`
+	AvgPrice    float64                  `json:"avg_price"`
 }
 
 // DriverRegistration represents the driver registration data
@@ -1585,24 +1564,126 @@ func (h *Handler) saveUploadedPhoto(r *http.Request, requestID string) (string, 
 	return dstPath, nil
 }
 
-func (h *Handler) SendToDriver(ctx context.Context, b *bot.Bot, request *DeliveryRequest) {
+func (h *Handler) SendToDriver(ctx context.Context, b *bot.Bot, req *domain.DeliveryRequest) {
 
-	// Look here write logic to send nearest driver to user
-	// and send him client request from  just A point
+	deltaLat := 30.0 / 111.32
+	latRad := req.FromLat * math.Pi / 180.0
+	deltaLon := 30.0 / (111.32 * math.Cos(latRad))
+	minLat, maxLat := req.FromLat-deltaLat, req.FromLat+deltaLat
+	minLon, maxLon := req.FromLon-deltaLon, req.FromLon+deltaLon
 
-	_, err := b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: 0,
-		Text:   "Sorry",
-	})
+	nearADriver := domain.NearADriver{
+		MinLat:  minLat,
+		MaxLat:  maxLat,
+		MinLong: minLon,
+		MaxLong: maxLon,
+	}
+
+	nearDrivers, err := h.driverRepo.GetDriverNearA(ctx, nearADriver, req)
 	if err != nil {
-		h.logger.Error("Failed to send message", zap.Error(err))
+		h.logger.Error("NO DRIVERS", zap.Error(err))
 		return
 	}
+
+	text := buildKZOrderText(req)
+	replyMarkup := &models.InlineKeyboardMarkup{
+		InlineKeyboard: [][]models.InlineKeyboardButton{
+			{
+				{Text: "✅ Қабылдау", CallbackData: fmt.Sprintf("accept:%s", req.ID)},
+				{Text: "📍 Көру", CallbackData: fmt.Sprintf("view:%s", req.ID)},
+			},
+		},
+	}
+
+	ticker := time.NewTicker(60 * time.Millisecond)
+	defer ticker.Stop()
+	sent, failed := 0, 0
+	for i := 0; i < len(nearDrivers); i++ {
+		select {
+		case <-ctx.Done():
+			if ctx.Err() != nil {
+				return
+			}
+		default:
+			nearDriver := nearDrivers[i]
+			if req.CargoPhoto != "" {
+				p := strings.TrimSpace(req.CargoPhoto)
+				if p != "" {
+					file, err := os.Open(p)
+					if err != nil {
+						h.logger.Warn("open cargo photo", zap.String("path", req.CargoPhoto), zap.Error(err))
+					}
+					_, err = b.SendPhoto(ctx, &bot.SendPhotoParams{
+						ChatID: nearDriver.TelegramID,
+						Photo: &models.InputFileUpload{
+							Filename: filepath.Base(p),
+							Data:     file,
+						},
+						Caption:     text,
+						ReplyMarkup: replyMarkup,
+					})
+					_ = file.Close()
+					if err != nil {
+						failed++
+						h.logger.Warn("send to driver with photo", zap.Int64("tg_id", nearDriver.TelegramID), zap.Error(err))
+						continue
+					}
+					sent++
+					continue
+				}
+
+			}
+			_, err := b.SendMessage(ctx, &bot.SendMessageParams{
+				ChatID:      nearDriver.TelegramID,
+				Text:        text,
+				ReplyMarkup: replyMarkup,
+			})
+			if err != nil {
+				failed++
+				h.logger.Warn("send to driver", zap.Int64("tg_id", nearDriver.TelegramID), zap.Error(err))
+				continue
+			}
+			sent++
+		}
+	}
+	h.logger.Info("broadcast finished", zap.Int("candidates", len(nearDrivers)), zap.Int("sent", sent), zap.Int("failed", failed))
+}
+
+func buildKZOrderText(r *domain.DeliveryRequest) string {
+	comment := r.Comment
+	if comment == "" {
+		comment = "—"
+	}
+	return fmt.Sprintf(
+		`Жаңа тапсырыс!
+Бастау: %s
+Мекенжай: %s
+Қашықтық: %.1f км
+ETA: %d мин
+Тасымал түрі: %s
+Байланыс: %s
+Баға: %d ₸
+Ескерту: %s
+
+Қабылдағыңыз келсе, төмендегі «Қабылдау» батырмасын басыңыз.`,
+		nonEmpty(r.FromAddress, "A нүктесі"),
+		nonEmpty(r.ToAddress, "B нүктесі"),
+		r.DistanceKm, r.EtaMin,
+		nonEmpty(r.TruckType, "кез келген"),
+		r.Contact, r.Price, comment,
+	)
+}
+
+func nonEmpty(s, def string) string {
+	if s == "" {
+		return def
+	}
+	return s
 }
 
 // parseDeliveryRequest parses the delivery request form data
-func (h *Handler) parseDeliveryRequest(r *http.Request) (*DeliveryRequest, error) {
-	req := &DeliveryRequest{}
+func (h *Handler) parseDeliveryRequest(r *http.Request) (*domain.DeliveryRequest, error) {
+	req := &domain.DeliveryRequest{}
 
 	// Helper function to get form value
 	getValue := func(key string) string {
@@ -1769,7 +1850,7 @@ func (h *Handler) getOSRMRoute(fromLat, fromLon, toLat, toLon float64) (float64,
 }
 
 // saveDeliveryRequest сохраняет заявку (включая путь к фото)
-func (h *Handler) saveDeliveryRequest(req *DeliveryRequest) (string, error) {
+func (h *Handler) saveDeliveryRequest(req *domain.DeliveryRequest) (string, error) {
 	// Если ID уже сгенерирован ранее — используем его
 	requestID := req.ID
 	if requestID == "" {
@@ -1811,7 +1892,7 @@ func nullableString(s string) interface{} {
 }
 
 // sendConfirmationMessage sends confirmation message to client
-func (h *Handler) sendConfirmationMessage(b *bot.Bot, req *DeliveryRequest, requestID string) {
+func (h *Handler) sendConfirmationMessage(b *bot.Bot, req *domain.DeliveryRequest, requestID string) {
 	if req.TelegramID == 0 {
 		h.logger.Warn("No Telegram ID provided, skipping confirmation message")
 		return

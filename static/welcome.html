@@ -2,7 +2,8 @@
 <html lang="kz">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>QazLine - Тез жеткізу қызметі</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
@@ -25,6 +26,8 @@
       --radius-md: 12px;
       --radius-lg: 16px;
       --radius-xl: 20px;
+
+      --tg-viewport-stable-height: 100vh;
     }
 
     * {
@@ -37,6 +40,9 @@
     html, body {
       height: 100vh;
       height: 100dvh;
+    }
+
+    body {
       overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', 'Inter', sans-serif;
       background: var(--bg-secondary);
@@ -50,6 +56,8 @@
       padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
       padding-left: max(20px, env(safe-area-inset-left, 20px));
       padding-right: max(20px, env(safe-area-inset-right, 20px));
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
     }
 
     .background {
@@ -75,8 +83,7 @@
 
     .loading-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
+      inset: 0;
       width: 100%;
       height: 100%;
       background: var(--bg-secondary);
@@ -162,6 +169,7 @@
       max-width: 400px;
       width: 100%;
       padding: 0;
+      opacity: 0;
     }
 
     .header-section {
@@ -201,6 +209,9 @@
       box-shadow: var(--shadow-medium);
       animation: logoFloat 6s ease-in-out infinite;
       letter-spacing: -2px;
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      will-change: transform;
     }
 
     @keyframes logoFloat {
@@ -211,6 +222,7 @@
     .brand-text {
       margin-bottom: 20px;
       flex-shrink: 0;
+      transition: transform 0.1s ease;
     }
 
     .brand-name {
@@ -222,16 +234,20 @@
       text-transform: none;
       opacity: 0;
       animation: fadeInUp 0.6s ease-out 0.3s forwards;
+      -webkit-user-select: none;
+      user-select: none;
     }
 
     .brand-slogan {
       font-size: 16px;
       font-weight: 500;
       color: var(--text-secondary);
-      letter-spacing: 0px;
+      letter-spacing: 0;
       opacity: 0;
       animation: fadeInUp 0.6s ease-out 0.5s forwards;
       margin-bottom: 6px;
+      -webkit-user-select: none;
+      user-select: none;
     }
 
     .brand-description {
@@ -261,12 +277,15 @@
       width: 100%;
       min-height: 180px;
       margin-top: auto;
+      position: relative;
+      z-index: 10;
     }
 
     .action-buttons {
       display: flex;
       flex-direction: column;
       gap: 12px;
+      transition: transform 0.1s ease;
     }
 
     .action-btn {
@@ -285,6 +304,21 @@
       color: inherit;
       box-shadow: var(--shadow-subtle);
       min-height: 70px;
+      opacity: 0;
+      transform: translateY(20px) translateZ(0);
+      -webkit-transform: translateY(20px) translateZ(0);
+      will-change: transform, opacity;
+      animation: slideInUp 0.4s ease-out forwards;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .action-btn:nth-child(1) {
+      animation-delay: 0.9s;
+    }
+
+    .action-btn:nth-child(2) {
+      animation-delay: 1.1s;
     }
 
     .action-btn:hover {
@@ -376,20 +410,6 @@
       border-color: #1a1a1a;
     }
 
-    .action-btn {
-      opacity: 0;
-      transform: translateY(20px);
-      animation: slideInUp 0.4s ease-out forwards;
-    }
-
-    .action-btn:nth-child(1) {
-      animation-delay: 0.9s;
-    }
-
-    .action-btn:nth-child(2) {
-      animation-delay: 1.1s;
-    }
-
     @keyframes slideInUp {
       to {
         opacity: 1;
@@ -406,6 +426,7 @@
       margin-bottom: 12px;
       box-shadow: var(--shadow-medium);
       animation: fadeInUp 0.4s ease-out;
+      display: none;
     }
 
     .driver-redirect h3 {
@@ -457,13 +478,6 @@
       .action-btn-icon { width: 38px; height: 38px; font-size: 16px; }
     }
 
-    .brand-name,
-    .brand-slogan,
-    .action-btn {
-      -webkit-user-select: none;
-      user-select: none;
-    }
-
     .action-btn:focus,
     .lang-btn:focus {
       outline: 2px solid var(--accent-secondary);
@@ -473,36 +487,23 @@
     .welcome-sequence {
       opacity: 0;
       animation: welcomeSequence 0.8s ease-out 0.1s forwards;
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      will-change: transform, opacity;
     }
 
     @keyframes welcomeSequence {
       0% { opacity: 0; transform: scale(0.98); }
       100% { opacity: 1; transform: scale(1); }
     }
-
-    .main-container,
-    .action-btn,
-    .logo {
-      transform: translateZ(0);
-      -webkit-transform: translateZ(0);
-      will-change: transform;
-    }
-
-    body {
-      overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .action-section {
-      position: relative;
-      z-index: 10;
-    }
   </style>
 </head>
 <body>
   <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-spinner"></div>
-    <div class="loading-text" data-kz="Жүктелуде..." data-ru="Загрузка...">Жүктелуде...</div>
+    <div class="loading-text"
+         data-kz="Жүктелуде..."
+         data-ru="Загрузка...">Жүктелуде...</div>
   </div>
 
   <div class="background"></div>
@@ -517,17 +518,21 @@
       <div class="logo-container">
         <div class="logo">Q</div>
       </div>
-      
+
       <div class="brand-text">
         <h1 class="brand-name">QazLine</h1>
-        <p class="brand-slogan" data-kz="Тез жеткізу қызметі" data-ru="Быстрая доставка">Тез жеткізу қызметі</p>
-        <p class="brand-description" data-kz="Алматы қаласында сенімді және тез жеткізу" data-ru="Надежная и быстрая доставка по Алматы">Алматы қаласында сенімді және тез жеткізу</p>
+        <p class="brand-slogan"
+           data-kz="Тез жеткізу қызметі"
+           data-ru="Быстрая доставка">Тез жеткізу қызметі</p>
+        <p class="brand-description"
+           data-kz="Алматы қаласында сенімді және тез жеткізу"
+           data-ru="Надежная и быстрая доставка по Алматы">Алматы қаласында сенімді және тез жеткізу</p>
       </div>
     </div>
 
     <div class="action-section">
       <div class="action-buttons">
-        <div class="driver-redirect" id="redirectMessage" style="display: none;">
+        <div class="driver-redirect" id="redirectMessage">
           <h3 data-kz="Қош келдіңіз!" data-ru="Добро пожаловать!">Қош келдіңіз!</h3>
           <p data-kz="Бағыттау..." data-ru="Перенаправление...">Бағыттау...</p>
         </div>
@@ -536,8 +541,12 @@
           <div class="action-btn-content">
             <div class="action-btn-icon">📦</div>
             <div class="action-btn-text">
-              <div class="action-btn-title" data-kz="Жеткізу тапсырысы" data-ru="Заказать доставку">Жеткізу тапсырысы</div>
-              <div class="action-btn-subtitle" data-kz="Жүкті тез әрі қауіпсіз жеткіземіз" data-ru="Быстро и безопасно доставим ваш груз">Жүкті тез әрі қауіпсіз жеткіземіз</div>
+              <div class="action-btn-title"
+                   data-kz="Жеткізу тапсырысы"
+                   data-ru="Заказать доставку">Жеткізу тапсырысы</div>
+              <div class="action-btn-subtitle"
+                   data-kz="Жүкті тез әрі қауіпсіз жеткіземіз"
+                   data-ru="Быстро и безопасно доставим ваш груз">Жүкті тез әрі қауіпсіз жеткіземіз</div>
             </div>
           </div>
           <div class="action-btn-arrow">→</div>
@@ -547,8 +556,12 @@
           <div class="action-btn-content">
             <div class="action-btn-icon">🚗</div>
             <div class="action-btn-text">
-              <div class="action-btn-title" data-kz="Жүргізуші болу" data-ru="Стать водителем">Жүргізуші болу</div>
-              <div class="action-btn-subtitle" data-kz="Бізге қосылып табыс табыңыз" data-ru="Присоединяйтесь и зарабатывайте с нами">Бізге қосылып табыс табыңыз</div>
+              <div class="action-btn-title"
+                   data-kz="Жүргізуші болу"
+                   data-ru="Стать водителем">Жүргізуші болу</div>
+              <div class="action-btn-subtitle"
+                   data-kz="Бізге қосылып табыс табыңыз"
+                   data-ru="Присоединяйтесь и зарабатывайте с нами">Бізге қосылып табыс табыңыз</div>
             </div>
           </div>
           <div class="action-btn-arrow">→</div>
@@ -595,13 +608,14 @@
       }
     };
 
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       console.log('🚀 QazLine Welcome Page loaded');
-      
+
       initializeTelegram();
       setupEventListeners();
       setLang('kz');
-      
+
+      // Small delay so Telegram init finishes
       setTimeout(() => {
         checkUserTypeAndRedirect();
       }, 800);
@@ -612,31 +626,40 @@
         console.log('📱 Initializing Telegram WebApp');
         Telegram.WebApp.ready();
         Telegram.WebApp.expand();
-        Telegram.WebApp.disableVerticalSwipes();
+        if (Telegram.WebApp.disableVerticalSwipes) {
+          Telegram.WebApp.disableVerticalSwipes();
+        }
         console.log('✅ Telegram WebApp initialized');
       }
     }
 
     function setupEventListeners() {
-      document.getElementById('deliveryBtn').addEventListener('click', function(e) {
-        if (isChecking || isRedirecting) {
-          e.preventDefault();
-          return false;
-        }
-      });
+      const deliveryBtn = document.getElementById('deliveryBtn');
+      const driverBtn = document.getElementById('driverBtn');
 
-      document.getElementById('driverBtn').addEventListener('click', function(e) {
-        if (isChecking || isRedirecting) {
-          e.preventDefault();
-          return false;
-        }
-      });
+      if (deliveryBtn) {
+        deliveryBtn.addEventListener('click', function (e) {
+          if (isChecking || isRedirecting) {
+            e.preventDefault();
+            return false;
+          }
+        });
+      }
+
+      if (driverBtn) {
+        driverBtn.addEventListener('click', function (e) {
+          if (isChecking || isRedirecting) {
+            e.preventDefault();
+            return false;
+          }
+        });
+      }
     }
 
-    // CORRECT REDIRECT LOGIC
+    // MAIN CHECK + REDIRECT LOGIC
     async function checkUserTypeAndRedirect() {
       const telegramId = getTelegramId();
-      
+
       if (!telegramId) {
         console.log('⚠️ No Telegram ID, showing welcome page');
         hideLoading();
@@ -646,13 +669,13 @@
       try {
         isChecking = true;
         updateLoadingText('checkingUser');
-        
+
         console.log('🔍 Checking user type for ID:', telegramId);
 
         const response = await fetch('/api/check/who', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ telegram_id: parseInt(telegramId) })
+          body: JSON.stringify({ telegram_id: parseInt(telegramId, 10) })
         });
 
         if (!response.ok) {
@@ -662,30 +685,29 @@
         const result = await response.json();
         console.log('📊 API Response:', result);
 
-        if (result.success && result.data) {
+        if (result && result.success && result.data) {
           const userData = result.data;
-          
-          // DRIVER → delivery-list.html
+
+          // DRIVER → /delivery-list
           if (userData.exists === true && userData.user_type === 'driver') {
-            console.log('🚗 DRIVER DETECTED → Redirecting to delivery-list.html');
+            console.log('🚗 DRIVER DETECTED → /delivery-list');
             showRedirectMessage('redirectingDriver');
             redirectTo('/delivery-list');
             return;
           }
-          
-          // CLIENT with orders → driver-list.html
+
+          // CLIENT → /driver-list
           if (userData.exists === true && userData.user_type === 'client') {
-            console.log('👤 CLIENT DETECTED → Redirecting to driver-list.html');
+            console.log('👤 CLIENT DETECTED → /driver-list');
             showRedirectMessage('redirectingClient');
             redirectTo('/driver-list');
             return;
           }
         }
 
-        // NEW USER → show welcome page
-        console.log('👤 New user → showing welcome page');
+        // NEW USER → stay on welcome
+        console.log('🆕 New user → show welcome page');
         hideLoading();
-        
       } catch (error) {
         console.error('❌ Error checking user:', error);
         updateLoadingText('error');
@@ -701,9 +723,15 @@
       const message = document.getElementById('redirectMessage');
       if (message) {
         const p = message.querySelector('p');
+        const h3 = message.querySelector('h3');
+
+        if (h3 && translations[currentLang].welcomeBack) {
+          h3.textContent = translations[currentLang].welcomeBack;
+        }
         if (p && translations[currentLang][key]) {
           p.textContent = translations[currentLang][key];
         }
+
         message.style.display = 'block';
       }
       isRedirecting = true;
@@ -712,11 +740,11 @@
 
     function redirectTo(url) {
       console.log('🔄 Redirecting to:', url);
-      
+
       if (window.Telegram?.WebApp?.HapticFeedback) {
         Telegram.WebApp.HapticFeedback.notificationOccurred('success');
       }
-      
+
       setTimeout(() => {
         window.location.replace(url);
       }, 1500);
@@ -725,32 +753,47 @@
     function getTelegramId() {
       if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
         const id = Telegram.WebApp.initDataUnsafe.user.id;
-        console.log('✅ Got Telegram ID:', id);
+        console.log('✅ Got Telegram ID from WebApp:', id);
         return id;
       }
-      
+
       const urlParams = new URLSearchParams(window.location.search);
       const testId = urlParams.get('test_id');
       if (testId) {
-        console.log('🧪 Using test ID:', testId);
+        console.log('🧪 Using test ID from query:', testId);
         return testId;
       }
-      
-      console.log('❌ No Telegram ID');
+
+      console.log('❌ No Telegram ID found');
       return null;
     }
 
     function updateLoadingText(key) {
       const loadingText = document.querySelector('.loading-text');
-      if (loadingText && translations[currentLang][key]) {
-        loadingText.textContent = translations[currentLang][key];
+      if (!loadingText) return;
+
+      const valueFromDict = translations[currentLang]?.[key];
+      if (valueFromDict) {
+        loadingText.textContent = valueFromDict;
+      } else {
+        // fallback to data-* attr
+        const attr = loadingText.getAttribute('data-' + currentLang);
+        if (attr) {
+          loadingText.textContent = attr;
+        }
       }
     }
 
     function hideLoading() {
-      document.getElementById('loadingOverlay').classList.add('hidden');
+      const overlay = document.getElementById('loadingOverlay');
+      if (!overlay) return;
+
+      overlay.classList.add('hidden');
       setTimeout(() => {
-        document.querySelector('.main-container').style.opacity = '1';
+        const main = document.querySelector('.main-container');
+        if (main) {
+          main.style.opacity = '1';
+        }
       }, 200);
     }
 
@@ -758,32 +801,36 @@
       if (isChecking || isRedirecting) return;
 
       currentLang = lang;
-      console.log('🌐 Language:', lang);
-      
+      console.log('🌐 Language set to:', lang);
+
       document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
-      document.getElementById('lang-' + lang).classList.add('active');
-      
+      const activeBtn = document.getElementById('lang-' + lang);
+      if (activeBtn) activeBtn.classList.add('active');
+
       document.querySelectorAll('[data-kz]').forEach(el => {
         const text = el.getAttribute('data-' + lang);
         if (text) el.textContent = text;
       });
 
-      document.querySelector('.brand-text').style.transform = 'scale(0.99)';
-      document.querySelector('.action-buttons').style.transform = 'scale(0.99)';
-      
+      const brand = document.querySelector('.brand-text');
+      const actions = document.querySelector('.action-buttons');
+
+      if (brand) brand.style.transform = 'scale(0.99)';
+      if (actions) actions.style.transform = 'scale(0.99)';
+
       setTimeout(() => {
-        document.querySelector('.brand-text').style.transform = 'scale(1)';
-        document.querySelector('.action-buttons').style.transform = 'scale(1)';
+        if (brand) brand.style.transform = 'scale(1)';
+        if (actions) actions.style.transform = 'scale(1)';
       }, 100);
     }
 
     window.setLang = setLang;
 
     console.log('🎉 QazLine Welcome Page initialized');
-    console.log('📋 Redirect logic:');
-    console.log('  - Driver → /delivery-list');
-    console.log('  - Client with orders → /driver-list');
-    console.log('  - New user → show welcome page');
+    console.log('📋 Redirect rules:');
+    console.log('  - driver → /delivery-list');
+    console.log('  - client → /driver-list');
+    console.log('  - new user → stay on welcome page');
   </script>
 </body>
 </html>

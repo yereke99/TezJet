@@ -36,6 +36,7 @@ type DeliveryRequest struct {
 	Price           int        `json:"price" db:"price"`
 	Contact         string     `json:"contact" db:"contact"`
 	Comment         string     `json:"comment" db:"comment"`
+	EtaMin          int        `json:"eta_min"`
 	CargoPhoto      string     `json:"cargo_photo"`
 	TruckType       string     `json:"truck_type" db:"truck_type"`
 	DistanceKm      float64    `json:"distance_km" db:"distance_km"`
@@ -43,6 +44,7 @@ type DeliveryRequest struct {
 	ItemPhotoPath   string     `json:"item_photo_path" db:"item_photo_path"`
 	MatchedDriverID *string    `json:"matched_driver_id" db:"matched_driver_id"` // Changed from *int64 to *string (UUID)
 	CompletedAt     *time.Time `json:"completed_at" db:"completed_at"`
+	TimeStart       string     `json:"time_start"`
 	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at" db:"updated_at"`
 }

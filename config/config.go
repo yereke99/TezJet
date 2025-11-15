@@ -31,6 +31,9 @@ type Config struct {
 	CargoPhoto      string
 	MaxUploadSize   int64
 
+	// AdminId
+	AdminTelegramID int64
+
 	// File upload configuration
 	UploadDir   string   `json:"upload_dir"`
 	MaxFileSize int64    `json:"max_file_size"` // in bytes
@@ -79,6 +82,8 @@ func NewConfig() (*Config, error) {
 
 		CargoPhoto:    "./delivery-photo",
 		MaxUploadSize: 20 << 20,
+
+		AdminTelegramID: 800703982,
 
 		// App defaults
 		Environment: "development",

@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math"
+	"strings"
 	"tezjet/internal/domain"
 	"time"
 
@@ -285,6 +287,77 @@ func (r *DriverRepository) GetDriverRouteByID(routeID string) (*domain.DriverRou
 	}
 
 	return route, nil
+}
+
+func (r *DriverRepository) GetDriverNearA(
+	ctx context.Context,
+	near domain.NearADriver, // { MinLat, MaxLat, MinLon, MaxLon float64 }
+	req *domain.DeliveryRequest,
+) ([]domain.Driver, error) {
+
+	const q = `
+	    SELECT id, telegram_id, first_name, last_name, latitude, longitude, profile_photo, truck_type
+		FROM drivers
+		WHERE status = 'approved'
+		  AND latitude  BETWEEN ? AND ?
+		  AND longitude BETWEEN ? AND ?
+	`
+
+	rows, err := r.db.QueryContext(ctx, q, near.MinLat, near.MaxLat, near.MinLong, near.MaxLong)
+	if err != nil {
+		return nil, fmt.Errorf("select drivers bbox: %w", err)
+	}
+	defer rows.Close()
+
+	var candidates []domain.Driver
+	for rows.Next() {
+		var d domain.Driver
+		if err := rows.Scan(
+			&d.ID,
+			&d.TelegramID,
+			&d.FirstName,
+			&d.LastName,
+			&d.Latitude,
+			&d.Longitude,
+			&d.ProfilePhotoPath,
+			&d.TruckType,
+		); err != nil {
+			// можно логировать: r.logger.Warn("scan driver", zap.Error(err))
+			continue
+		}
+
+		// Фильтр по типу авто, если заказ требует конкретный
+		if req.TruckType != "" && !equalsCI(req.TruckType, d.TruckType) {
+			continue
+		}
+
+		// Точное расстояние по ховерсайну
+		if dist := haversineKm(req.FromLat, req.FromLon, d.Latitude, d.Longitude); dist <= 30.0 {
+			candidates = append(candidates, d)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows err: %w", err)
+	}
+
+	return candidates, nil
+}
+
+// Ховерсайн
+func haversineKm(lat1, lon1, lat2, lon2 float64) float64 {
+	const earthRadiusKm = 6371.0
+	dLat := (lat2 - lat1) * math.Pi / 180.0
+	dLon := (lon2 - lon1) * math.Pi / 180.0
+	a := math.Sin(dLat/2)*math.Sin(dLat/2) +
+		math.Cos(lat1*math.Pi/180.0)*math.Cos(lat2*math.Pi/180.0)*
+			math.Sin(dLon/2)*math.Sin(dLon/2)
+	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+	return earthRadiusKm * c
+}
+
+// сравнение строк без учета регистра и лишних пробелов
+func equalsCI(a, b string) bool {
+	return strings.EqualFold(strings.TrimSpace(a), strings.TrimSpace(b))
 }
 
 // GetDriverRoutes retrieves all routes for a driver
