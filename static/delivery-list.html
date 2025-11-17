@@ -18,7 +18,13 @@
       --tg-theme-bg-color:#ffffff;
       --tg-theme-text-color:#0f172a;
 
-      /* Design tokens (Uber-ish) */
+      /* Safe-area / viewport vars */
+      --tg-viewport-stable-height:100vh;
+      --tg-safe-area-inset-top:0px;
+      --tg-safe-area-inset-bottom:0px;
+      --tg-content-safe-area-inset-top:0px;
+
+      /* Design tokens */
       --primary:#000000;
       --primary-600:#111111;
       --secondary:#0B63F6;
@@ -44,67 +50,71 @@
       --gradient:linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 100%);
       --gradient-2:linear-gradient(135deg, #0B63F6 0%, #155EF1 100%);
 
-      --safe-top:calc(var(--tg-safe-area-inset-top, 0px) + env(safe-area-inset-top, 0px));
-      --safe-bottom:calc(var(--tg-safe-area-inset-bottom, 0px) + env(safe-area-inset-bottom, 0px));
-
-      --header-h:56px;
-
       /* viewport fixes */
-      --vh: 100dvh;
+      --vh:100vh;
 
-      /* Bottom sheet */
+      /* Bottom sheet / nav */
       --sheet-head-h:56px;
       --footer-h:86px;
-      --sheet-top-gap: calc(12px + var(--safe-top));
+      --bottom-nav-h:76px;
     }
 
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html,body{height:100%}
 
-    /* Root lock; only our custom containers scroll */
     body{
-      position:fixed; inset:0;
-      width:100%; height:var(--vh);
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:var(--tg-viewport-stable-height, var(--vh));
+      box-sizing:border-box;
+
+      padding-top:calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px) + 15px);
+      padding-bottom:var(--tg-safe-area-inset-bottom, 0px);
+
       overflow:hidden;
       font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Inter,Roboto,system-ui,sans-serif;
       background:var(--tg-theme-bg-color, var(--bg));
       color:var(--tg-theme-text-color, var(--text));
       line-height:1.5;
-      -webkit-user-select:none; user-select:none;
+      -webkit-user-select:none;
+      user-select:none;
+
+      opacity:1;
+      transition:opacity .18s ease;
     }
+    body.page-out{opacity:.02;}
 
     .app{
-      height:var(--vh);
-      display:flex; flex-direction:column;
+      height:100%;
+      display:flex;
+      flex-direction:column;
       background:var(--tg-theme-bg-color, var(--bg));
     }
 
-    /* ===== Fixed TOP BAR (header) ===== */
+    /* ===== Header ===== */
     .header{
       position:relative;
-      height:var(--header-h);
+      height:56px;
       padding:8px 16px;
-      display:flex; align-items:center; justify-content:space-between;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
       gap:12px;
       background:rgba(255,255,255,.92);
-      backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+      backdrop-filter:blur(14px);
+      -webkit-backdrop-filter:blur(14px);
       border-bottom:1px solid var(--border-2);
-      margin-top:calc(var(--safe-top) + 6px);
       z-index:5;
     }
     .left,.right{display:flex;align-items:center;gap:10px}
-    .profile-btn{
-      width:44px;height:44px;border:none;border-radius:50%;
-      display:flex;align-items:center;justify-content:center;overflow:hidden;
-      background:#0A0A0A; color:#fff; font-size:20px; cursor:pointer;
-      box-shadow:var(--shadow);
+
+    .header-title{
+      font-weight:900;
+      font-size:18px;
+      color:#0f172a;
     }
-    .profile-btn img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-    .title{
-      font-weight:800; font-size:16px; letter-spacing:.2px;
-      color:#0f172a; background:#F3F4F6; border:1px solid var(--border);
-      padding:8px 12px; border-radius:12px; cursor:pointer;
-    }
+
     .refresh{
       width:44px;height:44px;border:none;border-radius:50%;
       background:#0F172A; color:#fff; cursor:pointer;
@@ -112,50 +122,19 @@
     }
     .refresh.loading{animation:spin 1s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
+
     .lang{display:flex;gap:4px;padding:2px;border-radius:999px;background:#F3F4F6;border:1px solid var(--border)}
     .lang button{border:none;background:transparent;padding:8px 14px;border-radius:999px;font-weight:800;font-size:13px;color:#6b7280;cursor:pointer}
     .lang button.active{background:#000;color:#fff}
 
-    /* ===== FIXED CHROME (Stats + Filters) ===== */
-    .chrome{
-      position:relative;
-      z-index:4;
-      background:var(--tg-theme-bg-color, var(--bg));
-      border-bottom:1px solid var(--border-2);
-    }
-    .stats{
-      display:grid; grid-template-columns:repeat(3,1fr); gap:12px;
-      padding:14px 16px;
-      background:var(--bg-2);
-    }
-    .stat{
-      background:var(--card); border:1px solid var(--border);
-      border-radius:16px; box-shadow:var(--shadow);
-      padding:12px; text-align:center;
-    }
-    .stat .v{font-size:22px;font-weight:900;color:#0f172a}
-    .stat .l{font-size:11px;color:#9CA3AF;letter-spacing:.6px;text-transform:uppercase}
-
-    .filters{
-      display:flex; gap:10px; padding:12px 16px;
-      background:#fff; border-top:1px solid var(--border-2);
-      overflow:hidden;
-    }
-    .chip{
-      padding:10px 16px;
-      background:#F3F4F6; color:#111827; border:1px solid var(--border);
-      border-radius:999px; font-weight:800; white-space:nowrap; cursor:pointer;
-    }
-    .chip.active{background:#000;color:#fff;border-color:#000}
-
-    /* ===== SCROLL AREA (only the list scrolls) ===== */
+    /* ===== Scroll area (list only) ===== */
     .scroll{
       flex:1 1 auto;
       min-height:0;
       overflow:auto;
       -webkit-overflow-scrolling:touch;
       overscroll-behavior-y:contain;
-      padding:12px 16px calc(20px + var(--safe-bottom));
+      padding:12px 16px calc(var(--bottom-nav-h) + 20px + var(--tg-safe-area-inset-bottom,0px));
       background:transparent;
     }
 
@@ -203,7 +182,8 @@
 
     /* Toast */
     .toast{
-      position:fixed; left:12px; right:12px; bottom:calc(12px + var(--safe-bottom));
+      position:fixed; left:12px; right:12px;
+      bottom:calc(var(--bottom-nav-h) + 12px + var(--tg-safe-area-inset-bottom,0px));
       background:#111827; color:#fff; border:1px solid rgba(255,255,255,.08);
       border-radius:16px; padding:14px 16px; display:none; gap:12px; align-items:center; z-index:50;
       box-shadow:var(--shadow-lg);
@@ -218,12 +198,17 @@
 
     .sheet{
       width:100%;
-      margin-top:var(--sheet-top-gap);
-      max-height:calc(var(--vh) - var(--sheet-top-gap));
+      max-height:calc(var(--tg-viewport-stable-height, var(--vh)) - 12px);
       background:#fff; border-radius:20px 20px 0 0; overflow:hidden;
       display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,.28);
     }
-    @media (min-width:1024px){.sheet{width:92vw; max-width:1400px; height:calc(var(--vh) - 14vh); border-radius:24px}}
+    @media (min-width:1024px){
+      .sheet{
+        width:92vw; max-width:1400px;
+        height:calc(var(--tg-viewport-stable-height, var(--vh)) - 14vh);
+        border-radius:24px;
+      }
+    }
 
     .sheet-head{
       height:var(--sheet-head-h);
@@ -233,12 +218,10 @@
     .sheet-title{font-weight:900;color:#0f172a}
     .close{width:40px;height:40px;border-radius:50%;border:none;background:#F3F4F6;color:#111827;font-size:22px;cursor:pointer}
 
-    /* SCROLL only inside body (footer is sticky) */
     .sheet-body{
       position:relative; overflow:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
       min-height:0;
-      /* важная правка: убран лишний safe-bottom из формулы */
-      max-height:calc(var(--vh) - var(--sheet-top-gap) - var(--sheet-head-h) - var(--footer-h));
+      max-height:calc(var(--tg-viewport-stable-height, var(--vh)) - var(--sheet-head-h) - var(--footer-h) - 24px);
       padding-bottom:16px; background:#fff;
     }
 
@@ -273,12 +256,10 @@
     .meta .v{font-weight:900;color:#0f172a}
     .meta .l{font-size:12px;color:#9CA3AF;text-transform:uppercase;letter-spacing:.5px}
 
-    /* Client comment */
     .comment-box{background:#F3F4F6;border:1px solid var(--border);border-radius:14px;padding:14px}
     .comment-label{font-size:12px;color:#9CA3AF;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
     .comment-val{font-weight:700;color:#111827}
 
-    /* Centered contact section */
     .contact{
       background:#fff; border-radius:16px; padding:8px 0 0; text-align:center;
     }
@@ -295,12 +276,11 @@
     .cbtn.wa{background:#F5F5F5; color:#0f172a}
     .contact small{display:block; color:#9CA3AF; margin-top:10px}
 
-    /* Fixed footer button (sticky + safe-area) */
     .sheet-footer{
       position:sticky; bottom:0; z-index:2;
       min-height:var(--footer-h);
       display:flex; align-items:center; justify-content:center;
-      padding:10px 16px calc(12px + var(--safe-bottom));
+      padding:10px 16px calc(12px + var(--tg-safe-area-inset-bottom,0px));
       background:#fff; border-top:1px solid var(--border-2); box-shadow:0 -12px 24px rgba(0,0,0,.04);
     }
     .accept{
@@ -312,15 +292,86 @@
     /* Leaflet cosmetics */
     .leaflet-control-attribution,.leaflet-control-zoom,.leaflet-control{display:none!important}
     .leaflet-container{background:#fff!important; font-family:inherit!important}
+
+    /* ===== Bottom Navigation (3 buttons like inDriver) ===== */
+    .bottom-nav{
+      position:fixed;
+      left:0;
+      right:0;
+      bottom:0;
+      padding:8px 16px calc(10px + var(--tg-safe-area-inset-bottom,0px));
+      background:rgba(255,255,255,.96);
+      backdrop-filter:blur(18px);
+      -webkit-backdrop-filter:blur(18px);
+      border-top:1px solid var(--border-2);
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      z-index:20;
+    }
+    .nav-btn{
+      flex:1;
+      border:none;
+      background:transparent;
+      border-radius:999px;
+      padding:6px 4px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:4px;
+      font-size:11px;
+      font-weight:800;
+      color:#6b7280;
+      cursor:pointer;
+      transition:background .16s ease, color .16s ease, transform .12s ease;
+    }
+    .nav-btn:active{transform:scale(.96);}
+    .nav-btn-active{
+      background:#111827;
+      color:#f9fafb;
+    }
+
+    .nav-icon,
+    .nav-avatar{
+      width:32px;
+      height:32px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:17px;
+      background:#F3F4F6;
+      color:#111827;
+      box-shadow:0 4px 10px rgba(15,23,42,.08);
+    }
+    .nav-avatar{
+      overflow:hidden;
+    }
+    .nav-avatar img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      border-radius:999px;
+    }
+
+    .nav-btn-active .nav-icon,
+    .nav-btn-active .nav-avatar{
+      background:#F9FAFB;
+      color:#111827;
+    }
+    .nav-label{
+      white-space:nowrap;
+    }
   </style>
 </head>
 <body>
   <div class="app">
-    <!-- Fixed Header -->
+    <!-- Header -->
     <header class="header">
       <div class="left">
-        <button id="profileBtn" class="profile-btn" onclick="openProfile()" aria-label="Профиль">👤</button>
-        <div class="title" onclick="openProfile()" data-ru="Профиль" data-kz="Профиль">Профиль</div>
+        <div class="header-title">QazLine</div>
       </div>
       <div class="right">
         <button id="refreshBtn" class="refresh" onclick="refreshOrders()" aria-label="Обновить заказы">🔄</button>
@@ -331,38 +382,14 @@
       </div>
     </header>
 
-    <!-- Fixed Chrome: Stats + Filters (does NOT scroll) -->
-    <section class="chrome" aria-hidden="false">
-      <div class="stats">
-        <div class="stat">
-          <div id="totalOrders" class="v">0</div>
-          <div class="l" data-ru="Всего" data-kz="Барлық">Всего</div>
-        </div>
-        <div class="stat">
-          <div id="nearbyOrders" class="v">0</div>
-          <div class="l" data-ru="Рядом" data-kz="Жақын">Рядом</div>
-        </div>
-        <div class="stat">
-          <div id="avgPrice" class="v">0₸</div>
-          <div class="l" data-ru="Средняя" data-kz="Орташа">Средняя</div>
-        </div>
-      </div>
-      <nav class="filters">
-        <div class="chip active" data-filter="all" onclick="setFilter('all')"><span data-ru="Все" data-kz="Барлық">Все</span></div>
-        <div class="chip" data-filter="new" onclick="setFilter('new')"><span data-ru="Новые" data-kz="Жаңа">Новые</span></div>
-        <div class="chip" data-filter="nearby" onclick="setFilter('nearby')"><span data-ru="Рядом" data-kз="Жақын">Рядом</span></div>
-        <div class="chip" data-filter="expensive" onclick="setFilter('expensive')"><span data-ru="Дорогие" data-kз="Қымбат">Дорогие</span></div>
-      </nav>
-    </section>
-
-    <!-- Scroll area: ONLY the list scrolls -->
-    <div class="scroll" id="scrollArea" style="padding-top:8px;">
-      <!-- New order toast (floating) -->
+    <!-- Scroll area: только список заказов -->
+    <div class="scroll" id="scrollArea">
+      <!-- New order toast -->
       <div id="newOrderToast" class="toast" role="status" aria-live="polite">
         <div style="font-size:20px">🚚</div>
         <div>
-          <div style="font-weight:900" data-ru="Новый заказ!" data-kз="Жаңа тапсырыс!">Новый заказ!</div>
-          <div id="toastSubtitle" style="opacity:.9" data-ru="У вас есть новые заказы" data-kз="Сізде жаңа тапсырыстар бар">У вас есть новые заказы</div>
+          <div style="font-weight:900" data-ru="Новый заказ!" data-kz="Жаңа тапсырыс!">Новый заказ!</div>
+          <div id="toastSubtitle" style="opacity:.9" data-ru="У вас есть новые заказы" data-kz="Сізде жаңа тапсырыстар бар">У вас есть новые заказы</div>
         </div>
       </div>
 
@@ -374,6 +401,27 @@
         </div>
       </main>
     </div>
+
+    <!-- Bottom navigation 3 buttons -->
+    <nav class="bottom-nav">
+      <!-- 1. Profile (avatar) -->
+      <button class="nav-btn" id="navProfile" onclick="handleNavProfile()">
+        <div class="nav-avatar" id="bottomProfileBtn">👤</div>
+        <span class="nav-label" data-ru="Профиль" data-kz="Профиль">Профиль</span>
+      </button>
+
+      <!-- 2. Orders list (current page) -->
+      <button class="nav-btn nav-btn-active" id="navOrders" onclick="handleNavOrders()">
+        <div class="nav-icon">📦</div>
+        <span class="nav-label" data-ru="Заказы" data-kz="Тапсырыстар">Заказы</span>
+      </button>
+
+      <!-- 3. Driver trip page -->
+      <button class="nav-btn" id="navTrip" onclick="handleNavTrip()">
+        <div class="nav-icon">🚚</div>
+        <span class="nav-label" data-ru="Сапар" data-kz="Сапар">Сапар</span>
+      </button>
+    </nav>
   </div>
 
   <!-- Detail Modal -->
@@ -385,23 +433,20 @@
       </div>
 
       <div id="sheetBody" class="sheet-body">
-        <!-- Map -->
         <section class="map-wrap">
           <div id="detailMap"></div>
           <div id="mapOverlay" class="map-overlay"><span id="routeEta">Загрузка...</span></div>
         </section>
 
-        <!-- Photo -->
         <section id="detailPhotoSection" class="photo" aria-live="polite">
           <img id="cargoPhoto" alt="Фото груза" loading="lazy" />
           <div class="cap" data-ru="Фото груза" data-kz="Жүк суреті">Фото груза</div>
         </section>
 
-        <!-- Info -->
         <section id="detailInfo" class="info">
           <div class="price-box">
             <div id="detailPrice" class="price-val">0₸</div>
-            <div class="price-l" data-ru="За доставку" data-kз="Жеткізу үшін">За доставку</div>
+            <div class="price-l" data-ru="За доставку" data-kz="Жеткізу үшін">За доставку</div>
           </div>
 
           <div class="route-box">
@@ -409,14 +454,14 @@
               <div class="m a">A</div>
               <div>
                 <div id="pickupAddress" class="s-addr">Загрузка...</div>
-                <div class="s-l" data-ru="Забрать" data-kз="Алып кету">Забрать</div>
+                <div class="s-l" data-ru="Забрать" data-kz="Алып кету">Забрать</div>
               </div>
             </div>
             <div class="step">
               <div class="m b">B</div>
               <div>
                 <div id="dropoffAddress" class="s-addr">Загрузка...</div>
-                <div class="s-l" data-ru="Доставить" data-kз="Жеткізу">Доставить</div>
+                <div class="s-l" data-ru="Доставить" data-kz="Жеткізу">Доставить</div>
               </div>
             </div>
           </div>
@@ -424,37 +469,34 @@
           <div class="meta">
             <div class="it">
               <div id="detailTruck" class="v">--</div>
-              <div class="l" data-ru="Транспорт" data-kз="Көлік">Транспорт</div>
+              <div class="l" data-ru="Транспорт" data-kz="Көлік">Транспорт</div>
             </div>
             <div class="it">
               <div id="detailTime" class="v">--</div>
-              <div class="l" data-ru="Время" data-kз="Уақыт">Время</div>
+              <div class="l" data-ru="Время" data-kz="Уақыт">Время</div>
             </div>
           </div>
 
-          <!-- Client comment -->
           <div class="comment-box" id="commentBox" style="display:none">
-            <div class="comment-label" data-ru="Комментарий клиента" data-kз="Клиенттің пікірі">Комментарий клиента</div>
+            <div class="comment-label" data-ru="Комментарий клиента" data-kz="Клиенттің пікірі">Комментарий клиента</div>
             <div class="comment-val" id="clientComment"></div>
           </div>
 
-          <!-- Centered contact -->
           <div class="contact">
-            <div class="ct" data-ru="Контакт клиента" data-kз="Клиент байланысы">Контакт клиента</div>
+            <div class="ct" data-ru="Контакт клиента" data-kz="Клиент байланысы">Контакт клиента</div>
             <div id="contactPhone" class="cp">+7 (___) ___-__-__</div>
             <div class="cb">
-              <a id="callBtn" class="cbtn call" href="#"><span>📞</span><span data-ru="Звонок" data-kз="Қоңырау">Звонок</span></a>
+              <a id="callBtn" class="cbtn call" href="#"><span>📞</span><span data-ru="Звонок" data-kz="Қоңырау">Звонок</span></a>
               <a id="whatsappBtn" class="cbtn wa" href="#"><span>💬</span><span>WhatsApp</span></a>
             </div>
-            <small data-ru="Нажмите, чтобы связаться" data-kз="Хабарласу үшін басыңыз">Нажмите, чтобы связаться</small>
+            <small data-ru="Нажмите, чтобы связаться" data-kz="Хабарласу үшін басыңыз">Нажмите, чтобы связаться</small>
           </div>
         </section>
       </div>
 
-      <!-- Fixed footer -->
       <div class="sheet-footer">
         <button id="acceptOrderBtn" class="accept" onclick="acceptOrder()">
-          <span data-ru="Принять заказ" data-kз="Тапсырысты қабылдау">Принять заказ</span>
+          <span data-ru="Принять заказ" data-kz="Тапсырысты қабылдау">Принять заказ</span>
         </button>
       </div>
     </div>
@@ -463,7 +505,6 @@
   <script>
     /* ====== STATE ====== */
     let currentLang='ru';
-    let currentFilter='all';
     let orders=[];
     let driverLocation=null;
     let refreshInterval=null;
@@ -471,12 +512,20 @@
     let currentOrder=null;
     let lastOrderIds=new Set();
     let previousOrderCount=0;
+    let telegramUserId=null;
 
-    /* ====== VIEWPORT FIX ====== */
+    /* ====== VIEWPORT / SAFE-AREA ====== */
     function applyViewportVars(){
       try{
-        const h = (window.Telegram?.WebApp?.viewportStableHeight) || window.innerHeight;
+        const tg = window.Telegram?.WebApp;
+        const h  = (tg?.viewportStableHeight) || window.innerHeight;
         document.documentElement.style.setProperty('--vh', h + 'px');
+        document.documentElement.style.setProperty('--tg-viewport-stable-height', h + 'px');
+
+        if(tg?.safeAreaInset){
+          document.documentElement.style.setProperty('--tg-safe-area-inset-top', tg.safeAreaInset.top + 'px');
+          document.documentElement.style.setProperty('--tg-safe-area-inset-bottom', tg.safeAreaInset.bottom + 'px');
+        }
       }catch(_){}
     }
     function bindViewportListener(){
@@ -487,23 +536,70 @@
     function initTelegram(){
       try{
         if(window.Telegram && Telegram.WebApp){
-          Telegram.WebApp.ready();
-          Telegram.WebApp.expand();
-          Telegram.WebApp.disableVerticalSwipes?.();
-          Telegram.WebApp.setHeaderColor?.('secondary_bg_color');
-          Telegram.WebApp.setBackgroundColor?.('#ffffff');
+          const tg = Telegram.WebApp;
+          tg.ready();
+          tg.expand();
+          tg.disableVerticalSwipes?.();
+          tg.setHeaderColor?.('secondary_bg_color');
+          tg.setBackgroundColor?.('#000000');
 
-          if(Telegram.WebApp?.colorScheme==='dark'){
+          if(tg.colorScheme==='dark'){
             document.documentElement.style.setProperty('--tg-theme-bg-color','#0b0b0b');
             document.documentElement.style.setProperty('--tg-theme-text-color','#f9fafb');
           }
-          const user=Telegram.WebApp?.initDataUnsafe?.user;
-          if(user){ window.telegramUserId=user.id; }
-          Telegram.WebApp.MainButton?.hide?.();
+
+          const user=tg.initDataUnsafe?.user;
+          if(user){
+            telegramUserId = user.id;
+            window.telegramUserId = user.id;
+          }
+
+          tg.MainButton?.hide?.();
         } else {
-          window.telegramUserId=12345; // dev fallback
+          telegramUserId = 12345; // dev fallback
+          window.telegramUserId = 12345;
         }
       }catch(e){}
+    }
+
+    /* ====== SMALL NAV HELPERS ====== */
+    function setActiveNav(name){
+      const map={
+        profile:'navProfile',
+        orders:'navOrders',
+        trip:'navTrip'
+      };
+      ['navProfile','navOrders','navTrip'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(!el) return;
+        if(map[name]===id) el.classList.add('nav-btn-active');
+        else el.classList.remove('nav-btn-active');
+      });
+    }
+
+    function navigateWithFade(url){
+      document.body.classList.add('page-out');
+      setTimeout(()=>{ window.location.href=url; }, 160);
+    }
+
+    function handleNavProfile(){
+      setActiveNav('profile');
+      const telegramId=telegramUserId;
+      if(!telegramId){ alert('Ошибка: не удалось получить ID пользователя'); return; }
+      navigateWithFade(`/driver-update?telegram_id=${telegramId}`);
+    }
+
+    function handleNavOrders(){
+      setActiveNav('orders');
+      const sc=document.getElementById('scrollArea');
+      sc?.scrollTo({top:0,behavior:'smooth'});
+      refreshOrders();
+    }
+
+    function handleNavTrip(){
+      setActiveNav('trip');
+      if(!telegramUserId) return;
+      navigateWithFade(`/driver?telegram_id=${telegramUserId}`);
     }
 
     /* ====== TOAST ====== */
@@ -518,25 +614,30 @@
     }
 
     /* ====== PROFILE AVATAR ====== */
-    async function loadDriverProfile(){
+    async function loadDriverProfileAvatar(){
       try{
-        const telegramId=window.telegramUserId; if(!telegramId) return;
-        const resp=await fetch('/api/check/who',{method:'POST',headers:{'Content-Type':'application/json'}, body:JSON.stringify({telegram_id:parseInt(telegramId)})});
+        const telegramId=telegramUserId; if(!telegramId) return;
+        const resp=await fetch('/api/check/who',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({telegram_id:parseInt(telegramId)})
+        });
         const result=await resp.json();
-        const btn=document.getElementById('profileBtn');
+        const btn=document.getElementById('bottomProfileBtn');
+        if(!btn) return;
 
         if(result.success && result.data?.exists && result.data.user_type==='driver'){
           const d=result.data.driver_data;
           if(d?.profile_photo?.trim()){
             const avatarPath=`./ava/${d.profile_photo}`;
             const img=new Image();
-            img.onload=()=>{ btn.innerHTML=`<img src="${avatarPath}" alt="Avatar" />`; };
+            img.onload=()=>{ btn.innerHTML=''; btn.appendChild(img); };
             img.onerror=()=>{
               const tries=[`/ava/${d.profile_photo}`,`/files/${d.profile_photo}`,`/static/ava/${d.profile_photo}`];
               (function tryNext(i){
                 if(i>=tries.length){ btn.textContent='👤'; return; }
                 const t=new Image();
-                t.onload=()=> btn.innerHTML=`<img src="${tries[i]}" alt="Avatar" />`;
+                t.onload=()=>{ btn.innerHTML=''; btn.appendChild(t); };
                 t.onerror=()=> tryNext(i+1);
                 t.src=tries[i];
               })(0);
@@ -544,12 +645,16 @@
             img.src=avatarPath;
           }else btn.textContent='👤';
         }else btn.textContent='👤';
-      }catch(_){ document.getElementById('profileBtn').textContent='👤'; }
+      }catch(_){
+        const btn=document.getElementById('bottomProfileBtn');
+        if(btn) btn.textContent='👤';
+      }
     }
+
     function openProfile(){
-      const telegramId=window.telegramUserId;
+      const telegramId=telegramUserId;
       if(!telegramId){ alert('Ошибка: не удалось получить ID пользователя'); return; }
-      window.location.href=`/driver-update?telegram_id=${telegramId}`;
+      navigateWithFade(`/driver-update?telegram_id=${telegramId}`);
     }
 
     /* ====== GEO ====== */
@@ -589,12 +694,16 @@
       try{
         if(!driverLocation) await getDriverLocation();
         const payload={
-          telegram_id:window.telegramUserId||0,
+          telegram_id:telegramUserId||0,
           driver_lat:driverLocation?.lat||43.238949,
           driver_lon:driverLocation?.lon||76.889709,
           radius:50
         };
-        const r=await fetch('/api/delivery-list',{method:'POST',headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+        const r=await fetch('/api/delivery-list',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify(payload)
+        });
         if(!r.ok) throw new Error('HTTP '+r.status);
         const json=await r.json();
         if(!(json.success && json.data)) throw new Error(json.message||'bad response');
@@ -608,25 +717,11 @@
           return {...o, distance, isNew: diffMin<10};
         }).sort((a,b)=> new Date(b.created_at)-new Date(a.created_at));
 
-        updateStats(); renderList();
+        renderList();
       }catch(e){
+        console.error(e);
         renderEmpty();
       }
-    }
-
-    function updateStats(){
-      const nearby=orders.filter(o=> (o.distance||999)<=5).length;
-      const avg=orders.length ? Math.round(orders.reduce((s,o)=>s+(o.price||0),0)/orders.length) : 0;
-      document.getElementById('totalOrders').textContent=orders.length;
-      document.getElementById('nearbyOrders').textContent=nearby;
-      document.getElementById('avgPrice').textContent=avg+'₸';
-    }
-
-    function setFilter(f){
-      currentFilter=f;
-      document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
-      document.querySelector(`.chip[data-filter="${f}"]`)?.classList.add('active');
-      renderList();
     }
 
     function formatTime(dt){
@@ -663,10 +758,7 @@
 
     function renderList(){
       const c=document.getElementById('orderList');
-      let list=[...orders];
-      if(currentFilter==='new') list=list.filter(o=>o.isNew);
-      if(currentFilter==='nearby') list=list.filter(o=>(o.distance||999)<=5);
-      if(currentFilter==='expensive') list=list.filter(o=>(o.price||0)>=5000);
+      let list=[...orders]; // без фильтров — просто все заказы
 
       if(!list.length) { renderEmpty(); return; }
 
@@ -884,7 +976,11 @@
       const btn=document.getElementById('acceptOrderBtn');
       try{
         btn.disabled=true; btn.innerHTML='<span>⏳ Принимаем...</span>';
-        const r=await fetch('/api/driver/accept-order',{method:'POST',headers:{'Content-Type':'application/json'}, body:JSON.stringify({telegram_id:window.telegramUserId, order_id:currentOrder.id})});
+        const r=await fetch('/api/driver/accept-order',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({telegram_id:telegramUserId, order_id:currentOrder.id})
+        });
         const j=await r.json();
         if(j.success){
           btn.innerHTML='<span>✅ Готово!</span>';
@@ -896,7 +992,10 @@
       }catch(e){
         btn.disabled=false; btn.innerHTML='<span>❌ Ошибка! Повторите</span>';
         btn.style.background='#D32F2F';
-        setTimeout(()=>{ btn.innerHTML = (currentLang==='ru')?'<span>Принять заказ</span>':'<span>Тапсырысты қабылдау</span>'; btn.style.background=''; }, 1500);
+        setTimeout(()=>{
+          btn.innerHTML = (currentLang==='ru')?'<span>Принять заказ</span>':'<span>Тапсырысты қабылдау</span>';
+          btn.style.background='';
+        }, 1500);
       }
     }
 
@@ -904,9 +1003,13 @@
     function setLang(lang){
       currentLang=lang;
       document.querySelectorAll('.lang button').forEach(b=>b.classList.remove('active'));
-      document.getElementById('lang-'+lang).classList.add('active');
-      document.querySelectorAll('[data-ru]').forEach(el=>{ const txt=el.getAttribute('data-'+lang); if(txt) el.textContent=txt; });
-      updateStats(); renderList();
+      const btn=document.getElementById('lang-'+lang);
+      if(btn) btn.classList.add('active');
+      document.querySelectorAll('[data-ru]').forEach(el=>{
+        const txt=el.getAttribute('data-'+lang);
+        if(txt) el.textContent=txt;
+      });
+      renderList();
     }
 
     /* ====== REFRESH ====== */
@@ -921,9 +1024,11 @@
     /* ====== LIFECYCLE ====== */
     document.addEventListener('DOMContentLoaded', async ()=>{
       initTelegram();
-      applyViewportVars(); bindViewportListener();
+      applyViewportVars();
+      bindViewportListener();
+      setActiveNav('orders');
       setLang('ru');
-      await loadDriverProfile();
+      await loadDriverProfileAvatar();
       await getDriverLocation();
       await loadOrders();
       startAutoRefresh();
@@ -937,17 +1042,23 @@
     window.addEventListener('beforeunload', ()=>{ stopAutoRefresh(); if(detailMap) detailMap.remove(); });
 
     // Modal close on backdrop / Esc
-    document.getElementById('detailModal').addEventListener('click', (e)=>{ if(e.target===e.currentTarget) closeDetail(); });
-    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && document.getElementById('detailModal').classList.contains('show')) closeDetail(); });
+    document.getElementById('detailModal').addEventListener('click', (e)=>{
+      if(e.target===e.currentTarget) closeDetail();
+    });
+    document.addEventListener('keydown', (e)=>{
+      if(e.key==='Escape' && document.getElementById('detailModal').classList.contains('show')) closeDetail();
+    });
 
-    // Expose
+    // Expose to window
     window.openProfile=openProfile;
     window.refreshOrders=refreshOrders;
-    window.setFilter=setFilter;
     window.setLang=setLang;
     window.showOrderDetail=showOrderDetail;
     window.closeDetail=closeDetail;
     window.acceptOrder=acceptOrder;
+    window.handleNavProfile=handleNavProfile;
+    window.handleNavOrders=handleNavOrders;
+    window.handleNavTrip=handleNavTrip;
   </script>
 </body>
 </html>
