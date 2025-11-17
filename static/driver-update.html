@@ -2,7 +2,8 @@
 <html lang="kk">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>Профильді жаңарту</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
@@ -27,14 +28,21 @@
     }
 
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro','Helvetica Neue',Roboto,Arial,sans-serif}
+    html,body{
+      height:100%;
+      overflow:hidden;
+      background:var(--bg);
+      color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,'SF Pro','Helvetica Neue',Roboto,Arial,sans-serif
+    }
     button{appearance:none;-webkit-appearance:none;cursor:pointer}
 
     /* ===== Top bars ===== */
     .header{
       position:fixed; left:0; right:0; z-index:1000;
       top: calc(var(--tg-safe-area-inset-top) + var(--top-offset));
-      padding:12px 16px; display:flex; align-items:center; justify-content:space-between;
+      padding:12px 16px;
+      display:flex; align-items:center; justify-content:space-between;
       background:transparent;
     }
     .back-btn{
@@ -44,19 +52,15 @@
     }
     .back-btn:active{ transform:scale(.96) }
     .header-title{font-size:18px;font-weight:800}
-    .trip-btn{
-      background:linear-gradient(135deg,var(--accent),var(--accent-dark)); color:#fff;
-      border:0;border-radius:18px;padding:10px 16px;font-size:13px;font-weight:800;box-shadow:var(--shadow);
-      display:flex;gap:6px;align-items:center
-    }
 
     .profile-header{
       position:fixed; left:0; right:0; z-index:900;
       top: calc(var(--tg-safe-area-inset-top) + var(--top-offset));
       margin-top:56px; /* пересчитывается JS */
-      padding:12px 20px 14px; background:var(--bg); border-bottom:1px solid var(--border);
+      padding:12px 20px 14px;
+      background:var(--bg);
+      border-bottom:1px solid var(--border);
     }
-    /* ЯВНЫЙ центринг через flex-обёртку */
     .ph-inner{
       max-width:680px; margin:0 auto;
       display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
@@ -65,13 +69,14 @@
 
     .status-badge{
       display:inline-flex; gap:6px; align-items:center; padding:5px 12px; border-radius:16px;
-      background:rgba(245,158,11,.1); color:#f59e0b; font-size:11px; font-weight:800; letter-spacing:.3px; text-transform:uppercase;
+      background:rgba(245,158,11,.1); color:#f59e0b; font-size:11px; font-weight:800;
+      letter-spacing:.3px; text-transform:uppercase;
       margin:4px 0 6px;
     }
 
-    /* ===== Avatar block (hard centered) ===== */
+    /* ===== Avatar block ===== */
     .avatar-container{
-      position:relative; margin-inline:auto; /* <— центр */
+      position:relative; margin-inline:auto;
       display:flex; align-items:center; justify-content:center;
     }
     .avatar{
@@ -90,7 +95,8 @@
 
     /* ===== Scrollable content ===== */
     .content{
-      position:fixed; left:0; right:0; overflow:auto; -webkit-overflow-scrolling:touch;
+      position:fixed; left:0; right:0;
+      overflow:auto; -webkit-overflow-scrolling:touch;
       top: var(--content-top);
       bottom: var(--content-bottom-pad);
       padding: 0 16px 20px;
@@ -98,7 +104,8 @@
     .content::-webkit-scrollbar{display:none}
 
     .section{
-      background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:12px;
+      background:var(--card); border:1px solid var(--border); border-radius:16px;
+      padding:16px; margin-bottom:12px;
     }
     .section-title{font-size:15px;font-weight:800;margin-bottom:12px;display:flex;gap:8px;align-items:center}
 
@@ -116,7 +123,8 @@
 
     .truck-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
     .truck-card{
-      padding:12px 8px; border:1.5px solid var(--border); border-radius:12px; text-align:center; background:var(--input-bg);
+      padding:12px 8px; border:1.5px solid var(--border); border-radius:12px;
+      text-align:center; background:var(--input-bg);
       transition:.15s border-color,.15s background;
     }
     .truck-card.selected{ border-color:var(--accent); background:rgba(16,185,129,.07) }
@@ -124,7 +132,8 @@
     .truck-label{font-size:11px;font-weight:800;color:var(--text-secondary)}
 
     .upload-box{
-      border:1.5px dashed var(--border); border-radius:12px; padding:16px; text-align:center; background:var(--input-bg);
+      border:1.5px dashed var(--border); border-radius:12px; padding:16px;
+      text-align:center; background:var(--input-bg);
       transition:.15s; cursor:pointer;
     }
     .upload-box.has-file{border-style:solid;border-color:var(--accent);background:rgba(16,185,129,.07)}
@@ -137,15 +146,17 @@
     .location-input{flex:1}
     .gps-btn{
       width:52px;height:52px;border-radius:12px;border:1.5px solid var(--border);
-      background:var(--input-bg);font-size:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.15s;
+      background:var(--input-bg);font-size:20px;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;transition:.15s;
     }
     .gps-btn.loading{ background:#f59e0b; border-color:#f59e0b; color:#fff; animation:pulse 1.5s infinite }
     .gps-btn.success{ background:var(--accent); border-color:var(--accent); color:#fff }
 
-    /* ===== Bottom action bar ===== */
+    /* ===== Bottom action bar (update button) ===== */
     .bottom-bar{
-      position:fixed; left:0; right:0; bottom:0; z-index:1000; background:var(--card); border-top:1px solid var(--border);
-      padding:16px 16px calc(20px + var(--tg-safe-area-inset-bottom));
+      position:fixed; left:0; right:0; bottom:calc(68px + var(--tg-safe-area-inset-bottom));
+      z-index:1000; background:var(--card); border-top:1px solid var(--border);
+      padding:12px 16px 10px;
       box-shadow:0 -2px 10px rgba(0,0,0,.05);
     }
     .btn{
@@ -160,12 +171,65 @@
       animation:spin 1s linear infinite;margin-left:8px;
     }
 
-    .loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+    /* ===== Bottom navigation (3 tabs) ===== */
+    .bottom-nav{
+      position:fixed;
+      left:0; right:0; bottom:0;
+      padding:8px 12px calc(8px + var(--tg-safe-area-inset-bottom));
+      background:var(--card);
+      border-top:1px solid var(--border);
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      z-index:999;
+    }
+    .tab{
+      flex:1;
+      border:0;
+      background:transparent;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:4px;
+      padding:6px 4px;
+      border-radius:999px;
+      cursor:pointer;
+      color:var(--text-secondary);
+      font-size:11px;
+      font-weight:600;
+    }
+    .tab-icon{
+      width:34px;height:34px;border-radius:999px;
+      display:grid;place-items:center;
+      background:#e5e7eb;
+      box-shadow:var(--shadow);
+      font-size:18px;
+    }
+    .tab-avatar{overflow:hidden;}
+    .tab-avatar img{
+      width:100%;height:100%;object-fit:cover;border-radius:999px;
+    }
+    .tab.active{
+      background:#0f172a;
+      color:#fff;
+    }
+    .tab.active .tab-icon{
+      background:#111827;
+      color:#fff;
+      box-shadow:none;
+    }
+
+    /* ===== Overlays / toast ===== */
+    .loading-overlay{
+      position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);
+      z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px
+    }
     .loading-overlay.show{display:flex}
     .spinner{width:42px;height:42px;border:3px solid rgba(255,255,255,.25);border-top:3px solid #fff;border-radius:50%;animation:spin 1s linear infinite}
     .loading-text{color:#fff;font-weight:800}
     .toast{
-      position:fixed; top:calc(var(--tg-safe-area-inset-top) + 70px); left:50%; transform:translateX(-50%) translateY(-20px);
+      position:fixed; top:calc(var(--tg-safe-area-inset-top) + 70px); left:50%;
+      transform:translateX(-50%) translateY(-20px);
       z-index:10000; max-width:90%; padding:14px 20px; border-radius:12px; color:#fff; font-weight:800;
       box-shadow:var(--shadow-lg); opacity:0; transition:.25s;
     }
@@ -195,7 +259,6 @@
   <div class="header" id="topHeader">
     <button class="back-btn" onclick="goToDeliveryList()">←</button>
     <div class="header-title">Профиль</div>
-    <button class="trip-btn" onclick="openDriverTrip()">🚚 Сапар</button>
   </div>
 
   <!-- Profile header (centered) -->
@@ -308,10 +371,26 @@
     </form>
   </div>
 
-  <!-- Bottom bar -->
+  <!-- Bottom update button -->
   <div class="bottom-bar" id="bottomBar">
     <button class="btn btn-primary" type="button" id="updateBtn" onclick="updateProfile()">✅ Жаңарту</button>
   </div>
+
+  <!-- Bottom nav (Профиль / Тапсырыстар / Сапар) -->
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="tab active" onclick="openProfile()">
+      <div id="navAvatar" class="tab-icon tab-avatar">👤</div>
+      <div class="tab-label">Профиль</div>
+    </button>
+    <button class="tab" onclick="openOrders()">
+      <div class="tab-icon">📦</div>
+      <div class="tab-label">Тапсырыстар</div>
+    </button>
+    <button class="tab" onclick="openSapar()">
+      <div class="tab-icon">🚚</div>
+      <div class="tab-label">Сапар</div>
+    </button>
+  </nav>
 
   <script>
     const translations = {
@@ -322,6 +401,7 @@
     };
 
     let currentLocation=null, originalData={};
+    let userId=null;
 
     document.addEventListener('DOMContentLoaded', () => {
       initTelegram();
@@ -335,8 +415,27 @@
       const img = document.getElementById('avatarImg');
       const fb  = document.getElementById('avatarFallback');
       if(!img || !fb) return;
-      if(src){ img.src=src; img.style.display='block'; fb.style.display='none'; }
-      else{ img.removeAttribute('src'); img.style.display='none'; fb.style.display='block'; }
+      if(src){
+        img.src=src;
+        img.style.display='block';
+        fb.style.display='none';
+      }else{
+        img.removeAttribute('src');
+        img.style.display='none';
+        fb.style.display='block';
+      }
+      setNavAvatar(src);
+    }
+
+    function setNavAvatar(src){
+      const box=document.getElementById('navAvatar');
+      if(!box) return;
+      if(src){
+        box.innerHTML =
+          '<img src="'+src+'" alt="Avatar">';
+      }else{
+        box.textContent='👤';
+      }
     }
 
     function initTelegram(){
@@ -360,7 +459,10 @@
       window.addEventListener('orientationchange', applyVH);
 
       const user = tg.initDataUnsafe?.user;
-      if(user) document.getElementById('telegramId').value = user.id;
+      if(user){
+        userId = user.id;
+        document.getElementById('telegramId').value = user.id;
+      }
       tg.BackButton?.hide?.();
     }
 
@@ -373,9 +475,10 @@
       prof.style.marginTop = headerH + 'px';
 
       const profileH = prof?.getBoundingClientRect().height || 140;
-      const contentTop = (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tg-safe-area-inset-top')) || 0)
-                       + (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--top-offset')) || 0)
-                       + headerH + profileH;
+      const contentTop =
+        (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tg-safe-area-inset-top')) || 0)
+        + (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--top-offset')) || 0)
+        + headerH + profileH;
 
       document.documentElement.style.setProperty('--content-top', contentTop + 'px');
 
@@ -385,8 +488,21 @@
       document.documentElement.style.setProperty('--content-bottom-pad', pad + 'px');
     }
 
-    function goToDeliveryList(){ location.href='/delivery-list'; }
-    function openDriverTrip(){ location.href='/driver'; }
+    /* Навигация */
+    function openProfile(){
+      if(!userId) return;
+      location.href = `/driver-update?telegram_id=${userId}`;
+    }
+    function openOrders(){
+      if(!userId) return;
+      location.href = `/delivery-list?telegram_id=${userId}`;
+    }
+    function openSapar(){
+      if(!userId) return;
+      location.href = `/driver?telegram_id=${userId}`;
+    }
+    function goToDeliveryList(){ openOrders(); }
+    function openDriverTrip(){ openSapar(); }
 
     function setupTruckTypes(){
       document.querySelectorAll('.truck-card').forEach(card=>{
@@ -426,7 +542,10 @@
             <img src="${ev.target.result}" class="file-preview" alt="Preview">
             <div class="upload-text">${file.name}</div>
             <div class="upload-hint">${(file.size/1024/1024).toFixed(1)} MB</div>`;
-          if(id==='profilePhoto'){ setAvatar(ev.target.result); applyLayoutSizes(); }
+          if(id==='profilePhoto'){
+            setAvatar(ev.target.result);
+            applyLayoutSizes();
+          }
         };
         r.readAsDataURL(file);
       }else{
@@ -474,7 +593,8 @@
         document.getElementById('latitude').value=lat;
         document.getElementById('longitude').value=lon;
         reverseGeocode(lat,lon).then(addr=>{
-          input.value=addr; btn.classList.remove('loading'); btn.classList.add('success'); btn.textContent='✅';
+          input.value=addr;
+          btn.classList.remove('loading'); btn.classList.add('success'); btn.textContent='✅';
           showToast('success',translations.locationSuccess);
           window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('success');
         }).catch(()=>{
@@ -497,7 +617,8 @@
     }
 
     async function loadDriverProfile(){
-      const overlay=document.getElementById('loadingOverlay'); overlay.classList.add('show');
+      const overlay=document.getElementById('loadingOverlay');
+      overlay.classList.add('show');
       try{
         const telegramId=document.getElementById('telegramId').value;
         if(!telegramId) throw new Error('Telegram ID жоқ');
@@ -525,7 +646,10 @@
     function populateForm(d){
       if(d.first_name) document.getElementById('firstName').value=d.first_name;
       if(d.last_name)  document.getElementById('lastName').value=d.last_name;
-      if(d.birthday){ const b=document.getElementById('birthday'); b.value=d.birthday; b.disabled=true; }
+      if(d.birthday){
+        const b=document.getElementById('birthday');
+        b.value=d.birthday; b.disabled=true;
+      }
       if(d.contact_number) document.getElementById('contactNumber').value=d.contact_number;
       if(d.start_city) document.getElementById('startCity').value=d.start_city;
 
@@ -570,9 +694,14 @@
       const full=[d.first_name,d.last_name].filter(Boolean).join(' ')||'Аты-жөні';
       document.getElementById('profileName').textContent=full;
 
-      const statusMap={pending:{icon:'⏳',text:'Қарауда'}, approved:{icon:'✅',text:'Мақұлданған'}, rejected:{icon:'❌',text:'Қабылданбаған'}};
+      const statusMap={
+        pending:{icon:'⏳',text:'Қарауда'},
+        approved:{icon:'✅',text:'Мақұлданған'},
+        rejected:{icon:'❌',text:'Қабылданбаған'}
+      };
       if(d.status && statusMap[d.status]){
-        document.getElementById('statusBadge').innerHTML=`${statusMap[d.status].icon} ${statusMap[d.status].text}`;
+        document.getElementById('statusBadge').innerHTML =
+          statusMap[d.status].icon + ' ' + statusMap[d.status].text;
       }
     }
 
@@ -583,6 +712,7 @@
       const contactNumber=document.getElementById('contactNumber').value.trim();
       const startCity=document.getElementById('startCity').value.trim();
       const truckType=document.getElementById('truckType').value;
+
       if(!firstName||!lastName||!contactNumber||!startCity||!truckType){
         showToast('error',translations.fillRequired);
         window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('error');
@@ -611,9 +741,16 @@
     }
 
     function showToast(type,msg){
-      const t=document.createElement('div'); t.className='toast '+type; t.textContent=msg; document.body.appendChild(t);
-      getComputedStyle(t).opacity; t.classList.add('show');
-      setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=>t.remove(),250); }, 2800);
+      const t=document.createElement('div');
+      t.className='toast '+type;
+      t.textContent=msg;
+      document.body.appendChild(t);
+      getComputedStyle(t).opacity;
+      t.classList.add('show');
+      setTimeout(()=>{
+        t.classList.remove('show');
+        setTimeout(()=>t.remove(),250);
+      }, 2800);
     }
   </script>
 </body>

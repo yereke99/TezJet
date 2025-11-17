@@ -2,7 +2,8 @@
 <html lang="kz">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Driver • Жүргізуші</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -21,113 +22,410 @@
 
       --page-px:16px; --row-h:64px;
 
-      /* БОЛЬШЕ отступ от системных кнопок мини-приложения */
-      --sys-pad: 48px; /* чуть больше полсантиметра */
+      /* отступ от системных кнопок мини-аппа */
+      --sys-pad:48px;
+      --bottom-ui:140px; /* CTA + bottom nav высота */
     }
     @media (prefers-color-scheme:dark){
-      :root{ --bg:#111214; --surface:#15171a; --ink:#f8fafc; --ink-2:#cbd5e1; --ink-3:#64748b; --muted:#23262b;
-             --shadow-sm:0 2px 8px rgba(0,0,0,.4); --shadow-md:0 10px 30px rgba(0,0,0,.5); }
+      :root{
+        --bg:#111214; --surface:#15171a;
+        --ink:#f8fafc; --ink-2:#cbd5e1; --ink-3:#64748b;
+        --muted:#23262b;
+        --shadow-sm:0 2px 8px rgba(0,0,0,.4);
+        --shadow-md:0 10px 30px rgba(0,0,0,.5);
+      }
     }
 
-    *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
     html,body{height:100%;}
     body{
-      margin:0; background:var(--bg); color:var(--ink);
+      margin:0;
+      background:var(--bg);
+      color:var(--ink);
       font-family:-apple-system,BlinkMacSystemFont,'SF Pro','Helvetica Neue',Roboto,Arial,sans-serif;
-      height:var(--tg-viewport-stable-height,100vh);
-      overflow-x:hidden; overscroll-behavior:none; -webkit-overflow-scrolling:touch;
 
-      /* ещё ниже общий контент */
-      padding-top: calc(env(safe-area-inset-top,0px) + var(--sys-pad));
-      padding-bottom: calc(env(safe-area-inset-bottom,0px));
+      /* реальная высота web-app’а */
+      height: var(--tg-viewport-stable-height, 100vh);
+      overflow-x:hidden;
+      overscroll-behavior:none;
+      -webkit-overflow-scrolling:touch;
+
+      /* опускаем ВСЁ содержимое ниже системного бара + нашего хедера */
+      padding-top: calc(
+        var(--tg-safe-area-inset-top, 0px)
+        + var(--tg-content-safe-area-inset-top, 0px)
+        + 64px          /* примерная высота .header */
+      );
+
+      /* просто safe-area снизу, без лишних отступов */
+      padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 
-    /* Header */
+    /* HEADER */
     .header{
-      position:sticky; top:0; z-index:50;
-      background:var(--surface); border-bottom:1px solid var(--muted);
+      position:fixed;
+      left:0;
+      right:0;
+
+      /* ставим сам header под системный бар Telegram */
+      top: calc(
+        var(--tg-safe-area-inset-top, 0px)
+        + var(--tg-content-safe-area-inset-top, 0px)
+      );
+
+      z-index:50;
+      background:var(--surface);
+      border-bottom:1px solid var(--muted);
       padding:12px var(--page-px);
-      display:flex; align-items:center; justify-content:space-between;
-      backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      backdrop-filter:blur(12px);
+      -webkit-backdrop-filter:blur(12px);
     }
-    .brand{display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:.2px;}
-    .brand-badge{width:28px; height:28px; border-radius:8px; background:var(--brand); color:#fff;
-                 display:grid; place-items:center; font-weight:800; box-shadow:var(--shadow-sm);}
-    .controls{display:flex; align-items:center; gap:10px;}
-    .chip{display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700;
-          padding:6px 10px; border-radius:999px; background:#eafaf7; color:#16a34a;}
-    .chip.off{background:#f1f5f9; color:var(--ink-2);}
-    .dot{width:6px; height:6px; border-radius:50%; background:currentColor;}
-    .lang{display:flex; gap:2px; background:#f1f5f9; padding:2px; border-radius:999px;}
-    .lang button{border:0; background:transparent; padding:6px 10px; border-radius:999px; font-weight:700; color:var(--ink-2); cursor:pointer;}
-    .lang button.active{background:var(--surface); color:var(--ink); box-shadow:var(--shadow-sm);}
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-weight:700;
+      letter-spacing:.2px;
+    }
+    .brand-badge{
+      width:28px;height:28px;border-radius:8px;
+      background:var(--brand);color:#fff;
+      display:grid;place-items:center;
+      font-weight:800;
+      box-shadow:var(--shadow-sm);
+    }
+    .controls{display:flex;align-items:center;gap:10px;}
+    .chip{
+      display:flex;align-items:center;gap:6px;
+      font-size:12px;font-weight:700;
+      padding:6px 10px;border-radius:999px;
+      background:#eafaf7;color:#16a34a;
+    }
+    .chip.off{background:#f1f5f9;color:var(--ink-2);}
+    .dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+    .lang{
+      display:flex;gap:2px;
+      background:#f1f5f9;
+      padding:2px;
+      border-radius:999px;
+    }
+    .lang button{
+      border:0;background:transparent;
+      padding:6px 10px;border-radius:999px;
+      font-weight:700;color:var(--ink-2);
+      cursor:pointer;
+    }
+    .lang button.active{
+      background:var(--surface);
+      color:var(--ink);
+      box-shadow:var(--shadow-sm);
+    }
 
     /* Card */
-    .card{background:var(--surface); margin:12px var(--page-px); border-radius:var(--r-lg); border:1px solid var(--muted); overflow:hidden; box-shadow:var(--shadow-sm);}
+    .card{
+      background:var(--surface);
+      margin:12px var(--page-px);
+      border-radius:var(--r-lg);
+      border:1px solid var(--muted);
+      overflow:hidden;
+      box-shadow:var(--shadow-sm);
+    }
 
     /* Rows */
-    .row{display:flex; align-items:center; gap:12px; padding:14px; min-height:var(--row-h);}
+    .row{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:14px;
+      min-height:var(--row-h);
+    }
     .row + .row{border-top:1px solid var(--muted);}
     .row:active{background:rgba(0,0,0,.03);}
-    .pin{width:14px; height:14px; border-radius:50%; flex:0 0 14px;}
-    .pin.from{background:var(--brand); box-shadow:0 0 0 4px rgba(16,224,184,.15);}
+    .pin{width:14px;height:14px;border-radius:50%;flex:0 0 14px;}
+    .pin.from{background:var(--brand);box-shadow:0 0 0 4px rgba(16,224,184,.15);}
     .pin.to{background:var(--ink);}
-    .col{flex:1; min-width:0;}
-    .label{font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--ink-3); margin-bottom:4px; font-weight:800;}
-    .value{font-size:16px; line-height:1.3; font-weight:600; color:var(--ink);}
-    .value.placeholder{color:var(--ink-3); font-weight:500;}
-    .trailing{width:36px; height:36px; border-radius:999px; border:0; background:#f3f4f6; color:var(--ink-2); display:grid; place-items:center; cursor:pointer;}
+    .col{flex:1;min-width:0;}
+    .label{
+      font-size:11px;text-transform:uppercase;
+      letter-spacing:.5px;color:var(--ink-3);
+      margin-bottom:4px;font-weight:800;
+    }
+    .value{
+      font-size:16px;line-height:1.3;
+      font-weight:600;color:var(--ink);
+    }
+    .value.placeholder{color:var(--ink-3);font-weight:500;}
+    .trailing{
+      width:36px;height:36px;border-radius:999px;
+      border:0;background:#f3f4f6;color:var(--ink-2);
+      display:grid;place-items:center;
+      cursor:pointer;
+    }
 
-    /* Inputs */
-    .icon{width:40px; height:40px; border-radius:12px; background:#f3f4f6; display:grid; place-items:center; font-size:18px; flex:0 0 40px;}
-    .input{width:100%; border:0; outline:none; background:transparent; font-size:16px; font-weight:600; color:var(--ink);}
-    .input::placeholder{color:var(--ink-3); font-weight:500;}
-    .textarea{width:100%; min-height:88px; max-height:220px; resize:vertical; border:0; outline:none; background:transparent; font-size:16px; color:var(--ink);}
+    .icon{
+      width:40px;height:40px;border-radius:12px;
+      background:#f3f4f6;
+      display:grid;place-items:center;
+      font-size:18px;flex:0 0 40px;
+    }
+    .input{
+      width:100%;border:0;outline:none;
+      background:transparent;
+      font-size:16px;font-weight:600;color:var(--ink);
+    }
+    .input::placeholder{color:var(--ink-3);font-weight:500;}
+    .textarea{
+      width:100%;min-height:88px;max-height:220px;
+      resize:vertical;border:0;outline:none;
+      background:transparent;font-size:16px;color:var(--ink);
+    }
+
+    /* CTA (green button) */
+    .page-footer{
+      position:fixed;
+      left:0;
+      right:0;
+
+      /* поднимаем кнопку чуть выше bottom-nav */
+      bottom: calc(
+        88px                       /* было 68px – стал больший зазор */
+        + env(safe-area-inset-bottom, 0px)
+      );
+
+      padding:0 var(--page-px) 12px;
+      z-index:40;
+    }
+
+    .cta{
+      width:100%;
+      min-height:52px;
+      border-radius:16px;
+      border:0;
+      background:var(--brand);
+      color:#fff;
+      font-weight:800;
+      font-size:16px;
+      box-shadow:var(--shadow-md);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      cursor:pointer;
+      transition:opacity .15s ease, transform .1s ease;
+    }
+    .cta:active{transform:scale(.98);}
+    .cta.disabled{
+      opacity:.4;
+      cursor:default;
+      box-shadow:none;
+      transform:none;
+    }
+
+    /* Bottom nav */
+    .bottom-nav{
+      position:fixed;
+      left:0; right:0;
+      bottom:0;
+      padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));
+      background:var(--surface);
+      border-top:1px solid var(--muted);
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      z-index:39;
+    }
+    .tab{
+      flex:1;
+      border:0;
+      background:transparent;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:4px;
+      padding:6px 4px;
+      border-radius:999px;
+      cursor:pointer;
+      color:var(--ink-2);
+      font-size:11px;
+      font-weight:600;
+    }
+    .tab-icon{
+      width:34px;height:34px;border-radius:999px;
+      display:grid;place-items:center;
+      background:#f3f4f6;
+      box-shadow:var(--shadow-sm);
+      font-size:18px;
+    }
+    /* уже есть .tab-icon – для аватара важно переписать вот это */
+#navAvatar{
+  width:34px;
+  height:34px;
+  border-radius:999px;
+  overflow:hidden;        /* чтобы фото не вылезало */
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* само фото */
+#navAvatar img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+    .tab-avatar{
+      overflow:hidden;
+    }
+    .tab-avatar img{
+      width:100%;height:100%;object-fit:cover;border-radius:999px;
+    }
+    .tab.active{
+      background:#0f172a;
+      color:#fff;
+    }
+    .tab.active .tab-icon{
+      background:#111827;
+      color:#fff;
+      box-shadow:none;
+    }
 
     /* Fullscreen picker */
     .modal{
-      position:fixed; inset:0;
-      /* карта тоже ниже системных кнопок */
-      top: calc(var(--tg-content-safe-area-inset-top,0px) + env(safe-area-inset-top,0px) + var(--sys-pad));
-      background:var(--surface); display:none; flex-direction:column; z-index:1000;
+      position:fixed;
+      inset:0;
+      top:calc(var(--tg-content-safe-area-inset-top,0px) + env(safe-area-inset-top,0px) + var(--sys-pad));
+      background:var(--surface);
+      display:none;
+      flex-direction:column;
+      z-index:1000;
     }
-    .modal.show{display:flex; animation:rise .25s ease-out;}
-    @keyframes rise{from{transform:translateY(10%); opacity:.6} to{transform:none; opacity:1}}
+    .modal.show{
+      display:flex;
+      animation:rise .25s ease-out;
+    }
+    @keyframes rise{
+      from{transform:translateY(10%);opacity:.6;}
+      to{transform:none;opacity:1;}
+    }
 
-    .m-head{position:sticky; top:0; z-index:5; background:var(--surface); border-bottom:1px solid var(--muted);
-            padding:10px var(--page-px); display:flex; align-items:center; gap:10px;}
-    .back{width:36px; height:36px; border-radius:999px; border:0; background:#f3f4f6; color:var(--ink); display:grid; place-items:center;}
-    .search-wrap{position:relative; flex:1;}
-    .search{width:100%; border:1px solid var(--muted); border-radius:12px; padding:12px 40px 12px 12px; background:#f8fafc; font-size:16px; outline:none;}
-    .clear{position:absolute; right:6px; top:50%; transform:translateY(-50%); width:28px; height:28px; border:0; border-radius:999px; background:#e2e8f0; display:none;}
+    .m-head{
+      position:sticky;top:0;z-index:5;
+      background:var(--surface);
+      border-bottom:1px solid var(--muted);
+      padding:10px var(--page-px);
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .back{
+      width:36px;height:36px;border-radius:999px;
+      border:0;background:#f3f4f6;color:var(--ink);
+      display:grid;place-items:center;
+      cursor:pointer;
+    }
+    .search-wrap{position:relative;flex:1;}
+    .search{
+      width:100%;
+      border:1px solid var(--muted);
+      border-radius:12px;
+      padding:12px 40px 12px 12px;
+      background:#f8fafc;
+      font-size:16px;
+      outline:none;
+    }
+    .clear{
+      position:absolute;
+      right:6px;top:50%;
+      transform:translateY(-50%);
+      width:28px;height:28px;
+      border:0;border-radius:999px;
+      background:#e2e8f0;
+      display:none;
+      cursor:pointer;
+    }
     .clear.show{display:block;}
 
-    .map{position:relative; flex:1; min-height:0;}
-    #map{position:absolute; inset:0;}
-    .center-pin{position:absolute; left:50%; top:50%; transform:translate(-50%,-100%); pointer-events:none; z-index:4;}
-    /* КРАСНЫЙ пин */
-    .center-pin .b{width:32px; height:32px; border-radius:50%; background:#ef4444; border:4px solid #fff; box-shadow:0 6px 20px rgba(239,68,68,.35); display:grid; place-items:center; color:#fff; font-weight:800;}
+    .map{position:relative;flex:1;min-height:0;}
+    #map{position:absolute;inset:0;}
+    .center-pin{
+      position:absolute;
+      left:50%;top:50%;
+      transform:translate(-50%,-100%);
+      pointer-events:none;
+      z-index:4;
+    }
+    .center-pin .b{
+      width:32px;height:32px;border-radius:50%;
+      background:#ef4444;
+      border:4px solid #fff;
+      box-shadow:0 6px 20px rgba(239,68,68,.35);
+      display:grid;place-items:center;
+      color:#fff;font-weight:800;
+      transition:transform .15s ease;
+    }
 
-    .results{max-height:40vh; overflow:auto; border-top:1px solid var(--muted);}
-    .empty{padding:28px; text-align:center; color:var(--ink-2);}
-    .item{display:flex; gap:12px; padding:12px var(--page-px); border-bottom:1px solid var(--muted); cursor:pointer;}
+    .results{
+      max-height:40vh;
+      overflow:auto;
+      border-top:1px solid var(--muted);
+    }
+    .empty{padding:28px;text-align:center;color:var(--ink-2);}
+    .item{
+      display:flex;
+      gap:12px;
+      padding:12px var(--page-px);
+      border-bottom:1px solid var(--muted);
+      cursor:pointer;
+    }
     .item:last-child{border-bottom:0;}
-    .ind{width:10px; height:10px; border-radius:50%; background:var(--brand); margin-top:6px;}
-    .t{font-weight:700;} .s{font-size:14px; color:var(--ink-2);}
+    .ind{width:10px;height:10px;border-radius:50%;background:var(--brand);margin-top:6px;}
+    .t{font-weight:700;}
+    .s{font-size:14px;color:var(--ink-2);}
 
-    .actions{display:flex; gap:10px; padding:12px var(--page-px) calc(12px + env(safe-area-inset-bottom,0px)); border-top:1px solid var(--muted); background:var(--surface);}
-    .btn{flex:1; min-height:52px; border-radius:14px; border:0; font-weight:800; font-size:15px;}
-    .btn.sec{background:#f3f4f6; color:var(--ink);} .btn.pri{background:var(--brand); color:#fff;}
+    .actions{
+      display:flex;
+      gap:10px;
+      padding:12px var(--page-px) calc(12px + env(safe-area-inset-bottom,0px));
+      border-top:1px solid var(--muted);
+      background:var(--surface);
+    }
+    .btn{
+      flex:1;
+      min-height:52px;
+      border-radius:14px;
+      border:0;
+      font-weight:800;
+      font-size:15px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      cursor:pointer;
+    }
+    .btn.sec{background:#f3f4f6;color:var(--ink);}
+    .btn.pri{background:var(--brand);color:#fff;}
 
-    .leaflet-control-attribution, .leaflet-control-zoom{display:none !important;}
+    .leaflet-control-attribution,
+    .leaflet-control-zoom{display:none!important;}
   </style>
 </head>
 <body>
-  <!-- Header -->
+  <!-- HEADER -->
   <div class="header">
-    <div class="brand"><div class="brand-badge">D</div>Driver</div>
+    <div class="brand">
+      <div class="brand-badge">D</div>
+      Driver
+    </div>
     <div class="controls">
-      <div class="chip off" id="chip"><span class="dot"></span><span id="chipText">Желіде емес</span></div>
+      <div class="chip off" id="chip">
+        <span class="dot"></span><span id="chipText">Желіде емес</span>
+      </div>
       <div class="lang">
         <button id="btn-ru" onclick="setLang('ru')">RU</button>
         <button id="btn-kz" class="active" onclick="setLang('kz')">KZ</button>
@@ -135,24 +433,30 @@
     </div>
   </div>
 
-  <!-- Card -->
+  <!-- MAIN CARD -->
   <div class="card">
     <div class="row" onclick="openPicker('from')">
       <div class="pin from"></div>
       <div class="col">
         <div class="label" data-ru="ОТКУДА" data-kz="ҚАЙДАН">ҚАЙДАН</div>
-        <div class="value placeholder" id="fromText" data-ru="Текущее местоположение" data-kz="Ағымдағы орналасу">Ағымдағы орналасу</div>
+        <div class="value placeholder" id="fromText"
+             data-ru="Текущее местоположение"
+             data-kz="Ағымдағы орналасу">Ағымдағы орналасу</div>
       </div>
-      <button class="trailing" onclick="event.stopPropagation(); openPicker('from')">📍</button>
+      <button class="trailing"
+              onclick="event.stopPropagation();openPicker('from')">📍</button>
     </div>
 
     <div class="row" onclick="openPicker('to')">
       <div class="pin to"></div>
       <div class="col">
         <div class="label" data-ru="КУДА" data-kz="ҚАЙДА">ҚАЙДА</div>
-        <div class="value placeholder" id="toText" data-ru="Выберите пункт назначения" data-kz="Мақсатты таңдаңыз">Мақсатты таңдаңыз</div>
+        <div class="value placeholder" id="toText"
+             data-ru="Выберите пункт назначения"
+             data-kz="Мақсатты таңдаңыз">Мақсатты таңдаңыз</div>
       </div>
-      <button class="trailing" onclick="event.stopPropagation(); openPicker('to')">📍</button>
+      <button class="trailing"
+              onclick="event.stopPropagation();openPicker('to')">📍</button>
     </div>
 
     <div class="row">
@@ -161,7 +465,7 @@
         <div class="label" data-ru="СТОИМОСТЬ" data-kz="ҚҰНЫ">ҚҰНЫ</div>
         <input id="price" class="input" type="number" min="2000" placeholder="2000">
       </div>
-      <div style="font-weight:800; color:var(--ink-2);">₸</div>
+      <div style="font-weight:800;color:var(--ink-2);">₸</div>
     </div>
 
     <div class="row">
@@ -176,17 +480,47 @@
       <div class="icon">💬</div>
       <div class="col">
         <div class="label" data-ru="КОММЕНТАРИЙ" data-kz="ТҮСІНІКТЕМЕ">ТҮСІНІКТЕМЕ</div>
-        <textarea id="comment" class="textarea" data-ru="Дополнительная информация (размер груза, особые требования, контакты)" data-kz="Қосымша ақпарат (жүк өлшемі, ерекше талаптар, байланыс деректері) " placeholder="Қосымша ақпарат (жүк өлшемі, ерекше талаптар, байланыс деректері) "></textarea>
+        <textarea id="comment" class="textarea"
+                  data-ru="Дополнительная информация (размер груза, особые требования, контакты)"
+                  data-kz="Қосымша ақпарат (жүк өлшемі, ерекше талаптар, байланыс деректері)"
+                  placeholder="Қосымша ақпарат (жүк өлшемі, ерекше талаптар, байланыс деректері)"></textarea>
       </div>
     </div>
   </div>
 
-  <!-- Fullscreen Picker -->
+  <!-- GREEN CTA BUTTON -->
+  <div class="page-footer">
+    <button id="createTripBtn" class="cta disabled">
+      <span data-ru="Создать поездку" data-kz="Сапарға шығу">Сапарға шығу</span>
+    </button>
+  </div>
+
+  <!-- BOTTOM NAV BAR (Профиль / Заказы / Сапар) -->
+  <nav class="bottom-nav">
+    <button class="tab" onclick="openProfile()">
+      <div id="navAvatar" class="tab-icon tab-avatar">👤</div>
+      <div class="tab-label" data-ru="Профиль" data-kz="Профиль">Профиль</div>
+    </button>
+    <button class="tab" onclick="openOrders()">
+      <div class="tab-icon">📦</div>
+      <div class="tab-label" data-ru="Заказы" data-kz="Тапсырыстар">Заказы</div>
+    </button>
+    <button class="tab active" onclick="openSapar()">
+      <div class="tab-icon">🚚</div>
+      <div class="tab-label" data-ru="Сапар" data-kz="Сапар">Сапар</div>
+    </button>
+  </nav>
+
+  <!-- FULLSCREEN PICKER (MAP) -->
   <div class="modal" id="picker">
     <div class="m-head">
       <button class="back" onclick="closePicker()">←</button>
       <div class="search-wrap">
-        <input id="search" class="search" type="text" placeholder="Мекенжай іздеу" data-ru="Поиск адреса" data-kz="Мекенжай іздеу" oninput="debouncedSearch(this.value)">
+        <input id="search" class="search" type="text"
+               placeholder="Мекенжай іздеу"
+               data-ru="Поиск адреса"
+               data-kz="Мекенжай іздеу"
+               oninput="debouncedSearch(this.value)">
         <button id="clear" class="clear" onclick="clearSearch()">×</button>
       </div>
     </div>
@@ -197,211 +531,532 @@
     </div>
 
     <div class="results" id="results">
-      <div class="empty" id="emptyHint">Орналасуды таңдау үшін картаны жылжытыңыз немесе іздеуді пайдаланыңыз</div>
+      <div class="empty" id="emptyHint">
+        Орналасуды таңдау үшін картаны жылжытыңыз немесе іздеуді пайдаланыңыз
+      </div>
     </div>
 
     <div class="actions">
-      <button class="btn sec" onclick="useMe()"><span>📍</span>&nbsp;<span data-ru="Моё местоположение" data-kz="Менің орным">Менің орным</span></button>
-      <button class="btn pri" onclick="confirmCenter()"><span>✓</span>&nbsp;<span data-ru="Подтвердить" data-kz="Растау">Растау</span></button>
+      <button class="btn sec" onclick="useMe()">
+        <span>📍</span>
+        <span data-ru="Моё местоположение" data-kz="Менің орным">Менің орным</span>
+      </button>
+      <button class="btn pri" onclick="confirmCenter()">
+        <span>✓</span>
+        <span data-ru="Подтвердить" data-kz="Растау">Растау</span>
+      </button>
     </div>
   </div>
 
   <script>
-    // ===== State =====
+    // ===== STATE =====
     let tg=null, currentLang='kz';
     let fromCoord=null, toCoord=null, fromText='', toText='';
     let map=null, userPos=null, markerMe=null, watcher=null;
     let picking=null, debounceTimer=null;
     let userId=null;
 
-    const t = {
-      ru:{ online:'В сети', offline:'Не в сети', create:'Создать поездку', opening:'Открываю…', err:'Ошибка', fill:'Заполните все обязательные поля', min:'Минимальная цена 2000 ₸', hint:'Перетащите карту или используйте поиск', searching:'Поиск…', nothing:'Ничего не найдено' },
-      kz:{ online:'Желіде', offline:'Желіде емес', create:'Саяхат жасау', opening:'Ашу…', err:'Қате', fill:'Барлық міндетті өрістерді толтырыңыз', min:'Ең төмен бағасы 2000 ₸', hint:'Картаны жылжытыңыз немесе іздеуді пайдаланыңыз', searching:'Іздеу…', nothing:'Ештеңе табылмады' }
+    const dict = {
+      ru:{
+        online:'В сети',
+        offline:'Не в сети',
+        create:'Создать поездку',
+        opening:'Открываю…',
+        err:'Ошибка',
+        fill:'Заполните все обязательные поля',
+        min:'Минимальная цена 2000 ₸',
+        hint:'Перетащите карту или используйте поиск',
+        searching:'Поиск…',
+        nothing:'Ничего не найдено'
+      },
+      kz:{
+        online:'Желіде',
+        offline:'Желіде емес',
+        create:'Сапарға шығу',
+        opening:'Ашу…',
+        err:'Қате',
+        fill:'Барлық міндетті өрістерді толтырыңыз',
+        min:'Ең төмен бағасы 2000 ₸',
+        hint:'Картаны жылжытыңыз немесе іздеуді пайдаланыңыз',
+        searching:'Іздеу…',
+        nothing:'Ештеңе табылмады'
+      }
     };
 
-    // ===== Init =====
+    // ===== INIT =====
     document.addEventListener('DOMContentLoaded', () => {
-      if (window.Telegram?.WebApp){
+      if(window.Telegram?.WebApp){
         tg = Telegram.WebApp;
-        tg.ready(); tg.expand(); tg.disableVerticalSwipes();
-        tg.MainButton.setParams({ text: t[currentLang].create, color:'#00d4aa', text_color:'#ffffff' });
-        tg.MainButton.onClick(createTrip); tg.MainButton.show();
-        const u=tg.initDataUnsafe?.user; if (u){ userId=u.id; setOnline(true); }
+        tg.ready();
+        tg.expand();
+        tg.disableVerticalSwipes?.();
+        const u = tg.initDataUnsafe?.user;
+        if(u){
+          userId = u.id;
+          setOnline(true);
+        }
         applyTheme();
       }
-      setLang('kz'); setNow5min(); startGPS(); validate(); setInterval(checkStatus, 30000);
+
+      setLang('kz');
+      setNow5min();
+      startGPS();
+      validate();
+      setInterval(checkStatus, 30000);
+
+      document.getElementById('price').addEventListener('input', validate);
+      document.getElementById('time').addEventListener('input', validate);
+      document.getElementById('createTripBtn').addEventListener('click', createTrip);
+
+      loadNavAvatar();
     });
 
-    function applyTheme(){ const p=tg?.themeParams||{}; if(!p.bg_color) return; if (isDark(p.bg_color)) document.documentElement.style.colorScheme='dark'; }
-    function isDark(hex){ const h=hex.replace('#',''); const r=parseInt(h.slice(0,2),16), g=parseInt(h.slice(2,4),16), b=parseInt(h.slice(4,6),16); return (0.299*r+0.587*g+0.114*b)/255<.5; }
+    function applyTheme(){
+      const p=tg?.themeParams || {};
+      if(!p.bg_color) return;
+      if(isDark(p.bg_color)) document.documentElement.style.colorScheme='dark';
+    }
+    function isDark(hex){
+      const h=hex.replace('#','');
+      const r=parseInt(h.slice(0,2),16),
+            g=parseInt(h.slice(2,4),16),
+            b=parseInt(h.slice(4,6),16);
+      const l=(0.299*r+0.587*g+0.114*b)/255;
+      return l<.5;
+    }
 
-    // ===== Language =====
+    // ===== LANGUAGE =====
     function setLang(lang){
-      currentLang=lang;
+      currentLang = lang;
       document.getElementById('btn-ru').classList.toggle('active', lang==='ru');
       document.getElementById('btn-kz').classList.toggle('active', lang==='kz');
 
-      document.querySelectorAll('[data-ru]').forEach(el=>{
-        const txt=el.getAttribute(`data-${lang}`);
-        if (el.tagName==='INPUT' || el.tagName==='TEXTAREA'){ el.placeholder=txt || el.placeholder; }
-        else if (txt){ el.textContent=txt; }
+      document.querySelectorAll('[data-ru]').forEach(el => {
+        const txt = el.getAttribute('data-'+lang);
+        if(el.tagName==='INPUT' || el.tagName==='TEXTAREA'){
+          if(txt) el.placeholder = txt;
+        }else if(txt){
+          el.textContent = txt;
+        }
       });
 
-      if (tg){ tg.MainButton.setText(t[currentLang].create); }
-      const chip=document.getElementById('chip'), chipText=document.getElementById('chipText');
-      chipText.textContent = chip.classList.contains('off') ? t[currentLang].offline : t[currentLang].online;
+      const chip=document.getElementById('chip');
+      const chipText=document.getElementById('chipText');
+      chipText.textContent = chip.classList.contains('off')
+        ? dict[lang].offline
+        : dict[lang].online;
 
-      document.getElementById('emptyHint').textContent=t[currentLang].hint;
+      document.getElementById('emptyHint').textContent = dict[lang].hint;
+
+      const ctaLabel = document.querySelector('#createTripBtn span');
+      if(ctaLabel && ctaLabel.getAttribute('data-'+lang)){
+        ctaLabel.textContent = ctaLabel.getAttribute('data-'+lang);
+      }
     }
-    function setOnline(on){ const chip=document.getElementById('chip'), chipText=document.getElementById('chipText'); chip.classList.toggle('off', !on); chipText.textContent=on?t[currentLang].online:t[currentLang].offline; }
 
-    // ===== Form =====
-    function setNow5min(){ const n=new Date(); n.setMinutes(Math.ceil(n.getMinutes()/5)*5,0,0);
-      const pad=n=>String(n).padStart(2,'0'); document.getElementById('time').value=`${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())}T${pad(n.getHours())}:${pad(n.getMinutes())}`; }
-    document.getElementById('price').addEventListener('input', validate);
-    document.getElementById('time').addEventListener('input', validate);
-    function validate(){ const p=document.getElementById('price').value, tm=document.getElementById('time').value;
-      const ok = fromCoord && toCoord && p && +p>=2000 && tm; if (tg){ if (ok) tg.MainButton.enable(); else tg.MainButton.disable(); tg.MainButton.show(); } return ok; }
+    function setOnline(on){
+      const chip=document.getElementById('chip');
+      const chipText=document.getElementById('chipText');
+      chip.classList.toggle('off', !on);
+      chipText.textContent = on ? dict[currentLang].online : dict[currentLang].offline;
+    }
+
+    // ===== FORM =====
+    function setNow5min(){
+      const n=new Date();
+      n.setMinutes(Math.ceil(n.getMinutes()/5)*5,0,0);
+      const pad=v=>String(v).padStart(2,'0');
+      document.getElementById('time').value =
+        `${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())}T${pad(n.getHours())}:${pad(n.getMinutes())}`;
+    }
+
+    function validate(){
+      const p = document.getElementById('price').value;
+      const tm = document.getElementById('time').value;
+      const ok = fromCoord && toCoord && p && +p >= 2000 && tm;
+
+      const btn = document.getElementById('createTripBtn');
+      if(btn){
+        btn.disabled = !ok;
+        btn.classList.toggle('disabled', !ok);
+      }
+      return ok;
+    }
 
     async function createTrip(){
-      if (!validate()) return alertX(t[currentLang].fill);
-      if (+document.getElementById('price').value < 2000) return alertX(t[currentLang].min);
-      tg && tg.MainButton.showProgress() && tg.MainButton.setText(t[currentLang].opening);
+      if(!validate()) return alertX(dict[currentLang].fill);
+      if(+document.getElementById('price').value < 2000)
+        return alertX(dict[currentLang].min);
+
+      const btn=document.getElementById('createTripBtn');
+      const labelSpan=btn.querySelector('span');
+      const original=labelSpan.textContent;
+      btn.disabled=true;
+      btn.classList.add('disabled');
+      labelSpan.textContent = dict[currentLang].opening;
+
       try{
         const fd=new FormData();
-        fd.append('from_address', fromText); fd.append('from_lat', fromCoord[0]); fd.append('from_lon', fromCoord[1]);
-        fd.append('to_address', toText); fd.append('to_lat', toCoord[0]); fd.append('to_lon', toCoord[1]);
-        fd.append('price', document.getElementById('price').value); fd.append('start_time', document.getElementById('time').value);
-        fd.append('comment', document.getElementById('comment').value); fd.append('telegram_id', userId || '0');
-        const r=await fetch('/api/driver/start',{method:'POST',body:fd}); const j=await r.json(); if(!j.success) throw new Error(j.message||'Unknown');
-        setTimeout(()=>{ window.location.href='./delivery-list'; }, 700);
-      }catch(e){ alertX(t[currentLang].err+': '+e.message); }
-      finally{ tg && tg.MainButton.hideProgress() && tg.MainButton.setText(t[currentLang].create); }
-    }
-    async function checkStatus(){ try{ if(!userId) return; const r=await fetch(`/api/driver/status?telegram_id=${userId}`); const j=await r.json(); if(j.success) setOnline(!!j.is_online); }catch{} }
-    function alertX(m){ if(tg) tg.showAlert(m); else alert(m); }
+        fd.append('from_address', fromText);
+        fd.append('from_lat', fromCoord[0]);
+        fd.append('from_lon', fromCoord[1]);
+        fd.append('to_address', toText);
+        fd.append('to_lat', toCoord[0]);
+        fd.append('to_lon', toCoord[1]);
+        fd.append('price', document.getElementById('price').value);
+        fd.append('start_time', document.getElementById('time').value);
+        fd.append('comment', document.getElementById('comment').value);
+        fd.append('telegram_id', userId || '0');
 
-    // ===== Picker / Map =====
+        const r = await fetch('/api/driver/start',{method:'POST',body:fd});
+        const j = await r.json();
+        if(!j.success) throw new Error(j.message || 'Unknown');
+
+        tg?.HapticFeedback?.notificationOccurred('success');
+        setTimeout(()=>{
+          window.location.href = './delivery-list';
+        }, 700);
+      }catch(e){
+        alertX(dict[currentLang].err + ': ' + e.message);
+      }finally{
+        labelSpan.textContent = original;
+        btn.disabled = !validate();
+        btn.classList.toggle('disabled', !validate());
+      }
+    }
+
+    async function checkStatus(){
+      try{
+        if(!userId) return;
+        const r = await fetch(`/api/driver/status?telegram_id=${userId}`);
+        const j = await r.json();
+        if(j.success) setOnline(!!j.is_online);
+      }catch(_){}
+    }
+
+    function alertX(msg){
+      if(tg) tg.showAlert(msg);
+      else alert(msg);
+    }
+
+    // ===== NAV AVATAR =====
+    async function loadNavAvatar(){
+      try{
+        if(!userId) return;
+        const resp = await fetch('/api/check/who',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({telegram_id:parseInt(userId)})
+        });
+        const result = await resp.json();
+        const box = document.getElementById('navAvatar');
+        if(!box) return;
+
+        if(result.success && result.data?.exists && result.data.user_type === 'driver'){
+          const d = result.data.driver_data;
+          if(d?.profile_photo?.trim()){
+            const baseCandidates = [
+              `./ava/${d.profile_photo}`,
+              `/ava/${d.profile_photo}`,
+              `/files/${d.profile_photo}`,
+              `/static/ava/${d.profile_photo}`
+            ];
+            (function tryNext(i){
+              if(i>=baseCandidates.length){ box.textContent='👤'; return; }
+              const img=new Image();
+              img.onload=()=>{
+                box.innerHTML=`<img src="${baseCandidates[i]}" alt="Avatar">`;
+              };
+              img.onerror=()=>tryNext(i+1);
+              img.src=baseCandidates[i];
+            })(0);
+          }else{
+            box.textContent='👤';
+          }
+        }else{
+          box.textContent='👤';
+        }
+      }catch(_){
+        const box=document.getElementById('navAvatar');
+        if(box) box.textContent='👤';
+      }
+    }
+
+    function openProfile(){
+      if(!userId) return;
+      window.location.href = `/driver-update?telegram_id=${userId}`;
+    }
+    function openOrders(){
+      if(!userId) return;
+      window.location.href = `/delivery-list?telegram_id=${userId}`;
+    }
+    function openSapar(){
+      if(!userId) return;
+      window.location.href = `/driver?telegram_id=${userId}`;
+    }
+
+    // ===== PICKER / MAP =====
     function openPicker(mode){
-      picking=mode;
+      picking = mode;
       document.getElementById('picker').classList.add('show');
-      if (tg) tg.MainButton.hide();
       setTimeout(initMap, 60);
     }
+
     function closePicker(){
       document.getElementById('picker').classList.remove('show');
-      if (map){ map.off(); map.remove(); map=null; markerMe=null; }
-      if (tg) validate(); clearSearch(true);
+      if(map){
+        map.off();
+        map.remove();
+        map=null;
+        markerMe=null;
+      }
+      clearSearch(true);
     }
 
     function initMap(){
-      const center=userPos || [43.238949, 76.889709];
-      map = L.map('map',{ center, zoom:15, zoomControl:false, attributionControl:false, dragging:true, tap:true, touchZoom:true, scrollWheelZoom:true });
+      const center = userPos || [43.238949, 76.889709];
+      map = L.map('map',{
+        center,
+        zoom:15,
+        zoomControl:false,
+        attributionControl:false,
+        dragging:true,
+        tap:true,
+        touchZoom:true,
+        scrollWheelZoom:true
+      });
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
 
       map.on('moveend', ()=>{ pulsePin(); });
 
-      if (userPos) drawMe();
+      if(userPos) drawMe();
     }
-    function pulsePin(){ const el=document.querySelector('.center-pin .b'); if(!el) return; el.style.transform='scale(1.1)'; setTimeout(()=>el.style.transform='scale(1)',150); }
+
+    function pulsePin(){
+      const el=document.querySelector('.center-pin .b');
+      if(!el) return;
+      el.style.transform='scale(1.1)';
+      setTimeout(()=>{ el.style.transform='scale(1)'; },150);
+    }
+
     function drawMe(){
-      if (!map || !userPos) return;
-      const icon=L.divIcon({ html:'<div style="width:14px;height:14px;border-radius:50%;background:#1976d2;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.3)"></div>', className:'', iconSize:[14,14], iconAnchor:[7,7]});
-      if (markerMe) markerMe.setLatLng(userPos); else markerMe=L.marker(userPos,{icon}).addTo(map);
+      if(!map || !userPos) return;
+      const icon = L.divIcon({
+        html:'<div style="width:14px;height:14px;border-radius:50%;background:#1976d2;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.3)"></div>',
+        className:'',
+        iconSize:[14,14],
+        iconAnchor:[7,7]
+      });
+      if(markerMe) markerMe.setLatLng(userPos);
+      else markerMe = L.marker(userPos,{icon}).addTo(map);
     }
-    function useMe(){ if(userPos && map){ map.setView(userPos,16); pulsePin(); } tg?.HapticFeedback?.impactOccurred('light'); }
+
+    function useMe(){
+      if(userPos && map){
+        map.setView(userPos,16);
+        pulsePin();
+      }
+      tg?.HapticFeedback?.impactOccurred('light');
+    }
 
     async function confirmCenter(){
-      if (!map) return;
+      if(!map) return;
       const c = map.getCenter();
       const coords = [c.lat, c.lng];
-      const text = await reverse(coords); // адрес подставляем ПОСЛЕ выбора
+      const text = await reverse(coords);
 
-      if (picking==='from'){
-        fromCoord=coords; fromText=text;
-        const el=document.getElementById('fromText'); el.textContent=text; el.classList.remove('placeholder');
+      if(picking === 'from'){
+        fromCoord = coords;
+        fromText  = text;
+        const el = document.getElementById('fromText');
+        el.textContent = text;
+        el.classList.remove('placeholder');
       }else{
-        toCoord=coords; toText=text;
-        const el=document.getElementById('toText'); el.textContent=text; el.classList.remove('placeholder');
+        toCoord = coords;
+        toText  = text;
+        const el = document.getElementById('toText');
+        el.textContent = text;
+        el.classList.remove('placeholder');
       }
-      closePicker(); validate(); tg?.HapticFeedback?.notificationOccurred('success');
+      closePicker();
+      validate();
+      tg?.HapticFeedback?.notificationOccurred('success');
     }
 
     // ===== GPS =====
     function startGPS(){
-      if (!navigator.geolocation) return;
+      if(!navigator.geolocation) return;
       watcher = navigator.geolocation.watchPosition(
-        p=>{ userPos=[p.coords.latitude, p.coords.longitude]; if(!fromCoord && !fromText){ setFromMe(); } if(map) drawMe(); },
-        _=>{}, { enableHighAccuracy:true, maximumAge:0, timeout:10000 }
+        p => {
+          userPos = [p.coords.latitude, p.coords.longitude];
+          if(!fromCoord && !fromText) setFromMe();
+          if(map) drawMe();
+        },
+        _ => {},
+        {enableHighAccuracy:true,maximumAge:0,timeout:10000}
       );
     }
+
     function setFromMe(){
-      if (!userPos) return;
+      if(!userPos) return;
       reverse(userPos).then(txt=>{
-        fromCoord=userPos; fromText=txt;
-        const el=document.getElementById('fromText'); el.textContent=txt; el.classList.remove('placeholder'); validate();
+        fromCoord = userPos;
+        fromText  = txt;
+        const el=document.getElementById('fromText');
+        el.textContent = txt;
+        el.classList.remove('placeholder');
+        validate();
       });
     }
 
-    // ===== Search =====
+    // ===== SEARCH =====
     function debouncedSearch(q){
-      const clear=document.getElementById('clear'); clear.classList.toggle('show', q.length>0);
+      const clear=document.getElementById('clear');
+      clear.classList.toggle('show', q.length>0);
       clearTimeout(debounceTimer);
-      if (!q || q.trim().length<2){ showHint(); return; }
-      document.getElementById('results').innerHTML=`<div class="empty">${t[currentLang].searching}</div>`;
-      debounceTimer=setTimeout(()=> searchOSM(q.trim()), 450);
-    }
-    function clearSearch(keepHint){ const s=document.getElementById('search'); s.value=''; document.getElementById('clear').classList.remove('show'); if(!keepHint) showHint(); }
-    function showHint(){ document.getElementById('results').innerHTML=`<div class="empty">${t[currentLang].hint}</div>`; }
 
-    function viewbox(){ const c=map?.getCenter() || {lat:43.238949, lng:76.889709}; const d=0.45; return `${c.lng-d},${c.lat-d},${c.lng+d},${c.lat+d}`; }
-    function langHeader(){ return currentLang==='ru' ? 'ru-RU' : 'kk-KZ'; }
+      if(!q || q.trim().length<2){
+        showHint();
+        return;
+      }
+      document.getElementById('results').innerHTML =
+        `<div class="empty">${dict[currentLang].searching}</div>`;
+      debounceTimer = setTimeout(()=>searchOSM(q.trim()), 450);
+    }
+
+    function clearSearch(keepHint){
+      const s=document.getElementById('search');
+      s.value='';
+      document.getElementById('clear').classList.remove('show');
+      if(!keepHint) showHint();
+    }
+
+    function showHint(){
+      document.getElementById('results').innerHTML =
+        `<div class="empty">${dict[currentLang].hint}</div>`;
+    }
+
+    function viewbox(){
+      const c = map?.getCenter() || {lat:43.238949,lng:76.889709};
+      const d = 0.45;
+      return `${c.lng-d},${c.lat-d},${c.lng+d},${c.lat+d}`;
+    }
+
+    function langHeader(){
+      return currentLang==='ru' ? 'ru-RU' : 'kk-KZ';
+    }
 
     async function searchOSM(q){
       try{
-        const vb=viewbox(), base='https://nominatim.openstreetmap.org';
-        const common=`format=json&limit=15&addressdetails=1&countrycodes=kz&accept-language=${encodeURIComponent(langHeader())}&viewbox=${vb}&bounded=1`;
-        const url1=`${base}/search?${common}&q=${encodeURIComponent(q)}&extratags=1&namedetails=1`;
-        const r1=await fetch(url1); let results=await r1.json();
+        const vb = viewbox();
+        const base = 'https://nominatim.openstreetmap.org';
+        const common = `format=json&limit=15&addressdetails=1&countrycodes=kz&accept-language=${encodeURIComponent(langHeader())}&viewbox=${vb}&bounded=1`;
+        const url1 = `${base}/search?${common}&q=${encodeURIComponent(q)}&extratags=1&namedetails=1`;
+        const r1 = await fetch(url1);
+        let results = await r1.json();
+
         if(!results || results.length===0){
-          const url2=`${base}/search?format=json&limit=15&addressdetails=1&q=${encodeURIComponent(q+', Kazakhstan')}&accept-language=${encodeURIComponent(langHeader())}`;
-          const r2=await fetch(url2); results=await r2.json();
+          const url2 = `${base}/search?format=json&limit=15&addressdetails=1&q=${encodeURIComponent(q+', Kazakhstan')}&accept-language=${encodeURIComponent(langHeader())}`;
+          const r2 = await fetch(url2);
+          results = await r2.json();
         }
-        const center=map?.getCenter() || {lat:43.238949,lng:76.889709};
-        const typeWeight=t=>{const order=['city','town','village','hamlet','suburb','neighbourhood','quarter','residential']; const i=order.indexOf(t||''); return i===-1?8:i;};
-        const dist=(lat,lon)=>{const dx=(lat-center.lat)*111, dy=(lon-center.lng)*85; return Math.hypot(dx,dy);};
-        const uniq=new Map(); for(const r of results){ const k=`${r.lat},${r.lon}`; if(!uniq.has(k)) uniq.set(k,r); }
-        const arr=[...uniq.values()].map(r=>({ name:(r.display_name||'').split(',')[0], full:r.display_name, lat:+r.lat, lon:+r.lon, type:r.type||r.class||'', score:typeWeight(r.type||'')*10 + dist(+r.lat,+r.lon) }))
-                   .sort((a,b)=>a.score-b.score).slice(0,15);
-        if(arr.length===0){ document.getElementById('results').innerHTML=`<div class="empty">${t[currentLang].nothing}</div>`; return; }
+
+        const center = map?.getCenter() || {lat:43.238949,lng:76.889709};
+        const typeWeight = t => {
+          const order=['city','town','village','hamlet','suburb','neighbourhood','quarter','residential'];
+          const i=order.indexOf(t||'');
+          return i===-1?8:i;
+        };
+        const dist = (lat,lon)=>{
+          const dx=(lat-center.lat)*111;
+          const dy=(lon-center.lng)*85;
+          return Math.hypot(dx,dy);
+        };
+
+        const uniq=new Map();
+        for(const r of results){
+          const k=`${r.lat},${r.lon}`;
+          if(!uniq.has(k)) uniq.set(k,r);
+        }
+
+        const arr=[...uniq.values()]
+          .map(r=>({
+            name:(r.display_name||'').split(',')[0],
+            full:r.display_name,
+            lat:+r.lat, lon:+r.lon,
+            type:r.type||r.class||'',
+            score:typeWeight(r.type||'')*10 + dist(+r.lat,+r.lon)
+          }))
+          .sort((a,b)=>a.score-b.score)
+          .slice(0,15);
+
+        if(arr.length===0){
+          document.getElementById('results').innerHTML =
+            `<div class="empty">${dict[currentLang].nothing}</div>`;
+          return;
+        }
+
         document.getElementById('results').innerHTML = arr.map(a=>`
           <div class="item" onclick="choose(${a.lat},${a.lon}, '${escapeHtml(a.name)}')">
             <div class="ind"></div>
-            <div><div class="t">${escapeHtml(a.name)}</div><div class="s">${escapeHtml(a.full.split(',').slice(1,4).join(', ').trim())}</div></div>
-          </div>`).join('');
-      }catch(e){ document.getElementById('results').innerHTML=`<div class="empty">${t[currentLang].err}</div>`; }
+            <div>
+              <div class="t">${escapeHtml(a.name)}</div>
+              <div class="s">${escapeHtml(a.full.split(',').slice(1,4).join(', ').trim())}</div>
+            </div>
+          </div>
+        `).join('');
+      }catch(e){
+        document.getElementById('results').innerHTML =
+          `<div class="empty">${dict[currentLang].err}</div>`;
+      }
     }
+
     function choose(lat,lon,name){
       if(map) map.setView([lat,lon],16);
-      // Подставляем адрес сразу и закрываем пикер
-      if(picking==='from'){ fromCoord=[lat,lon]; fromText=name; const el=document.getElementById('fromText'); el.textContent=name; el.classList.remove('placeholder'); }
-      else{ toCoord=[lat,lon]; toText=name; const el=document.getElementById('toText'); el.textContent=name; el.classList.remove('placeholder'); }
-      closePicker(); validate(); tg?.HapticFeedback?.impactOccurred('light');
+
+      if(picking === 'from'){
+        fromCoord=[lat,lon];
+        fromText=name;
+        const el=document.getElementById('fromText');
+        el.textContent=name;
+        el.classList.remove('placeholder');
+      }else{
+        toCoord=[lat,lon];
+        toText=name;
+        const el=document.getElementById('toText');
+        el.textContent=name;
+        el.classList.remove('placeholder');
+      }
+      closePicker();
+      validate();
+      tg?.HapticFeedback?.impactOccurred('light');
     }
 
-    // ===== Reverse geocode =====
+    // ===== REVERSE GEOCODE =====
     async function reverse([lat,lon]){
       try{
-        const url=`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=${encodeURIComponent(langHeader())}`;
-        const r=await fetch(url); const j=await r.json();
-        if (j?.display_name) return j.display_name.split(',').slice(0,4).join(', ');
+        const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=${encodeURIComponent(langHeader())}`;
+        const r = await fetch(url);
+        const j = await r.json();
+        if(j?.display_name)
+          return j.display_name.split(',').slice(0,4).join(', ');
         return `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-      }catch{ return `${lat.toFixed(6)}, ${lon.toFixed(6)}`; }
+      }catch(_){
+        return `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+      }
     }
 
-    // ===== Helpers =====
-    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
-    window.addEventListener('beforeunload', ()=>{ watcher && navigator.geolocation.clearWatch(watcher); map && map.remove(); });
+    // ===== HELPERS =====
+    function escapeHtml(s){
+      return String(s).replace(/[&<>"']/g, m=>({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      }[m]));
+    }
+
+    window.addEventListener('beforeunload', () => {
+      if(watcher) navigator.geolocation.clearWatch(watcher);
+      if(map) map.remove();
+    });
   </script>
 </body>
 </html>

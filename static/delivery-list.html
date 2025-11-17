@@ -192,20 +192,53 @@
     @keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
     /* ======= BOTTOM SHEET (modal) ======= */
-    .modal{position:fixed; inset:0; display:none; z-index:100; background:rgba(0,0,0,.72); backdrop-filter:blur(10px)}
-    .modal.show{display:flex; align-items:flex-end}
-    @media (min-width:1024px){.modal.show{align-items:center; justify-content:center}}
+    .modal{
+      position:fixed;
+      left:0; right:0; top:0; bottom:0;
+      display:none;
+      z-index:100;
+      background:rgba(0,0,0,.72);
+      backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
+    }
+    .modal.show{
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      padding-bottom:calc(var(--tg-safe-area-inset-bottom,0px) + 4px);
+    }
+    @media (min-width:1024px){
+      .modal.show{
+        align-items:center;
+        justify-content:center;
+        padding-bottom:0;
+      }
+    }
 
     .sheet{
       width:100%;
-      max-height:calc(var(--tg-viewport-stable-height, var(--vh)) - 12px);
-      background:#fff; border-radius:20px 20px 0 0; overflow:hidden;
-      display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,.28);
+      /* ещё ниже под системную шапку Telegram */
+      max-height:calc(
+        var(--tg-viewport-stable-height, var(--vh))
+        - var(--tg-safe-area-inset-top,0px)
+        - 140px
+      );
+      margin-top:calc(var(--tg-safe-area-inset-top, 0px) + 80px);
+      background:#fff;
+      border-radius:20px 20px 0 0;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      box-shadow:0 20px 60px rgba(0,0,0,.28);
     }
+
+
     @media (min-width:1024px){
       .sheet{
-        width:92vw; max-width:1400px;
+        width:92vw;
+        max-width:1400px;
         height:calc(var(--tg-viewport-stable-height, var(--vh)) - 14vh);
+        margin-top:0;
         border-radius:24px;
       }
     }
@@ -219,10 +252,20 @@
     .close{width:40px;height:40px;border-radius:50%;border:none;background:#F3F4F6;color:#111827;font-size:22px;cursor:pointer}
 
     .sheet-body{
-      position:relative; overflow:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+      position:relative;
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
+      overscroll-behavior:contain;
       min-height:0;
-      max-height:calc(var(--tg-viewport-stable-height, var(--vh)) - var(--sheet-head-h) - var(--footer-h) - 24px);
-      padding-bottom:16px; background:#fff;
+      max-height:calc(
+        var(--tg-viewport-stable-height, var(--vh))
+        - var(--sheet-head-h)
+        - var(--footer-h)
+        - 40px
+        - var(--tg-safe-area-inset-top,0px)
+      );
+      padding-bottom:16px;
+      background:#fff;
     }
 
     .map-wrap{position:relative;width:100%;height:40vh;min-height:240px;border-bottom:1px solid var(--border-2)}
@@ -752,7 +795,7 @@
         <div class="empty">
           <div style="font-size:54px; opacity:.28">📦</div>
           <div style="font-weight:900; margin-top:8px">${currentLang==='ru'?'Нет доступных заказов':'Қол жетімді тапсырыстар жоқ'}</div>
-          <div style="color:#9CA3AF">${currentLang==='ru'?'Заказы появятся автоматически':'Тапсырыстар автоматты түрде пайда болады'}</div>
+          <div style="color:#9CA3AF">${currentLang==='ру'?'Заказы появятся автоматически':'Тапсырыстар автоматты түрде пайда болады'}</div>
         </div>`;
     }
 
