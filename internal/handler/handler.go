@@ -1303,7 +1303,7 @@ func (h *Handler) driverUpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 // Additional handler methods for routes, CORS, etc. (keeping existing functionality)
 func (h *Handler) deliveryHandler(w http.ResponseWriter, r *http.Request) {
-	path := "./static/delivery.html"
+	path := "./static/delivery-opm.html"
 	w.Header().Set("Content-Type", "text/html")
 	http.ServeFile(w, r, path)
 }
