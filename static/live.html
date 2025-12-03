@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8" />
+  <title>Esimde Live</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Telegram WebApp JS -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <style>
+    :root {
+      --bg: #050814;
+      --bg-elevated: #0c1020;
+      --accent: #ff3b6a;
+      --accent-soft: rgba(255, 59, 106, 0.15);
+      --accent-strong: rgba(255, 59, 106, 0.4);
+      --text-main: #ffffff;
+      --text-secondary: #9fa4c0;
+      --border-soft: rgba(255, 255, 255, 0.08);
+      --radius-lg: 20px;
+      --radius-pill: 999px;
+      --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.55);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #182345 0, #050814 45%, #02030a 100%);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      padding: 16px;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 540px;
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .bot-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .bot-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ff3b6a, #ffa63b);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08);
+    }
+
+    .bot-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .bot-name {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .bot-subtitle {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      border: none;
+      cursor: pointer;
+      border-radius: var(--radius-pill);
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.12s ease-out, box-shadow 0.12s ease-out, background 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .btn-ghost:active {
+      transform: scale(0.96);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 10px 24px rgba(255, 59, 106, 0.35);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.97);
+      box-shadow: 0 6px 16px rgba(255, 59, 106, 0.3);
+    }
+
+    .live-card {
+      background: rgba(5, 9, 24, 0.92);
+      border-radius: 24px;
+      padding: 10px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      overflow: hidden;
+      backdrop-filter: blur(18px);
+    }
+
+    .live-video-wrapper {
+      position: relative;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #000;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .video-aspect {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%; /* 16:9 */
+    }
+
+    .video-aspect iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+
+    .live-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 10px 12px;
+      pointer-events: none;
+    }
+
+    .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: var(--radius-pill);
+      background: linear-gradient(135deg, #ff3b6a, #ff8b3b);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      box-shadow: 0 0 18px rgba(0, 0, 0, 0.8);
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+    }
+
+    .viewers-pill {
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      background: rgba(0, 0, 0, 0.5);
+      color: #f5f5f5;
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(10px);
+    }
+
+    .viewers-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #2ecc71;
+      box-shadow: 0 0 10px rgba(46, 204, 113, 0.8);
+    }
+
+    .bottom-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .live-title {
+      max-width: 75%;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fdfdfd;
+      text-shadow: 0 0 16px rgba(0, 0, 0, 0.85);
+    }
+
+    .badges {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .badge {
+      font-size: 10px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      background: rgba(0, 0, 0, 0.55);
+      color: #f5f5f5;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .badge.red {
+      background: var(--accent-strong);
+      border-color: rgba(255, 59, 106, 0.8);
+    }
+
+    .live-info {
+      margin-top: 10px;
+      padding: 10px 12px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .live-main-text {
+      font-size: 14px;
+      color: var(--text-main);
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    .live-sub-text {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .live-actions {
+      margin-top: 4px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .pill-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .pill {
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-secondary);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .bottom-bar {
+      margin-top: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-start;
+      align-items: center;
+    }
+
+    .hint {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    @media (max-width: 420px) {
+      .page {
+        padding-bottom: 6px;
+      }
+
+      .header {
+        gap: 8px;
+      }
+
+      .bot-name {
+        font-size: 14px;
+      }
+
+      .live-title {
+        font-size: 13px;
+      }
+
+      .live-main-text {
+        font-size: 13px;
+      }
+
+      .live-card {
+        padding: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <!-- HEADER -->
+    <header class="header">
+      <div class="bot-info">
+        <div class="bot-avatar">E</div>
+        <div class="bot-text">
+          <div class="bot-name">Esimde Live</div>
+          <div class="bot-subtitle">Парфюм &amp; косметика тікелей эфирі</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-ghost" id="tg-close-btn" type="button">
+          ✕
+        </button>
+      </div>
+    </header>
+
+    <!-- LIVE CARD -->
+    <section class="live-card">
+      <div class="live-video-wrapper">
+        <div class="video-aspect">
+          <!-- iframe, сырт көзге жай Esimde эфирі болып көрінеді -->
+          <iframe
+            src="https://www.youtube-nocookie.com/embed/r2_WrEY_hfQ?controls=0&modestbranding=1&rel=0&autoplay=1&mute=0&playsinline=1&enablejsapi=1"
+            title="Esimde тікелей эфирі"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+          ></iframe>
+        </div>
+
+        <div class="live-overlay">
+          <div class="top-row">
+            <div class="live-pill">
+              <span class="live-dot"></span>
+              LIVE
+            </div>
+            <div class="viewers-pill">
+              <span class="viewers-dot"></span>
+              <span id="viewer-count">~ 20 000 көрермен</span>
+            </div>
+          </div>
+
+          <div class="bottom-row">
+            <div class="live-title" id="stream-title">
+              Esimde парфюм &amp; косметика тікелей эфир
+            </div>
+            <div class="badges">
+              <div class="badge red">HD 1080p</div>
+              <div class="badge">Esimde Live</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="live-info">
+        <p class="live-main-text" id="stream-description">
+          Esimde жобасына қош келдіңіз! Бұл эфирде біз парфюм мен косметика туралы айтып,
+          эксклюзивті ұсыныстар көрсетеміз және клиенттерге арналған ынталандыру сыйлықтарын береміз.
+        </p>
+        <p class="live-sub-text">
+          Эфир Telegram ішіндегі WebApp арқылы ашылады — қолданбадан шықпай-ақ парфюм таңдап,
+          жеңілдіктер алып, чек жіберу арқылы ынталандыру сыйлықтарына қатыса аласыз.
+        </p>
+
+        <div class="live-actions">
+          <div class="pill-group">
+            <div class="pill">
+              <span class="pill-dot"></span> Telegram-нан шықпай қарау
+            </div>
+            <div class="pill">
+              🎁 Чек жіберіп, ынталандыру сыйлығын алу
+            </div>
+          </div>
+
+          <button class="btn btn-primary" id="open-chat-btn" type="button">
+            💬 Ботпен жазысу
+          </button>
+        </div>
+
+        <div class="bottom-bar">
+          <span class="hint">
+            Тікелей эфир барысында Esimde өнімдері мен ынталандыру сыйлықтары туралы барлық ақпарат осы бетте көрсетіледі.
+          </span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      const tg = window.Telegram ? window.Telegram.WebApp : null;
+
+      if (tg) {
+        tg.ready();
+        document.body.style.backgroundColor = tg.themeParams.bg_color || "#050814";
+
+        const closeBtn = document.getElementById("tg-close-btn");
+        closeBtn.onclick = function () {
+          try {
+            tg.close();
+          } catch (e) {
+            closeBtn.style.display = "none";
+          }
+        };
+      } else {
+        const closeBtn = document.getElementById("tg-close-btn");
+        closeBtn.style.display = "none";
+      }
+
+      const chatBtn = document.getElementById("open-chat-btn");
+      chatBtn.onclick = function () {
+        if (tg) {
+          tg.close(); // чатқа қайта оралады
+        } else {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+      };
+
+      // ?title=... &desc=... арқылы текстті өзгерту
+      const params = new URLSearchParams(window.location.search);
+      const customTitle = params.get("title");
+      const customDesc = params.get("desc");
+      if (customTitle) {
+        document.getElementById("stream-title").textContent = customTitle;
+      }
+      if (customDesc) {
+        document.getElementById("stream-description").textContent = customDesc;
+      }
+    })();
+  </script>
+</body>
+</html>

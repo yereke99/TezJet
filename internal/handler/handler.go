@@ -71,6 +71,7 @@ type Handler struct {
 	logger     *zap.Logger
 	cfg        *config.Config
 	db         *sql.DB
+	bot        *bot.Bot
 	userRepo   *repository.UserRepository
 	driverRepo *repository.DriverRepository
 }
@@ -1314,6 +1315,18 @@ func (h *Handler) registerDriverHandler(w http.ResponseWriter, r *http.Request) 
 	http.ServeFile(w, r, path)
 }
 
+func (h *Handler) mainClientHandler(w http.ResponseWriter, r *http.Request) {
+	path := "./static/main-client.html"
+	w.Header().Set("Content-Type", "text/html")
+	http.ServeFile(w, r, path)
+}
+
+func (h *Handler) liveHandler(w http.ResponseWriter, r *http.Request) {
+	path := "./static/live.html"
+	w.Header().Set("Content-Type", "text/html")
+	http.ServeFile(w, r, path)
+}
+
 // Middleware
 func (h *Handler) corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -1356,11 +1369,16 @@ func (h *Handler) adminHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, path)
 }
 
+func (h *Handler) SetBot(b *bot.Bot) {
+	h.bot = b
+}
+
 // Updated StartWebServer function with welcome page as default
 func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 	go h.ChangeDriverStatus(ctx, b)
 
 	r := mux.NewRouter()
+	h.SetBot(b)
 
 	r.Use(h.corsMiddleware)
 
@@ -1379,6 +1397,8 @@ func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 	r.HandleFunc("/register", h.registerDriverHandler).Methods("GET")
 	r.HandleFunc("/driver-update", h.driverUpdateHandler).Methods("GET")
 	r.HandleFunc("/admin", h.adminHandler).Methods("GET")
+	r.HandleFunc("/main-client", h.mainClientHandler).Methods("GET")
+	r.HandleFunc("/live", h.liveHandler).Methods("GET")
 
 	r.HandleFunc("/driver", h.driverHandler).Methods("GET")
 	r.HandleFunc("/api/driver/start", h.handleDriverStart(b)).Methods("POST", "OPTIONS")
@@ -1395,6 +1415,7 @@ func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 	r.HandleFunc("/api/admin/drivers", h.handleAdminDrivers).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/admin/drivers/{id}", h.handleAdminDriverDetail).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/admin/orders", h.handleAdminOrders).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/admin/drivers/{id}/reject", h.RejectDriver).Methods(http.MethodPost)
 
 	// Delivery list routes
 	r.HandleFunc("/delivery-list", h.deliveryListHandler).Methods("GET")

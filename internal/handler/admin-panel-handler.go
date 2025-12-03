@@ -2,15 +2,179 @@
 package handler
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/go-telegram/bot"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 )
+
+type DriverShort struct {
+	ID         string
+	TelegramID int64
+	FirstName  string
+	LastName   string
+	Status     string
+	IsVerified bool
+	Contact    string
+}
+
+// POST /api/admin/drivers/{id}/reject?telegram_id=...
+func (h *Handler) RejectDriver(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	vars := mux.Vars(r)
+	driverID := vars["id"]
+
+	adminTidStr := r.URL.Query().Get("telegram_id")
+	if adminTidStr == "" {
+		h.writeJSON(w, http.StatusBadRequest, Response{
+			Success: false,
+			Message: "telegram_id қажет",
+		})
+		return
+	}
+
+	adminTid, err := strconv.ParseInt(adminTidStr, 10, 64)
+	if err != nil {
+		h.writeJSON(w, http.StatusBadRequest, Response{
+			Success: false,
+			Message: "telegram_id дұрыс емес",
+		})
+		return
+	}
+
+	// Доп. проверка, что это реально админ
+	if h.cfg.AdminTelegramID != 0 && adminTid != h.cfg.AdminTelegramID {
+		h.writeJSON(w, http.StatusForbidden, Response{
+			Success: false,
+			Message: "Тек әкімшіге рұқсат",
+		})
+		return
+	}
+
+	var req struct {
+		Reason string `json:"reason"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.writeJSON(w, http.StatusBadRequest, Response{
+			Success: false,
+			Message: "JSON қате",
+		})
+		return
+	}
+	if req.Reason == "" {
+		h.writeJSON(w, http.StatusBadRequest, Response{
+			Success: false,
+			Message: "Себеп бос болмауы керек",
+		})
+		return
+	}
+
+	// Транзакция: обновить статус + получить данные для сообщения
+	tx, err := h.db.BeginTx(ctx, nil)
+	if err != nil {
+		h.logErr("begin tx", err)
+		h.writeJSON(w, http.StatusInternalServerError, Response{Success: false, Message: "Tx error"})
+		return
+	}
+	defer tx.Rollback()
+
+	var driver DriverShort
+	// заблокируем только если он ещё не rejected
+	err = tx.QueryRowContext(ctx,
+		`SELECT id, telegram_id, first_name, last_name, status, is_verified, contact_number
+       FROM drivers
+       WHERE id = ?`,
+		driverID,
+	).Scan(&driver.ID, &driver.TelegramID, &driver.FirstName, &driver.LastName,
+		&driver.Status, &driver.IsVerified, &driver.Contact)
+	if err == sql.ErrNoRows {
+		h.writeJSON(w, http.StatusNotFound, Response{
+			Success: false,
+			Message: "Жүргізуші табылмады",
+		})
+		return
+	}
+	if err != nil {
+		h.logErr("select driver", err)
+		h.writeJSON(w, http.StatusInternalServerError, Response{Success: false, Message: "DB error"})
+		return
+	}
+
+	_, err = tx.ExecContext(ctx,
+		`UPDATE drivers
+         SET status = 'rejected',
+             is_verified = 0,
+             updated_at = CURRENT_TIMESTAMP,
+             approved_by = ?
+         WHERE id = ?`,
+		adminTidStr, driverID,
+	)
+	if err != nil {
+		h.logErr("update driver status", err)
+		h.writeJSON(w, http.StatusInternalServerError, Response{Success: false, Message: "DB update error"})
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		h.logErr("commit tx", err)
+		h.writeJSON(w, http.StatusInternalServerError, Response{Success: false, Message: "Tx commit error"})
+		return
+	}
+
+	// Отправляем сообщение водителю
+	go h.notifyDriverRejected(context.Background(), driver, req.Reason)
+
+	h.writeJSON(w, http.StatusOK, Response{
+		Success: true,
+		Message: "Жүргізуші блокталды",
+		Data: map[string]interface{}{
+			"driver_id": driverID,
+			"status":    "rejected",
+		},
+	})
+}
+
+func (h *Handler) notifyDriverRejected(ctx context.Context, d DriverShort, reason string) {
+	if d.TelegramID == 0 {
+		return
+	}
+
+	text := fmt.Sprintf(
+		"Сәлеметсіз бе, %s!\n\n"+
+			"Өкінішке орай, әкімші сіздің QazLine жүргізуші аккаунтыңызды қабылдамады.\n\n"+
+			"Себеп:\n%s\n\n"+
+			"Егер сұрақтарыңыз болса, әкімшімен байланысыңыз.",
+		d.FirstName,
+		reason,
+	)
+
+	_, err := h.bot.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID: d.TelegramID,
+		Text:   text,
+	})
+	if err != nil {
+		h.logErr("send reject message", err)
+	}
+}
+
+func (h *Handler) writeJSON(w http.ResponseWriter, status int, resp Response) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+func (h *Handler) logErr(msg string, err error) {
+	if h.logger != nil {
+		h.logger.Error(msg, zap.Error(err))
+	}
+}
 
 // ===== ADMIN API =====
 

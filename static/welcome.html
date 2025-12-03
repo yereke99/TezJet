@@ -537,6 +537,7 @@
           <p data-kz="Бағыттау..." data-ru="Перенаправление...">Бағыттау...</p>
         </div>
 
+        <!-- эти кнопки оставляем как есть, если у тебя backend-роуты /delivery и /register -->
         <a href="/delivery" class="action-btn primary" id="deliveryBtn">
           <div class="action-btn-content">
             <div class="action-btn-icon">📦</div>
@@ -574,6 +575,9 @@
     let currentLang = 'kz';
     let isChecking = false;
     let isRedirecting = false;
+
+    // базовый путь, чтобы нормально открывать main-client.html и delivery-list.html
+    const BASE_PATH = window.location.pathname.replace(/[^\/]+$/, '');
 
     const translations = {
       kz: {
@@ -615,7 +619,7 @@
       setupEventListeners();
       setLang('kz');
 
-      // Small delay so Telegram init finishes
+      // Небольшая задержка, чтобы Telegram init успел отработать
       setTimeout(() => {
         checkUserTypeAndRedirect();
       }, 800);
@@ -688,19 +692,19 @@
         if (result && result.success && result.data) {
           const userData = result.data;
 
-          // DRIVER → /delivery-list
+          // DRIVER → delivery-list.html
           if (userData.exists === true && userData.user_type === 'driver') {
-            console.log('🚗 DRIVER DETECTED → /delivery-list');
+            console.log('🚗 DRIVER DETECTED → delivery-list.html');
             showRedirectMessage('redirectingDriver');
-            redirectTo('/delivery-list');
+            redirectTo('delivery-list.html');
             return;
           }
 
-          // CLIENT → /driver-list
+          // CLIENT → main-client.html
           if (userData.exists === true && userData.user_type === 'client') {
-            console.log('👤 CLIENT DETECTED → /driver-list');
+            console.log('👤 CLIENT DETECTED → main-client.html');
             showRedirectMessage('redirectingClient');
-            redirectTo('/driver-list');
+            redirectTo('main-client.html');
             return;
           }
         }
@@ -746,7 +750,8 @@
       }
 
       setTimeout(() => {
-        window.location.replace(url);
+        // используем BASE_PATH + относительный путь
+        window.location.replace(BASE_PATH + url);
       }, 1500);
     }
 
@@ -776,7 +781,6 @@
       if (valueFromDict) {
         loadingText.textContent = valueFromDict;
       } else {
-        // fallback to data-* attr
         const attr = loadingText.getAttribute('data-' + currentLang);
         if (attr) {
           loadingText.textContent = attr;
@@ -828,8 +832,8 @@
 
     console.log('🎉 QazLine Welcome Page initialized');
     console.log('📋 Redirect rules:');
-    console.log('  - driver → /delivery-list');
-    console.log('  - client → /driver-list');
+    console.log('  - driver → delivery-list.html');
+    console.log('  - client → main-client.html');
     console.log('  - new user → stay on welcome page');
   </script>
 </body>

@@ -16,35 +16,35 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* ==================== LIGHT THEME (Default) ==================== */
+    /* ==================== LIGHT THEME (Uber-style) ==================== */
     :root {
-      --primary: #10b981;
-      --primary-dark: #059669;
-      --primary-light: #34d399;
-      --primary-ultra-light: #d1fae5;
+      --primary: #020617;           /* almost black */
+      --primary-dark: #000000;
+      --primary-light: #111827;
+      --primary-ultra-light: #e5e7eb;
       
-      --bg-main: #f8fafc;
+      --bg-main: #f3f4f6;           /* neutral gray background */
       --bg-secondary: #ffffff;
-      --bg-tertiary: #f1f5f9;
+      --bg-tertiary: #e5e7eb;
       --bg-card: #ffffff;
       
-      --text-primary: #0f172a;
-      --text-secondary: #475569;
-      --text-muted: #94a3b8;
+      --text-primary: #020617;
+      --text-secondary: #4b5563;
+      --text-muted: #9ca3af;
       
-      --border: #e2e8f0;
-      --border-light: #f1f5f9;
+      --border: #e5e7eb;
+      --border-light: #f3f4f6;
       
       --danger: #ef4444;
       --warning: #f59e0b;
-      --success: #10b981;
+      --success: #22c55e;
       --info: #3b82f6;
       
-      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07);
-      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08);
-      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
-      --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+      --shadow-sm: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+      --shadow-md: 0 4px 8px -2px rgb(15 23 42 / 0.08);
+      --shadow-lg: 0 12px 20px -4px rgb(15 23 42 / 0.12);
+      --shadow-xl: 0 20px 30px -6px rgb(15 23 42 / 0.18);
+      --shadow-card: 0 1px 3px 0 rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.04);
       
       --radius-sm: 8px;
       --radius-md: 12px;
@@ -53,31 +53,31 @@
       
       --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       
-      --gradient-primary: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-      --gradient-card: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(52, 211, 153, 0.05) 100%);
+      --gradient-primary: linear-gradient(135deg, #020617 0%, #111827 100%);
+      --gradient-card: linear-gradient(135deg, rgba(15, 23, 42, 0.03) 0%, rgba(30, 64, 175, 0.04) 100%);
     }
 
     /* ==================== DARK THEME ==================== */
     [data-theme="dark"] {
-      --bg-main: #0f172a;
-      --bg-secondary: #1e293b;
-      --bg-tertiary: #334155;
-      --bg-card: #1e293b;
+      --bg-main: #020617;
+      --bg-secondary: #030712;
+      --bg-tertiary: #111827;
+      --bg-card: #020617;
       
-      --text-primary: #f1f5f9;
-      --text-secondary: #cbd5e1;
-      --text-muted: #64748b;
+      --text-primary: #e5e7eb;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
       
-      --border: #334155;
-      --border-light: #475569;
+      --border: #111827;
+      --border-light: #1f2937;
       
-      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.2);
-      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3);
-      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4);
-      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5);
-      --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.2);
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+      --shadow-md: 0 4px 8px -2px rgb(0 0 0 / 0.6);
+      --shadow-lg: 0 12px 20px -4px rgb(0 0 0 / 0.7);
+      --shadow-xl: 0 20px 30px -6px rgb(0 0 0 / 0.8);
+      --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.5), 0 1px 2px -1px rgb(0 0 0 / 0.4);
       
-      --gradient-card: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(52, 211, 153, 0.1) 100%);
+      --gradient-card: linear-gradient(135deg, rgba(15, 23, 42, 0.6) 0%, rgba(15, 23, 42, 0.9) 100%);
     }
 
     html, body {
@@ -165,16 +165,13 @@
     .logo-icon svg {
       width: 100%;
       height: 100%;
-      filter: drop-shadow(0 4px 12px rgba(16, 185, 129, 0.3));
+      filter: drop-shadow(0 4px 12px rgba(15, 23, 42, 0.45));
     }
 
     .logo-text {
       font-size: 24px;
       font-weight: 700;
-      background: var(--gradient-primary);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      color: var(--text-primary);
       letter-spacing: -0.5px;
     }
 
@@ -183,12 +180,12 @@
       align-items: center;
       gap: 6px;
       padding: 6px 12px;
-      background: rgba(16, 185, 129, 0.1);
-      border: 1px solid rgba(16, 185, 129, 0.2);
+      background: rgba(15, 23, 42, 0.05);
+      border: 1px solid rgba(15, 23, 42, 0.12);
       border-radius: 999px;
       font-size: 11px;
       font-weight: 600;
-      color: var(--primary);
+      color: var(--text-secondary);
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
@@ -245,8 +242,8 @@
     }
 
     .nav-item.active {
-      background: var(--gradient-card);
-      color: var(--primary);
+      background: rgba(15, 23, 42, 0.06);
+      color: var(--text-primary);
       font-weight: 600;
       box-shadow: var(--shadow-sm);
     }
@@ -267,7 +264,7 @@
     .nav-badge {
       margin-left: auto;
       padding: 2px 8px;
-      background: var(--danger);
+      background: #111827;
       color: white;
       border-radius: 999px;
       font-size: 11px;
@@ -300,8 +297,8 @@
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: var(--success);
-      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+      background: #22c55e;
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
       animation: pulse 2s infinite;
     }
 
@@ -385,8 +382,8 @@
 
     .search-input:focus {
       outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+      border-color: #111827;
+      box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
     }
 
     .search-input::placeholder {
@@ -434,7 +431,7 @@
       right: -4px;
       width: 18px;
       height: 18px;
-      background: var(--danger);
+      background: #111827;
       color: white;
       border-radius: 50%;
       font-size: 10px;
@@ -526,7 +523,7 @@
       top: 0;
       left: 0;
       width: 100%;
-      height: 4px;
+      height: 3px;
       background: var(--gradient-primary);
       transform: scaleX(0);
       transform-origin: left;
@@ -534,8 +531,8 @@
     }
 
     .stat-card:hover {
-      border-color: var(--primary);
-      transform: translateY(-4px);
+      border-color: #111827;
+      transform: translateY(-3px);
       box-shadow: var(--shadow-lg);
     }
 
@@ -551,28 +548,15 @@
     }
 
     .stat-icon {
-      width: 56px;
-      height: 56px;
+      width: 48px;
+      height: 48px;
       border-radius: var(--radius-lg);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 28px;
-      background: var(--gradient-card);
+      font-size: 24px;
+      background: rgba(15, 23, 42, 0.04);
       box-shadow: var(--shadow-sm);
-    }
-
-    .stat-icon.drivers { 
-      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(96, 165, 250, 0.1) 100%);
-    }
-    .stat-icon.orders { 
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(251, 191, 36, 0.1) 100%);
-    }
-    .stat-icon.revenue { 
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(52, 211, 153, 0.1) 100%);
-    }
-    .stat-icon.active { 
-      background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%);
     }
 
     .stat-trend {
@@ -587,17 +571,17 @@
     }
 
     .stat-trend.up {
-      background: rgba(16, 185, 129, 0.1);
+      background: rgba(34, 197, 94, 0.08);
       color: var(--success);
     }
 
     .stat-trend.down {
-      background: rgba(239, 68, 68, 0.1);
+      background: rgba(239, 68, 68, 0.08);
       color: var(--danger);
     }
 
     .stat-value {
-      font-size: 36px;
+      font-size: 32px;
       font-weight: 700;
       margin-bottom: 8px;
       line-height: 1;
@@ -674,6 +658,7 @@
       align-items: center;
       gap: 6px;
       box-shadow: var(--shadow-sm);
+      white-space: nowrap;
     }
 
     .btn-primary {
@@ -695,6 +680,18 @@
     .btn-secondary:hover {
       background: var(--bg-main);
       transform: translateY(-1px);
+    }
+
+    .btn-danger {
+      background: #111827;
+      color: #f9fafb;
+      border: 1px solid #111827;
+    }
+
+    .btn-danger:hover {
+      background: #000000;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
     }
 
     .btn-sm {
@@ -738,10 +735,7 @@
     .map-overlay-value {
       font-size: 20px;
       font-weight: 700;
-      background: var(--gradient-primary);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      color: var(--text-primary);
     }
 
     /* ==================== TABLE ==================== */
@@ -840,9 +834,9 @@
     }
 
     .badge-success {
-      background: rgba(16, 185, 129, 0.1);
+      background: rgba(34, 197, 94, 0.1);
       color: var(--success);
-      border: 1px solid rgba(16, 185, 129, 0.2);
+      border: 1px solid rgba(34, 197, 94, 0.2);
     }
 
     .badge-warning {
@@ -892,7 +886,7 @@
     }
 
     .activity-icon.success {
-      background: rgba(16, 185, 129, 0.1);
+      background: rgba(34, 197, 94, 0.1);
       color: var(--success);
     }
 
@@ -1026,7 +1020,7 @@
       width: 40px;
       height: 40px;
       border: 3px solid var(--border);
-      border-top-color: var(--primary);
+      border-top-color: #111827;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
@@ -1139,6 +1133,7 @@
       display: flex;
       gap: 12px;
       justify-content: flex-end;
+      flex-wrap: wrap;
     }
 
     /* ==================== DRIVER DETAILS ==================== */
@@ -1196,8 +1191,8 @@
     }
 
     .doc-link:hover {
-      border-color: var(--primary);
-      color: var(--primary);
+      border-color: #111827;
+      color: #111827;
       transform: translateY(-1px);
     }
 
@@ -1267,16 +1262,13 @@
           <div class="logo-icon">
             <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect width="48" height="48" rx="12" fill="url(#gradient)"/>
-              <path d="M24 12L32 18V30L24 36L16 30V18L24 12Z" fill="white" opacity="0.9"/>
-              <path d="M24 20L28 22.5V27.5L24 30L20 27.5V22.5L24 20Z" fill="url(#gradient2)"/>
+              <path d="M12 30L18 18H22L16 30H12Z" fill="white" opacity="0.9"/>
+              <path d="M22 30L26 18H30L26 30H22Z" fill="white" opacity="0.9"/>
+              <path d="M30 30H36V18H32L30 30Z" fill="white" opacity="0.9"/>
               <defs>
                 <linearGradient id="gradient" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#10b981"/>
-                  <stop offset="1" stop-color="#34d399"/>
-                </linearGradient>
-                <linearGradient id="gradient2" x1="20" y1="20" x2="28" y2="30" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#059669"/>
-                  <stop offset="1" stop-color="#10b981"/>
+                  <stop stop-color="#020617"/>
+                  <stop offset="1" stop-color="#111827"/>
                 </linearGradient>
               </defs>
             </svg>
@@ -1383,7 +1375,7 @@
           <div class="stats-grid">
             <div class="stat-card">
               <div class="stat-header">
-                <div class="stat-icon drivers">🚚</div>
+                <div class="stat-icon">🚚</div>
                 <div class="stat-trend up">
                   <span>↑</span>
                   <span>12%</span>
@@ -1399,7 +1391,7 @@
 
             <div class="stat-card">
               <div class="stat-header">
-                <div class="stat-icon orders">📦</div>
+                <div class="stat-icon">📦</div>
                 <div class="stat-trend up">
                   <span>↑</span>
                   <span>8%</span>
@@ -1415,7 +1407,7 @@
 
             <div class="stat-card">
               <div class="stat-header">
-                <div class="stat-icon revenue">💰</div>
+                <div class="stat-icon">💰</div>
                 <div class="stat-trend up">
                   <span>↑</span>
                   <span>24%</span>
@@ -1423,12 +1415,12 @@
               </div>
               <div class="stat-value">₸<span id="totalRevenue">-</span></div>
               <div class="stat-label">Табыс</div>
-              <div class="stat-sublabel">Осы айда</div>
+              <div class="stat-sublabel">Осы айда (бағалау)</div>
             </div>
 
             <div class="stat-card">
               <div class="stat-header">
-                <div class="stat-icon active">⚡</div>
+                <div class="stat-icon">⚡</div>
                 <div class="stat-trend up">
                   <span>↑</span>
                   <span>5%</span>
@@ -1683,6 +1675,10 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" id="closeDriverModalBtn">Жабу</button>
+        <button class="btn btn-danger" id="rejectDriverBtn">
+          <span>🚫</span>
+          <span>Блоктау</span>
+        </button>
         <button class="btn btn-primary" id="contactDriverBtn">
           <span>💬</span>
           <span>Хабарласу</span>
@@ -1991,19 +1987,19 @@
         el.style.height = '16px';
         el.style.borderRadius = '50%';
         el.style.border = '3px solid white';
-        el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15), 0 0 0 6px rgba(16,185,129,0.2)';
-        el.style.background = driver.status === 'approved' ? '#10b981' : '#f59e0b';
+        el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.18), 0 0 0 6px rgba(15,23,42,0.18)';
+        el.style.background = driver.status === 'approved' ? '#facc15' : '#9ca3af';
         el.style.cursor = 'pointer';
         el.style.transition = 'all 0.2s';
 
         el.addEventListener('mouseenter', () => {
           el.style.transform = 'scale(1.3)';
-          el.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2), 0 0 0 8px rgba(16,185,129,0.3)';
+          el.style.boxShadow = '0 4px 12px rgba(0,0,0,0.25), 0 0 0 8px rgba(15,23,42,0.25)';
         });
 
         el.addEventListener('mouseleave', () => {
           el.style.transform = 'scale(1)';
-          el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15), 0 0 0 6px rgba(16,185,129,0.2)';
+          el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.18), 0 0 0 6px rgba(15,23,42,0.18)';
         });
 
         el.addEventListener('click', () => {
@@ -2016,7 +2012,7 @@
       });
     }
 
-    // ==================== RECENT ACTIVITY ====================
+    // ==================== RECENT ACTIVITY ==================== */
     function loadRecentActivity() {
       const activityList = document.getElementById('activityList');
       
@@ -2058,7 +2054,7 @@
       `).join('');
     }
 
-    // ==================== RECENT ORDERS TABLE ====================
+    // ==================== RECENT ORDERS TABLE ==================== */
     function loadRecentOrders() {
       const tbody = document.getElementById('recentOrdersBody');
       const recentOrders = ordersData.slice(0, 5);
@@ -2101,7 +2097,7 @@
       `).join('');
     }
 
-    // ==================== DRIVERS TABLE ====================
+    // ==================== DRIVERS TABLE ==================== */
     function loadDriversTable() {
       const tbody = document.getElementById('driversTableBody');
 
@@ -2140,16 +2136,19 @@
           <td><span class="badge badge-info">${getTruckTypeName(driver.truck_type)}</span></td>
           <td>${getStatusBadge(driver.status)}</td>
           <td>${formatDate(driver.created_at)}</td>
-          <td>
+          <td style="display:flex;gap:6px;flex-wrap:wrap;">
             <button class="btn btn-sm btn-secondary" onclick="showDriverDetails('${driver.id}')">
               Көру
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="openRejectPrompt('${driver.id}')">
+              🚫 Блок
             </button>
           </td>
         </tr>
       `).join('');
     }
 
-    // ==================== ORDERS TABLE ====================
+    // ==================== ORDERS TABLE ==================== */
     function loadOrdersTable() {
       const tbody = document.getElementById('ordersTableBody');
 
@@ -2195,7 +2194,7 @@
       `).join('');
     }
 
-    // ==================== DRIVER DETAILS MODAL ====================
+    // ==================== DRIVER DETAILS MODAL ==================== */
     function showDriverDetails(driverId) {
       const driver = driversData.find(d => d.id === driverId);
       if (!driver) return;
@@ -2259,7 +2258,7 @@
 
       modal.classList.add('active');
 
-      // Update contact button
+      // Contact button
       const contactBtn = document.getElementById('contactDriverBtn');
       contactBtn.onclick = () => {
         if (driver.contact_number) {
@@ -2267,28 +2266,79 @@
           window.open(`https://wa.me/${digits}`, '_blank');
         }
       };
+
+      // Reject button from modal
+      const rejectBtn = document.getElementById('rejectDriverBtn');
+      rejectBtn.onclick = () => {
+        openRejectPrompt(driver.id);
+      };
     }
 
-    // ==================== ANALYTICS CHARTS ====================
+    // ==================== REJECT / BLOCK DRIVER ==================== */
+    function openRejectPrompt(driverId) {
+      const driver = driversData.find(d => d.id === driverId);
+      const name = driver ? `${driver.first_name} ${driver.last_name}` : '';
+      const reason = prompt(`Жүргізушіні неге блоктайсыз?\n\nЖүргізуші: ${name}\n\nСебебін жазыңыз (клиентке де осы мәтін жіберіледі):`);
+      if (!reason || !reason.trim()) return;
+
+      rejectDriver(driverId, reason.trim());
+    }
+
+    async function rejectDriver(driverId, reason) {
+      try {
+        const res = await fetch(`/api/admin/drivers/${driverId}/reject?telegram_id=${adminTelegramId}`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ reason })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          alert(data.message || 'Жүргізушіні блоктау сәтсіз аяқталды');
+          return;
+        }
+
+        // Update local state
+        const idx = driversData.findIndex(d => d.id === driverId);
+        if (idx !== -1) {
+          driversData[idx].status = 'rejected';
+          driversData[idx].is_verified = false;
+        }
+
+        loadDriversTable();
+        updateDriversOnMap();
+
+        alert('Жүргізуші блокталды және хабарлама жіберілді.');
+        
+        const modal = document.getElementById('driverModal');
+        modal.classList.remove('active');
+      } catch (err) {
+        console.error(err);
+        alert('Қате пайда болды. Кейінірек қайталап көріңіз.');
+      }
+    }
+
+    // ==================== ANALYTICS CHARTS ==================== */
     function initCharts() {
       if (!summaryData) return;
 
       const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-      const textColor = isDark ? '#cbd5e1' : '#475569';
-      const gridColor = isDark ? '#334155' : '#e2e8f0';
+      const textColor = isDark ? '#cbd5e1' : '#4b5563';
+      const gridColor = isDark ? '#111827' : '#e5e7eb';
 
       // Orders chart
-      const ordersData = summaryData.charts?.orders_by_day || [];
+      const ordersChartData = summaryData.charts?.orders_by_day || [];
       if (ordersChart) ordersChart.destroy();
       ordersChart = new Chart(document.getElementById('ordersChart'), {
         type: 'line',
         data: {
-          labels: ordersData.map(d => new Date(d.date).toLocaleDateString('kk-KZ', { month: 'short', day: 'numeric' })),
+          labels: ordersChartData.map(d => new Date(d.date).toLocaleDateString('kk-KZ', { month: 'short', day: 'numeric' })),
           datasets: [{
             label: 'Тапсырыстар',
-            data: ordersData.map(d => d.count),
-            borderColor: '#10b981',
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            data: ordersChartData.map(d => d.count),
+            borderColor: '#111827',
+            backgroundColor: 'rgba(15, 23, 42, 0.12)',
             tension: 0.4,
             fill: true
           }]
@@ -2323,7 +2373,7 @@
           datasets: [{
             label: 'Жаңа жүргізушілер',
             data: driversChartData.map(d => d.count),
-            backgroundColor: 'rgba(59, 130, 246, 0.8)',
+            backgroundColor: 'rgba(15, 23, 42, 0.9)',
             borderRadius: 8
           }]
         },
@@ -2347,17 +2397,17 @@
         }
       });
 
-      // Revenue chart
+      // Revenue chart (mock from orders)
       if (revenueChart) revenueChart.destroy();
       revenueChart = new Chart(document.getElementById('revenueChart'), {
         type: 'line',
         data: {
-          labels: ordersData.map(d => new Date(d.date).toLocaleDateString('kk-KZ', { month: 'short', day: 'numeric' })),
+          labels: ordersChartData.map(d => new Date(d.date).toLocaleDateString('kk-KZ', { month: 'short', day: 'numeric' })),
           datasets: [{
             label: 'Табыс (₸)',
-            data: ordersData.map(d => d.count * 5000),
-            borderColor: '#10b981',
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            data: ordersChartData.map(d => d.count * 5000),
+            borderColor: '#111827',
+            backgroundColor: 'rgba(15, 23, 42, 0.12)',
             tension: 0.4,
             fill: true
           }]
@@ -2400,10 +2450,10 @@
               orders.cancelled || 0
             ],
             backgroundColor: [
-              'rgba(16, 185, 129, 0.8)',
-              'rgba(245, 158, 11, 0.8)',
-              'rgba(59, 130, 246, 0.8)',
-              'rgba(239, 68, 68, 0.8)'
+              'rgba(34, 197, 94, 0.9)',
+              'rgba(245, 158, 11, 0.9)',
+              'rgba(59, 130, 246, 0.9)',
+              'rgba(239, 68, 68, 0.9)'
             ]
           }]
         },
@@ -2420,12 +2470,13 @@
       });
     }
 
-    // ==================== HELPER FUNCTIONS ====================
+    // ==================== HELPER FUNCTIONS ==================== */
     function getStatusBadge(status) {
       const badges = {
         'approved': '<span class="badge badge-success">Мақұлданған</span>',
         'pending': '<span class="badge badge-warning">Күтуде</span>',
         'rejected': '<span class="badge badge-danger">Бас тартылған</span>',
+        'suspended': '<span class="badge badge-danger">Тоқтатылған</span>',
         'completed': '<span class="badge badge-success">Аяқталған</span>',
         'in_progress': '<span class="badge badge-info">Орындалуда</span>',
         'matched': '<span class="badge badge-info">Сәйкестендірілген</span>',

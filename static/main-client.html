@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="kz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>QazLine – Клиент</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg-primary: #000000;
+      --bg-secondary: #ffffff;
+      --bg-card: #f8f9fa;
+      --bg-card-dark: #111111;
+      --text-primary: #000000;
+      --text-secondary: #666666;
+      --text-muted: #999999;
+      --text-white: #ffffff;
+      --accent-primary: #000000;
+      --accent-secondary: #007AFF;
+      --border: #e5e5e5;
+      --border-light: #f0f0f0;
+      --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.08);
+      --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.12);
+      --shadow-strong: 0 8px 32px rgba(0, 0, 0, 0.16);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+
+      --tg-viewport-stable-height: 100vh;
+      --bottom-nav-height: 72px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100vh;
+      height: 100dvh;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", "Inter", sans-serif;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: var(--tg-viewport-stable-height, 100vh);
+      padding-top: max(10px, env(safe-area-inset-top, 10px));
+      padding-bottom: calc(var(--bottom-nav-height) + max(14px, env(safe-area-inset-bottom, 14px)));
+      padding-left: max(16px, env(safe-area-inset-left, 16px));
+      padding-right: max(16px, env(safe-area-inset-right, 16px));
+      overflow: hidden;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .background {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at top, rgba(0,0,0,0.05), transparent 55%),
+                  var(--bg-secondary);
+      z-index: -2;
+    }
+
+    .background::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(0,0,0,0.04) 0%, transparent 50%);
+      z-index: -1;
+    }
+
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 24px;
+      z-index: 9999;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+    }
+
+    .loading-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .loading-spinner {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--border-light);
+      border-top: 2px solid var(--accent-primary);
+      animation: spin 1s linear infinite;
+    }
+
+    .loading-text {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .lang-switch {
+      position: absolute;
+      top: max(60px, calc(env(safe-area-inset-top, 20px) + 40px));
+      right: 18px;
+      display: flex;
+      background: var(--bg-card);
+      border-radius: 24px;
+      padding: 4px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-subtle);
+      z-index: 20;
+    }
+
+    .lang-btn {
+      background: transparent;
+      border: none;
+      border-radius: 20px;
+      padding: 6px 14px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      min-width: 44px;
+      color: var(--text-secondary);
+      transition: all 0.2s ease;
+    }
+
+    .lang-btn.active {
+      background: var(--accent-primary);
+      color: var(--text-white);
+      transform: scale(1.02);
+    }
+
+    .lang-btn:hover:not(.active) {
+      background: var(--border-light);
+      color: var(--text-primary);
+    }
+
+    .app-root {
+      position: relative;
+      height: 100%;
+      max-width: 420px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    .app-root.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 2px 10px 2px;
+      flex-shrink: 0;
+    }
+
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-square {
+      width: 38px;
+      height: 38px;
+      border-radius: 14px;
+      background: var(--accent-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-white);
+      font-weight: 800;
+      font-size: 22px;
+      letter-spacing: -1px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    }
+
+    .brand-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .user-pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.04);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .user-avatar {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: #111;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .content-scroll {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 4px 2px 0 2px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .content-scroll::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+    }
+
+    .hero-card {
+      position: relative;
+      border-radius: var(--radius-xl);
+      background: radial-gradient(circle at top left, #1f2937 0%, #020617 45%, #000000 100%);
+      color: var(--text-white);
+      padding: 18px 16px 16px 16px;
+      box-shadow: var(--shadow-strong);
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    .hero-badge-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .pill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .pill-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 0 3px rgba(34,197,94,0.35);
+    }
+
+    .hero-time {
+      font-size: 11px;
+      color: rgba(255,255,255,0.75);
+    }
+
+    .hero-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      margin-bottom: 6px;
+    }
+
+    .hero-subtitle {
+      font-size: 13px;
+      color: rgba(255,255,255,0.8);
+      max-width: 260px;
+      margin-bottom: 14px;
+    }
+
+    .hero-cta-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hero-btn-primary {
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 999px;
+      border: none;
+      padding: 11px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      background: #f9fafb;
+      color: #000;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 10px 30px rgba(15,23,42,0.6);
+      transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .hero-btn-primary span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .hero-btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 40px rgba(15,23,42,0.8);
+      background: #ffffff;
+    }
+
+    .hero-btn-primary:active {
+      transform: translateY(0);
+      box-shadow: 0 8px 24px rgba(15,23,42,0.7);
+    }
+
+    .hero-secondary {
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      background: rgba(15,23,42,0.6);
+      backdrop-filter: blur(12px);
+      color: rgba(255,255,255,0.9);
+    }
+
+    .hero-map-hint {
+      position: absolute;
+      right: 14px;
+      bottom: 12px;
+      font-size: 11px;
+      color: rgba(148,163,184,0.9);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .hero-map-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #38bdf8;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 4px 2px 8px 2px;
+    }
+
+    .section-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .section-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .section-action {
+      font-size: 12px;
+      color: var(--accent-secondary);
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .info-card {
+      border-radius: var(--radius-lg);
+      background: var(--bg-card);
+      padding: 12px 12px;
+      box-shadow: var(--shadow-subtle);
+      border: 1px solid var(--border-light);
+      display: flex;
+      gap: 10px;
+    }
+
+    .info-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      background: #000;
+      color: #fff;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .info-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .info-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .info-text {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.35;
+    }
+
+    .info-meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .pill-small {
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.04);
+      font-size: 11px;
+    }
+
+    .gray-text {
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 8px max(16px, env(safe-area-inset-left, 16px))
+                  max(8px, env(safe-area-inset-bottom, 8px))
+                  max(16px, env(safe-area-inset-right, 16px));
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(18px);
+      border-top: 1px solid rgba(148,163,184,0.3);
+      z-index: 30;
+      display: flex;
+      justify-content: center;
+    }
+
+    .bottom-nav-inner {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+    }
+
+    .nav-item {
+      flex: 1;
+      border-radius: 999px;
+      padding: 7px 8px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border: 1px solid transparent;
+      background: transparent;
+      -webkit-user-select: none;
+      user-select: none;
+      text-decoration: none;
+    }
+
+    .nav-item span.icon {
+      font-size: 16px;
+    }
+
+    .nav-item.active {
+      background: #000;
+      color: #fff;
+      border-color: #000;
+      box-shadow: 0 8px 24px rgba(15,23,42,0.45);
+    }
+
+    .nav-item.active .icon {
+      transform: translateY(-0.5px);
+    }
+
+    .nav-item-label {
+      white-space: nowrap;
+    }
+
+    .nav-item:active:not(.active) {
+      background: rgba(0,0,0,0.05);
+    }
+
+    @media (max-width: 480px) {
+      .hero-title { font-size: 18px; }
+      .hero-subtitle { font-size: 12px; }
+      .info-title { font-size: 13px; }
+      .info-text { font-size: 12px; }
+    }
+
+    @media (max-height: 640px) {
+      body {
+        padding-top: max(6px, env(safe-area-inset-top, 6px));
+        padding-bottom: calc(var(--bottom-nav-height) + max(6px, env(safe-area-inset-bottom, 6px)));
+      }
+      .hero-card {
+        padding: 14px 12px 12px 12px;
+        border-radius: 18px;
+      }
+    }
+
+    .lang-btn:focus,
+    .nav-item:focus {
+      outline: 2px solid var(--accent-secondary);
+      outline-offset: 1px;
+    }
+  </style>
+</head>
+<body>
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text"
+         data-kz="Жүктелуде..."
+         data-ru="Загрузка...">
+      Жүктелуде...
+    </div>
+  </div>
+
+  <div class="background"></div>
+
+  <div class="lang-switch">
+    <button class="lang-btn active" id="lang-kz" onclick="setLang('kz')">ҚАЗ</button>
+    <button class="lang-btn" id="lang-ru" onclick="setLang('ru')">РУС</button>
+  </div>
+
+  <div class="app-root" id="appRoot">
+    <header class="top-bar">
+      <div class="logo-wrap">
+        <div class="logo-square">Q</div>
+        <div class="brand-info">
+          <div class="brand-title">QazLine</div>
+          <div class="brand-subtitle"
+               id="brandSubtitle"
+               data-kz="Жеткізу клиенті"
+               data-ru="Клиент доставки">
+            Жеткізу клиенті
+          </div>
+        </div>
+      </div>
+      <div class="user-pill" id="userPill">
+        <div class="user-avatar" id="userAvatar">👤</div>
+        <span id="userNameText"
+              data-kz="Клиент"
+              data-ru="Клиент">Клиент</span>
+      </div>
+    </header>
+
+    <main class="content-scroll">
+      <section class="hero-card">
+        <div class="hero-badge-row">
+          <div class="pill-badge">
+            <span class="pill-dot"></span>
+            <span id="statusBadge"
+                  data-kz="Қызмет онлайн"
+                  data-ru="Сервис онлайн">Қызмет онлайн</span>
+          </div>
+          <div class="hero-time" id="heroTime"></div>
+        </div>
+
+        <h1 class="hero-title"
+            id="heroTitle"
+            data-kz="Қайда жеткіземіз?"
+            data-ru="Куда везём груз?">
+          Қайда жеткіземіз?
+        </h1>
+
+        <p class="hero-subtitle"
+           id="heroSubtitle"
+           data-kz="Жаңа тапсырыс беріп, жақын жүргізушіні табыңыз."
+           data-ru="Оформите новый заказ и мы подберём ближайшего водителя.">
+          Жаңа тапсырыс беріп, жақын жүргізушіні табыңыз.
+        </p>
+
+        <div class="hero-cta-row">
+          <a href="/delivery" class="hero-btn-primary" id="newOrderBtn">
+            <span>
+              <span>📦</span>
+              <span id="newOrderText"
+                    data-kz="Жаңа тапсырыс"
+                    data-ru="Новый заказ">Жаңа тапсырыс</span>
+            </span>
+          </a>
+          <button class="hero-secondary" type="button" id="historyQuickBtn" aria-label="History">
+            ⏱
+          </button>
+        </div>
+
+        <div class="hero-map-hint">
+          <div class="hero-map-dot"></div>
+          <span id="etaText"
+                data-kz="Орташа күту: 5–10 мин"
+                data-ru="Среднее ожидание: 5–10 мин">
+            Орташа күту: 5–10 мин
+          </span>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-header">
+          <div>
+            <div class="section-title"
+                 id="sectionRecentTitle"
+                 data-kz="Соңғы тапсырысыңыз"
+                 data-ru="Ваш последний заказ">
+              Соңғы тапсырысыңыз
+            </div>
+            <div class="section-subtitle"
+                 id="sectionRecentSubtitle"
+                 data-kz="Мәртебесін тез тексеріңіз"
+                 data-ru="Быстро проверяйте статус">
+              Мәртебесін тез тексеріңіз
+            </div>
+          </div>
+          <div class="section-action" id="goHistoryFromHeader">
+            <span data-kz="Барлық тарих"
+                  data-ru="Вся история">Барлық тарих</span> →
+          </div>
+        </div>
+
+        <div class="card-list">
+          <article class="info-card" id="lastOrderCard">
+            <div class="info-icon">🚚</div>
+            <div class="info-body">
+              <div class="info-title" id="lastOrderTitle"
+                   data-kz="Соңғы тапсырыс табылмады"
+                   data-ru="Последний заказ не найден">
+                Соңғы тапсырыс табылмады
+              </div>
+              <div class="info-text" id="lastOrderDesc"
+                   data-kz="Жаңа тапсырыс жасағаннан кейін мұнда соңғы бағыт көрінеді."
+                   data-ru="После оформления заказа здесь появится последний маршрут.">
+                Жаңа тапсырыс жасағаннан кейін мұнда соңғы бағыт көрінеді.
+              </div>
+              <div class="info-meta-row">
+                <span class="pill-small" id="lastOrderStatus"
+                      data-kz="Статус: белсенді емес"
+                      data-ru="Статус: нет активных">
+                  Статус: белсенді емес
+                </span>
+                <span class="gray-text" id="lastOrderMeta"
+                      data-kz="Әзірге тапсырыс жоқ"
+                      data-ru="Заказов пока нет">
+                  Әзірге тапсырыс жоқ
+                </span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-header">
+          <div>
+            <div class="section-title"
+                 id="sectionTipsTitle"
+                 data-kz="Кеңестер мен қауіпсіздік"
+                 data-ru="Советы и безопасность">
+              Кеңестер мен қауіпсіздік
+            </div>
+          </div>
+        </div>
+        <div class="card-list">
+          <article class="info-card">
+            <div class="info-icon">🛡</div>
+            <div class="info-body">
+              <div class="info-title"
+                   data-kz="Жеткізу барысын бақылаңыз"
+                   data-ru="Отслеживайте доставку">
+                Жеткізу барысын бақылаңыз
+              </div>
+              <div class="info-text"
+                   data-kz="Жүргізуші тапсырысыңызды қабылдағаннан кейін сізге Telegram-да хабарлама келеді."
+                   data-ru="После принятия заказа водителем вы получите уведомление в Telegram.">
+                Жүргізуші тапсырысыңызды қабылдағаннан кейін сізге Telegram-да хабарлама келеді.
+              </div>
+            </div>
+          </article>
+
+          <article class="info-card">
+            <div class="info-icon">💳</div>
+            <div class="info-body">
+              <div class="info-title"
+                   data-kz="Қауіпсіз төлем"
+                   data-ru="Безопасная оплата">
+                Қауіпсіз төлем
+              </div>
+              <div class="info-text"
+                   data-kz="Төлем шарттарын жүргізушімен жеке келісіп, тек ресми чектерді сақтаңыз."
+                   data-ru="Уточняйте условия оплаты с водителем и сохраняйте чек.">
+                Төлем шарттарын жүргізушімен жеке келісіп, тек ресми чектерді сақтаңыз.
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <button class="nav-item active" id="tabHome" type="button">
+        <span class="icon">🏠</span>
+        <span class="nav-item-label"
+              data-kz="Басты"
+              data-ru="Главная">Басты</span>
+      </button>
+      <button class="nav-item" id="tabHistory" type="button">
+        <span class="icon">📜</span>
+        <span class="nav-item-label"
+              data-kz="Тарих"
+              data-ru="История">Тарих</span>
+      </button>
+      <button class="nav-item" id="tabProfile" type="button">
+        <span class="icon">⚙️</span>
+        <span class="nav-item-label"
+              data-kz="Профиль"
+              data-ru="Профиль">Профиль</span>
+      </button>
+    </div>
+  </nav>
+
+  <script>
+    let currentLang = "kz";
+    let isCheckingUser = false;
+
+    document.addEventListener("DOMContentLoaded", () => {
+      initTelegram();
+      setLang("kz");
+      initTimeLabel();
+      bindEvents();
+      checkUserRoleAndShow();
+    });
+
+    function initTelegram() {
+      try {
+        if (window.Telegram && Telegram.WebApp) {
+          Telegram.WebApp.ready();
+          Telegram.WebApp.expand();
+          if (Telegram.WebApp.disableVerticalSwipes) {
+            Telegram.WebApp.disableVerticalSwipes();
+          }
+        }
+      } catch (e) {
+        console.warn("Telegram init error:", e);
+      }
+    }
+
+    function bindEvents() {
+      const historyBtn = document.getElementById("historyQuickBtn");
+      const headerHistory = document.getElementById("goHistoryFromHeader");
+      const tabHome = document.getElementById("tabHome");
+      const tabHistory = document.getElementById("tabHistory");
+      const tabProfile = document.getElementById("tabProfile");
+
+      if (historyBtn) {
+        historyBtn.addEventListener("click", () => goHistory());
+      }
+      if (headerHistory) {
+        headerHistory.addEventListener("click", () => goHistory());
+      }
+
+      if (tabHome) {
+        tabHome.addEventListener("click", () => {
+          setActiveTab("home");
+        });
+      }
+
+      if (tabHistory) {
+        tabHistory.addEventListener("click", () => {
+          setActiveTab("history");
+          goHistory();
+        });
+      }
+
+      if (tabProfile) {
+        tabProfile.addEventListener("click", () => {
+          setActiveTab("profile");
+          openProfile();
+        });
+      }
+    }
+
+    function setActiveTab(tab) {
+      document.querySelectorAll(".nav-item").forEach(btn => btn.classList.remove("active"));
+      if (tab === "home") {
+        const el = document.getElementById("tabHome");
+        el && el.classList.add("active");
+      } else if (tab === "history") {
+        const el = document.getElementById("tabHistory");
+        el && el.classList.add("active");
+      } else if (tab === "profile") {
+        const el = document.getElementById("tabProfile");
+        el && el.classList.add("active");
+      }
+    }
+
+    function goHistory() {
+      // 👉 Страница истории клиента
+      window.location.href = "/user-history";
+    }
+
+    function openProfile() {
+      // Пока простой alert / можно позже сделать /client-profile.html
+      if (window.Telegram?.WebApp?.showAlert) {
+        const txt = currentLang === "kz"
+          ? "Профиль беті әзірлену үстінде."
+          : "Страница профиля в разработке.";
+        Telegram.WebApp.showAlert(txt);
+      } else {
+        alert(currentLang === "kz"
+          ? "Профиль беті әзірлену үстінде."
+          : "Страница профиля в разработке.");
+      }
+      setActiveTab("home");
+    }
+
+    function initTimeLabel() {
+      const el = document.getElementById("heroTime");
+      if (!el) return;
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, "0");
+      const m = String(now.getMinutes()).padStart(2, "0");
+      el.textContent = `${h}:${m}`;
+    }
+
+    function getTelegramId() {
+      try {
+        if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
+          return Telegram.WebApp.initDataUnsafe.user.id;
+        }
+      } catch (e) {
+        console.warn("initDataUnsafe error:", e);
+      }
+      const params = new URLSearchParams(location.search);
+      const testId = params.get("test_id");
+      return testId || null;
+    }
+
+    async function checkUserRoleAndShow() {
+      const overlay = document.getElementById("loadingOverlay");
+      const root = document.getElementById("appRoot");
+      const tgId = getTelegramId();
+
+      if (!tgId) {
+        // Нет Telegram ID → отправляем на welcome
+        updateLoadingText("noUser");
+        setTimeout(() => {
+          if (overlay) overlay.classList.add("hidden");
+          if (root) root.classList.add("visible");
+        }, 300);
+        return;
+      }
+
+      isCheckingUser = true;
+      updateLoadingText("checkingUser");
+
+      try {
+        const res = await fetch("/api/check/who", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ telegram_id: parseInt(tgId, 10) })
+        });
+
+        if (!res.ok) {
+          throw new Error("HTTP " + res.status);
+        }
+
+        const data = await res.json();
+        if (data && data.success && data.data) {
+          const userData = data.data;
+
+          // Если это водитель → отправляем на /delivery-list
+          if (userData.exists === true && userData.user_type === "driver") {
+            updateLoadingText("redirectDriver");
+            setTimeout(() => {
+              window.location.replace("/delivery-list");
+            }, 600);
+            return;
+          }
+
+          // Клиент → остаёмся здесь
+          setClientNameFromTelegram();
+        } else {
+          // Новый юзер, считаем клиентом
+          setClientNameFromTelegram();
+        }
+      } catch (e) {
+        console.error("checkUserRole error:", e);
+        updateLoadingText("error");
+        setTimeout(() => {}, 700);
+      } finally {
+        isCheckingUser = false;
+        setTimeout(() => {
+          if (overlay) overlay.classList.add("hidden");
+          if (root) root.classList.add("visible");
+        }, 250);
+      }
+    }
+
+    function setClientNameFromTelegram() {
+      try {
+        const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
+        if (!user) return;
+
+        const nameEl = document.getElementById("userNameText");
+        const avatarEl = document.getElementById("userAvatar");
+
+        const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ");
+        if (nameEl && fullName) {
+          nameEl.textContent = fullName;
+        }
+        if (avatarEl && fullName) {
+          const initial = (fullName || "Q")[0].toUpperCase();
+          avatarEl.textContent = initial;
+        }
+      } catch (e) {
+        console.warn("setClientNameFromTelegram error:", e);
+      }
+    }
+
+    function updateLoadingText(key) {
+      const el = document.querySelector(".loading-text");
+      if (!el) return;
+
+      const dict = {
+        kz: {
+          checkingUser: "Пайдаланушы түрі тексерілуде...",
+          redirectDriver: "Жүргізуші панеліне бағыттау...",
+          error: "Қате пайда болды. Кейінірек қайталап көріңіз.",
+          noUser: "WebApp деректері жоқ. Welcome бетіне өтіңіз."
+        },
+        ru: {
+          checkingUser: "Проверяем тип пользователя...",
+          redirectDriver: "Перенаправляем в панель водителя...",
+          error: "Произошла ошибка. Попробуйте позже.",
+          noUser: "Нет данных WebApp. Откройте Welcome-страницу."
+        }
+      };
+
+      const langDict = dict[currentLang] || dict.kz;
+      const text = langDict[key] || el.getAttribute("data-" + currentLang);
+      if (text) el.textContent = text;
+    }
+
+    function setLang(lang) {
+      if (isCheckingUser) return;
+      currentLang = lang;
+
+      document.querySelectorAll(".lang-btn").forEach(btn => btn.classList.remove("active"));
+      const activeBtn = document.getElementById("lang-" + lang);
+      if (activeBtn) activeBtn.classList.add("active");
+
+      document.querySelectorAll("[data-kz]").forEach(el => {
+        const t = el.getAttribute("data-" + lang);
+        if (t) el.textContent = t;
+      });
+
+      const root = document.getElementById("appRoot");
+      if (root) {
+        root.style.transform = "scale(0.99)";
+        setTimeout(() => {
+          root.style.transform = "scale(1)";
+        }, 100);
+      }
+    }
+
+    window.setLang = setLang;
+  </script>
+</body>
+</html>
