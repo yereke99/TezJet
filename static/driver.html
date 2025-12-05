@@ -59,6 +59,8 @@
 
       /* просто safe-area снизу, без лишних отступов */
       padding-bottom: env(safe-area-inset-bottom, 0px);
+
+      transition: background .18s ease;
     }
 
     /* HEADER */
@@ -192,7 +194,7 @@
 
       /* поднимаем кнопку чуть выше bottom-nav */
       bottom: calc(
-        88px                       /* было 68px – стал больший зазор */
+        88px                       /* зазор над bottom-nav */
         + env(safe-area-inset-bottom, 0px)
       );
 
@@ -260,24 +262,24 @@
       box-shadow:var(--shadow-sm);
       font-size:18px;
     }
-    /* уже есть .tab-icon – для аватара важно переписать вот это */
-#navAvatar{
-  width:34px;
-  height:34px;
-  border-radius:999px;
-  overflow:hidden;        /* чтобы фото не вылезало */
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
 
-/* само фото */
-#navAvatar img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  display:block;
-}
+    /* Аватарка в bottom-nav — строго круглая и обрезает фото */
+    #navAvatar{
+      width:34px;
+      height:34px;
+      border-radius:999px;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    #navAvatar img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+      border-radius:999px;
+    }
 
     .tab-avatar{
       overflow:hidden;
@@ -413,6 +415,64 @@
 
     .leaflet-control-attribution,
     .leaflet-control-zoom{display:none!important;}
+
+    /* ===== DESKTOP / LARGE SCREENS ADAPTATION ===== */
+    @media (min-width:1024px){
+      body{
+        background:#020617;
+        display:block;
+      }
+
+      /* Центруем контент как “телефон” по середине экрана */
+      .header,
+      .page-footer,
+      .bottom-nav{
+        left:50%;
+        right:auto;
+        transform:translateX(-50%);
+        width:100%;
+        max-width:480px;
+      }
+
+      .header{
+        border-radius:18px 18px 0 0;
+        margin-top:8px;
+        box-shadow:0 16px 40px rgba(15,23,42,.45);
+      }
+
+      .card{
+        max-width:480px;
+        margin-left:auto;
+        margin-right:auto;
+        margin-top:88px;
+        margin-bottom:120px;
+        border-radius:20px;
+        box-shadow:0 18px 40px rgba(15,23,42,.5);
+      }
+
+      .page-footer{
+        max-width:480px;
+        border-radius:18px;
+      }
+
+      .bottom-nav{
+        max-width:480px;
+        border-radius:999px;
+        box-shadow:0 18px 40px rgba(15,23,42,.6);
+      }
+
+      /* модалка-карта тоже центрируется и не растягивается */
+      .modal{
+        left:50%;
+        right:auto;
+        width:100%;
+        max-width:480px;
+        transform:translateX(-50%);
+        border-radius:22px;
+        box-shadow:0 24px 60px rgba(0,0,0,.7);
+        overflow:hidden;
+      }
+    }
   </style>
 </head>
 <body>

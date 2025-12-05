@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport"
         content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <title>QazLine – Клиент</title>
+  <title>Alash Go – Клиент</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
@@ -29,6 +29,12 @@
       --radius-xl: 24px;
 
       --tg-viewport-stable-height: 100vh;
+      --tg-safe-area-inset-top: env(safe-area-inset-top, 0px);
+      --tg-safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+      --tg-safe-area-inset-left: env(safe-area-inset-left, 0px);
+      --tg-safe-area-inset-right: env(safe-area-inset-right, 0px);
+      --tg-content-safe-area-inset-top: 0px;
+
       --bottom-nav-height: 72px;
     }
 
@@ -48,15 +54,24 @@
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", "Inter", sans-serif;
       background: var(--bg-secondary);
       color: var(--text-primary);
+
       position: fixed;
-      top: 0;
-      left: 0;
+      inset: 0;
       width: 100%;
       height: var(--tg-viewport-stable-height, 100vh);
-      padding-top: max(10px, env(safe-area-inset-top, 10px));
-      padding-bottom: calc(var(--bottom-nav-height) + max(14px, env(safe-area-inset-bottom, 14px)));
-      padding-left: max(16px, env(safe-area-inset-left, 16px));
-      padding-right: max(16px, env(safe-area-inset-right, 16px));
+
+      padding-top: calc(
+        var(--tg-safe-area-inset-top, 0px) +
+        var(--tg-content-safe-area-inset-top, 0px) +
+        12px
+      );
+      padding-bottom: calc(
+        var(--bottom-nav-height) +
+        max(10px, var(--tg-safe-area-inset-bottom, 0px))
+      );
+      padding-left: max(16px, var(--tg-safe-area-inset-left, 0px));
+      padding-right: max(16px, var(--tg-safe-area-inset-right, 0px));
+
       overflow: hidden;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
@@ -119,43 +134,6 @@
       to { transform: rotate(360deg); }
     }
 
-    .lang-switch {
-      position: absolute;
-      top: max(60px, calc(env(safe-area-inset-top, 20px) + 40px));
-      right: 18px;
-      display: flex;
-      background: var(--bg-card);
-      border-radius: 24px;
-      padding: 4px;
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow-subtle);
-      z-index: 20;
-    }
-
-    .lang-btn {
-      background: transparent;
-      border: none;
-      border-radius: 20px;
-      padding: 6px 14px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 13px;
-      min-width: 44px;
-      color: var(--text-secondary);
-      transition: all 0.2s ease;
-    }
-
-    .lang-btn.active {
-      background: var(--accent-primary);
-      color: var(--text-white);
-      transform: scale(1.02);
-    }
-
-    .lang-btn:hover:not(.active) {
-      background: var(--border-light);
-      color: var(--text-primary);
-    }
-
     .app-root {
       position: relative;
       height: 100%;
@@ -177,7 +155,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 6px 2px 10px 2px;
+      padding: 4px 2px 10px 2px;
       flex-shrink: 0;
     }
 
@@ -197,7 +175,7 @@
       justify-content: center;
       color: var(--text-white);
       font-weight: 800;
-      font-size: 22px;
+      font-size: 20px;
       letter-spacing: -1px;
       box-shadow: 0 6px 18px rgba(0,0,0,0.25);
     }
@@ -228,15 +206,15 @@
       gap: 6px;
       font-size: 12px;
       color: var(--text-secondary);
-      max-width: 160px;
+      max-width: 200px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
     .user-avatar {
-      width: 22px;
-      height: 22px;
+      width: 24px;
+      height: 24px;
       border-radius: 999px;
       background: #111;
       color: #fff;
@@ -246,6 +224,23 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .user-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+
+    .user-avatar span {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .content-scroll {
@@ -266,17 +261,60 @@
       border-radius: var(--radius-xl);
       background: radial-gradient(circle at top left, #1f2937 0%, #020617 45%, #000000 100%);
       color: var(--text-white);
-      padding: 18px 16px 16px 16px;
+      padding: 18px 16px 14px 16px;
       box-shadow: var(--shadow-strong);
       margin-bottom: 14px;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* LANG SWITCH ТЕПЕРЬ ВНУТРИ КАРТОЧКИ */
+    .lang-switch {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      background: rgba(15,23,42,0.9);
+      border-radius: 24px;
+      padding: 3px;
+      border: 1px solid rgba(148,163,184,0.6);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.35);
+      z-index: 5;
+    }
+
+    .lang-btn {
+      background: transparent;
+      border: none;
+      border-radius: 18px;
+      padding: 4px 12px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 11px;
+      min-width: 40px;
+      color: rgba(226,232,240,0.8);
+      transition: all 0.18s ease;
+    }
+
+    .lang-btn.active {
+      background: #f9fafb;
+      color: #020617;
+      transform: scale(1.02);
+    }
+
+    .lang-btn:hover:not(.active) {
+      background: rgba(148,163,184,0.25);
+      color: #e5e7eb;
     }
 
     .hero-badge-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-top: 10px;
+      margin-bottom: 4px;
+      padding-right: 84px; /* место под lang-switch */
     }
 
     .pill-badge {
@@ -307,14 +345,14 @@
       font-size: 20px;
       font-weight: 700;
       letter-spacing: -0.4px;
-      margin-bottom: 6px;
+      margin-bottom: 2px;
     }
 
     .hero-subtitle {
       font-size: 13px;
       color: rgba(255,255,255,0.8);
       max-width: 260px;
-      margin-bottom: 14px;
+      margin-bottom: 10px;
     }
 
     .hero-cta-row {
@@ -376,10 +414,9 @@
       color: rgba(255,255,255,0.9);
     }
 
+    /* ETA БОЛЬШЕ НЕ absolute */
     .hero-map-hint {
-      position: absolute;
-      right: 14px;
-      bottom: 12px;
+      margin-top: 8px;
       font-size: 11px;
       color: rgba(148,163,184,0.9);
       display: flex;
@@ -492,9 +529,9 @@
       left: 0;
       right: 0;
       bottom: 0;
-      padding: 8px max(16px, env(safe-area-inset-left, 16px))
-                  max(8px, env(safe-area-inset-bottom, 8px))
-                  max(16px, env(safe-area-inset-right, 16px));
+      padding: 8px max(16px, var(--tg-safe-area-inset-left, 0px))
+                  max(8px, var(--tg-safe-area-inset-bottom, 0px))
+                  max(16px, var(--tg-safe-area-inset-right, 0px));
       background: rgba(255,255,255,0.95);
       backdrop-filter: blur(18px);
       border-top: 1px solid rgba(148,163,184,0.3);
@@ -506,13 +543,13 @@
     .bottom-nav-inner {
       width: 100%;
       max-width: 420px;
-      display: flex;
-      gap: 10px;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      column-gap: 10px;
+      align-items: center;
     }
 
     .nav-item {
-      flex: 1;
       border-radius: 999px;
       padding: 7px 8px;
       display: flex;
@@ -529,6 +566,7 @@
       -webkit-user-select: none;
       user-select: none;
       text-decoration: none;
+      min-width: 0;
     }
 
     .nav-item span.icon {
@@ -554,6 +592,11 @@
       background: rgba(0,0,0,0.05);
     }
 
+    .nav-spacer {
+      width: 100%;
+      height: 100%;
+    }
+
     @media (max-width: 480px) {
       .hero-title { font-size: 18px; }
       .hero-subtitle { font-size: 12px; }
@@ -563,11 +606,14 @@
 
     @media (max-height: 640px) {
       body {
-        padding-top: max(6px, env(safe-area-inset-top, 6px));
-        padding-bottom: calc(var(--bottom-nav-height) + max(6px, env(safe-area-inset-bottom, 6px)));
+        padding-top: calc(
+          var(--tg-safe-area-inset-top, 0px) +
+          var(--tg-content-safe-area-inset-top, 0px) +
+          8px
+        );
       }
       .hero-card {
-        padding: 14px 12px 12px 12px;
+        padding: 14px 12px 10px 12px;
         border-radius: 18px;
       }
     }
@@ -591,17 +637,12 @@
 
   <div class="background"></div>
 
-  <div class="lang-switch">
-    <button class="lang-btn active" id="lang-kz" onclick="setLang('kz')">ҚАЗ</button>
-    <button class="lang-btn" id="lang-ru" onclick="setLang('ru')">РУС</button>
-  </div>
-
   <div class="app-root" id="appRoot">
     <header class="top-bar">
       <div class="logo-wrap">
-        <div class="logo-square">Q</div>
+        <div class="logo-square">AG</div>
         <div class="brand-info">
-          <div class="brand-title">QazLine</div>
+          <div class="brand-title">Alash Go</div>
           <div class="brand-subtitle"
                id="brandSubtitle"
                data-kz="Жеткізу клиенті"
@@ -611,7 +652,10 @@
         </div>
       </div>
       <div class="user-pill" id="userPill">
-        <div class="user-avatar" id="userAvatar">👤</div>
+        <div class="user-avatar" id="userAvatar">
+          <img id="userAvatarImg" alt="User avatar">
+          <span id="userAvatarFallback">👤</span>
+        </div>
         <span id="userNameText"
               data-kz="Клиент"
               data-ru="Клиент">Клиент</span>
@@ -620,6 +664,12 @@
 
     <main class="content-scroll">
       <section class="hero-card">
+        <!-- LANG SWITCH ВНУТРИ КАРТОЧКИ -->
+        <div class="lang-switch">
+          <button class="lang-btn active" id="lang-kz" onclick="setLang('kz')">ҚАЗ</button>
+          <button class="lang-btn" id="lang-ru" onclick="setLang('ru')">РУС</button>
+        </div>
+
         <div class="hero-badge-row">
           <div class="pill-badge">
             <span class="pill-dot"></span>
@@ -633,14 +683,14 @@
         <h1 class="hero-title"
             id="heroTitle"
             data-kz="Қайда жеткіземіз?"
-            data-ru="Куда везём груз?">
+            data-ru="Куда везём жүк?">
           Қайда жеткіземіз?
         </h1>
 
         <p class="hero-subtitle"
            id="heroSubtitle"
            data-kz="Жаңа тапсырыс беріп, жақын жүргізушіні табыңыз."
-           data-ru="Оформите новый заказ и мы подберём ближайшего водителя.">
+           data-ru="Оформите новый заказ, және біз жақын жүргізушіні табамыз.">
           Жаңа тапсырыс беріп, жақын жүргізушіні табыңыз.
         </p>
 
@@ -658,6 +708,7 @@
           </button>
         </div>
 
+        <!-- ETA ПОД КНОПКАМИ -->
         <div class="hero-map-hint">
           <div class="hero-map-dot"></div>
           <span id="etaText"
@@ -771,24 +822,21 @@
 
   <nav class="bottom-nav">
     <div class="bottom-nav-inner">
-      <button class="nav-item active" id="tabHome" type="button">
-        <span class="icon">🏠</span>
-        <span class="nav-item-label"
-              data-kz="Басты"
-              data-ru="Главная">Басты</span>
-      </button>
       <button class="nav-item" id="tabHistory" type="button">
         <span class="icon">📜</span>
         <span class="nav-item-label"
               data-kz="Тарих"
               data-ru="История">Тарих</span>
       </button>
-      <button class="nav-item" id="tabProfile" type="button">
-        <span class="icon">⚙️</span>
+
+      <button class="nav-item active" id="tabHome" type="button">
+        <span class="icon">🏠</span>
         <span class="nav-item-label"
-              data-kz="Профиль"
-              data-ru="Профиль">Профиль</span>
+              data-kz="Басты"
+              data-ru="Главная">Басты</span>
       </button>
+
+      <div class="nav-spacer"></div>
     </div>
   </nav>
 
@@ -823,7 +871,6 @@
       const headerHistory = document.getElementById("goHistoryFromHeader");
       const tabHome = document.getElementById("tabHome");
       const tabHistory = document.getElementById("tabHistory");
-      const tabProfile = document.getElementById("tabProfile");
 
       if (historyBtn) {
         historyBtn.addEventListener("click", () => goHistory());
@@ -844,13 +891,6 @@
           goHistory();
         });
       }
-
-      if (tabProfile) {
-        tabProfile.addEventListener("click", () => {
-          setActiveTab("profile");
-          openProfile();
-        });
-      }
     }
 
     function setActiveTab(tab) {
@@ -861,30 +901,11 @@
       } else if (tab === "history") {
         const el = document.getElementById("tabHistory");
         el && el.classList.add("active");
-      } else if (tab === "profile") {
-        const el = document.getElementById("tabProfile");
-        el && el.classList.add("active");
       }
     }
 
     function goHistory() {
-      // 👉 Страница истории клиента
       window.location.href = "/user-history";
-    }
-
-    function openProfile() {
-      // Пока простой alert / можно позже сделать /client-profile.html
-      if (window.Telegram?.WebApp?.showAlert) {
-        const txt = currentLang === "kz"
-          ? "Профиль беті әзірлену үстінде."
-          : "Страница профиля в разработке.";
-        Telegram.WebApp.showAlert(txt);
-      } else {
-        alert(currentLang === "kz"
-          ? "Профиль беті әзірлену үстінде."
-          : "Страница профиля в разработке.");
-      }
-      setActiveTab("home");
     }
 
     function initTimeLabel() {
@@ -915,7 +936,6 @@
       const tgId = getTelegramId();
 
       if (!tgId) {
-        // Нет Telegram ID → отправляем на welcome
         updateLoadingText("noUser");
         setTimeout(() => {
           if (overlay) overlay.classList.add("hidden");
@@ -942,7 +962,6 @@
         if (data && data.success && data.data) {
           const userData = data.data;
 
-          // Если это водитель → отправляем на /delivery-list
           if (userData.exists === true && userData.user_type === "driver") {
             updateLoadingText("redirectDriver");
             setTimeout(() => {
@@ -951,19 +970,18 @@
             return;
           }
 
-          // Клиент → остаёмся здесь
           setClientNameFromTelegram();
         } else {
-          // Новый юзер, считаем клиентом
           setClientNameFromTelegram();
         }
       } catch (e) {
         console.error("checkUserRole error:", e);
         updateLoadingText("error");
-        setTimeout(() => {}, 700);
       } finally {
         isCheckingUser = false;
         setTimeout(() => {
+          const overlay = document.getElementById("loadingOverlay");
+          const root = document.getElementById("appRoot");
           if (overlay) overlay.classList.add("hidden");
           if (root) root.classList.add("visible");
         }, 250);
@@ -976,15 +994,25 @@
         if (!user) return;
 
         const nameEl = document.getElementById("userNameText");
-        const avatarEl = document.getElementById("userAvatar");
+        const avatarImg = document.getElementById("userAvatarImg");
+        const avatarFallback = document.getElementById("userAvatarFallback");
 
         const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ");
-        if (nameEl && fullName) {
-          nameEl.textContent = fullName;
+        const displayName = user.username
+          ? ("@" + user.username)
+          : (fullName || "Клиент");
+
+        if (nameEl && displayName) {
+          nameEl.textContent = displayName;
         }
-        if (avatarEl && fullName) {
-          const initial = (fullName || "Q")[0].toUpperCase();
-          avatarEl.textContent = initial;
+
+        if (user.photo_url && avatarImg) {
+          avatarImg.src = user.photo_url;
+          avatarImg.style.display = "block";
+          if (avatarFallback) avatarFallback.style.display = "none";
+        } else if (avatarFallback) {
+          const initials = (fullName || "A")[0].toUpperCase();
+          avatarFallback.textContent = initials;
         }
       } catch (e) {
         console.warn("setClientNameFromTelegram error:", e);
@@ -1000,13 +1028,13 @@
           checkingUser: "Пайдаланушы түрі тексерілуде...",
           redirectDriver: "Жүргізуші панеліне бағыттау...",
           error: "Қате пайда болды. Кейінірек қайталап көріңіз.",
-          noUser: "WebApp деректері жоқ. Welcome бетіне өтіңіз."
+          noUser: "WebApp деректері жоқ. Клиент беті ашылуда."
         },
         ru: {
           checkingUser: "Проверяем тип пользователя...",
           redirectDriver: "Перенаправляем в панель водителя...",
           error: "Произошла ошибка. Попробуйте позже.",
-          noUser: "Нет данных WebApp. Откройте Welcome-страницу."
+          noUser: "Нет данных WebApp. Открываем клиентский экран."
         }
       };
 

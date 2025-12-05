@@ -1347,7 +1347,6 @@ func (h *Handler) corsMiddleware(next http.Handler) http.Handler {
 func (h *Handler) welcomeHandler(w http.ResponseWriter, r *http.Request) {
 	path := "./static/welcome.html"
 	w.Header().Set("Content-Type", "text/html")
-	fmt.Println("HERE")
 	h.logger.Info("Serving welcome page", zap.String("user_agent", r.Header.Get("User-Agent")))
 	http.ServeFile(w, r, path)
 }
@@ -1397,6 +1396,7 @@ func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 	r.HandleFunc("/register", h.registerDriverHandler).Methods("GET")
 	r.HandleFunc("/driver-update", h.driverUpdateHandler).Methods("GET")
 	r.HandleFunc("/admin", h.adminHandler).Methods("GET")
+	r.HandleFunc("/delivery-list", h.deliveryListHandler).Methods("GET")
 	r.HandleFunc("/main-client", h.mainClientHandler).Methods("GET")
 	r.HandleFunc("/live", h.liveHandler).Methods("GET")
 
@@ -1418,7 +1418,6 @@ func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 	r.HandleFunc("/api/admin/drivers/{id}/reject", h.RejectDriver).Methods(http.MethodPost)
 
 	// Delivery list routes
-	r.HandleFunc("/delivery-list", h.deliveryListHandler).Methods("GET")
 	r.HandleFunc("/api/delivery-list", h.handleDeliveryList).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/driver/accept-order", h.handleDriverAcceptOrder(b)).Methods("POST", "OPTIONS")
 
@@ -1720,16 +1719,6 @@ func (h *Handler) isInAlmatyArea(lat, lon float64) bool {
 func (h *Handler) deliveryListHandler(w http.ResponseWriter, r *http.Request) {
 	path := "./static/delivery-list.html"
 	w.Header().Set("Content-Type", "text/html")
-
-	// Check if file exists
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		h.logger.Error("Delivery list page not found", zap.String("path", path))
-		http.Error(w, "Delivery list page not found", http.StatusNotFound)
-		return
-	}
-
-	h.logger.Info("Serving delivery list page",
-		zap.String("user_agent", r.Header.Get("User-Agent")))
 	http.ServeFile(w, r, path)
 }
 
@@ -2432,19 +2421,11 @@ func (h *Handler) DefaultHandler(ctx context.Context, b *bot.Bot, update *models
 	}
 
 	// Bilingual welcome message
-	message := `🚀 *QazLine - Тез жеткізу қызметі*
+	message := `AlashGo — Қазақстанға арналған заманауи цифрлық платформа 🚀
+Қызмет табу, тапсырыс беру, жүргізушілермен не клиенттермен байланысу — барлығы бір жерде.
 
-🇰🇿 Сәлеметсіз бе! QazLine-ке қош келдіңіз - Қазақстандағы ең тез жеткізу қызметі.
-
-🇷🇺 Добро пожаловать в QazLine - самый быстрый сервис доставки в Казахстане.
-
-📦 *Не істей аламыз | Что мы умеем:*
-• Тез жеткізу | Быстрая доставка
-• Жүргізуші болу | Работа водителем  
-• 24/7 қолдау | Поддержка 24/7
-
-👇 Төмендегі батырманы басып қосымшаны ашыңыз
-👇 Нажмите кнопку ниже, чтобы открыть приложение`
+Біздің мақсат — сервисті жеңіл, жылдам жəне қолжетімді ету.
+AlashGo — ұлттық стильдегі жаңа буын сервисі 🇰🇿✨`
 
 	_, err := b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:      update.Message.From.ID,

@@ -537,8 +537,8 @@
           <p data-kz="Бағыттау..." data-ru="Перенаправление...">Бағыттау...</p>
         </div>
 
-        <!-- эти кнопки оставляем как есть, если у тебя backend-роуты /delivery и /register -->
-        <a href="/delivery" class="action-btn primary" id="deliveryBtn">
+        <!-- КНОПКА КЛИЕНТА: теперь ведёт на /main-client -->
+        <a href="/main-client" class="action-btn primary" id="deliveryBtn">
           <div class="action-btn-content">
             <div class="action-btn-icon">📦</div>
             <div class="action-btn-text">
@@ -575,9 +575,6 @@
     let currentLang = 'kz';
     let isChecking = false;
     let isRedirecting = false;
-
-    // базовый путь, чтобы нормально открывать main-client.html и delivery-list.html
-    const BASE_PATH = window.location.pathname.replace(/[^\/]+$/, '');
 
     const translations = {
       kz: {
@@ -619,7 +616,6 @@
       setupEventListeners();
       setLang('kz');
 
-      // Небольшая задержка, чтобы Telegram init успел отработать
       setTimeout(() => {
         checkUserTypeAndRedirect();
       }, 800);
@@ -660,7 +656,6 @@
       }
     }
 
-    // MAIN CHECK + REDIRECT LOGIC
     async function checkUserTypeAndRedirect() {
       const telegramId = getTelegramId();
 
@@ -692,24 +687,21 @@
         if (result && result.success && result.data) {
           const userData = result.data;
 
-          // DRIVER → delivery-list.html
           if (userData.exists === true && userData.user_type === 'driver') {
             console.log('🚗 DRIVER DETECTED → delivery-list.html');
             showRedirectMessage('redirectingDriver');
-            redirectTo('delivery-list.html');
+            redirectTo('/delivery-list');
             return;
           }
 
-          // CLIENT → main-client.html
           if (userData.exists === true && userData.user_type === 'client') {
             console.log('👤 CLIENT DETECTED → main-client.html');
             showRedirectMessage('redirectingClient');
-            redirectTo('main-client.html');
+            redirectTo('/main-client');
             return;
           }
         }
 
-        // NEW USER → stay on welcome
         console.log('🆕 New user → show welcome page');
         hideLoading();
       } catch (error) {
@@ -742,16 +734,17 @@
       updateLoadingText(key);
     }
 
-    function redirectTo(url) {
-      console.log('🔄 Redirecting to:', url);
+    function redirectTo(path) {
+      console.log('🔄 Redirecting to:', path);
 
       if (window.Telegram?.WebApp?.HapticFeedback) {
         Telegram.WebApp.HapticFeedback.notificationOccurred('success');
       }
 
+      const target = path.startsWith('/') ? path : '/' + path;
+
       setTimeout(() => {
-        // используем BASE_PATH + относительный путь
-        window.location.replace(BASE_PATH + url);
+        window.location.href = target;
       }, 1500);
     }
 

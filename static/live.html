@@ -396,7 +396,7 @@
             </div>
             <div class="viewers-pill">
               <span class="viewers-dot"></span>
-              <span id="viewer-count">~ 20 000 көрермен</span>
+              <span id="viewer-count"></span>
             </div>
           </div>
 
@@ -475,6 +475,17 @@
           window.scrollTo({ top: 0, behavior: "smooth" });
         }
       };
+
+      // Көрермен санын 19 000–20 000 арасында рандом қылып, әр 2 секундта өзгерту
+      const viewerSpan = document.getElementById("viewer-count");
+      if (viewerSpan) {
+        const updateViewers = () => {
+          const value = Math.floor(19000 + Math.random() * 1001); // 19000–20000
+          viewerSpan.textContent = `~ ${value.toLocaleString("kk-KZ")} көрермен`;
+        };
+        updateViewers();
+        setInterval(updateViewers, 2000);
+      }
 
       // ?title=... &desc=... арқылы текстті өзгерту
       const params = new URLSearchParams(window.location.search);

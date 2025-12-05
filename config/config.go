@@ -64,7 +64,7 @@ func NewConfig() (*Config, error) {
 		IdleTimeout:  120 * time.Second,
 
 		// Telegram defaults
-		Token:      "8511244047:AAFHI2ikGyCimPwLviZ9ufN4Iprdp5FAfnU",
+		Token:      "8427694761:AAHguigt4P08oQakzFeWgxtJc_cMSRG3x1I",
 		BaseURL:    "https://meily.kz",
 		AdminToken: "admin-secret-token-change-in-production",
 

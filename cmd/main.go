@@ -68,7 +68,6 @@ func main() {
 	// Create handler with repositories
 	handl := handler.NewHandler(cfg, zapLogger, db, userRepo, driverRepo)
 
-	// Create bot instance
 	opts := []bot.Option{
 		bot.WithDefaultHandler(handl.DefaultHandler),
 	}

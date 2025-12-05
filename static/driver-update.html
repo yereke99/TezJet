@@ -82,7 +82,7 @@
       left:0; right:0;
       z-index:900;
       top: calc(var(--tg-safe-area-inset-top) + var(--top-offset));
-      margin-top:34px; /* пересчитывается JS, но делаем меньше для большего скролла */
+      margin-top:34px;
       padding:10px 20px 12px;
       background:var(--bg);
       border-bottom:1px solid var(--border);
@@ -409,9 +409,87 @@
     @keyframes spin{to{transform:rotate(360deg)}}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.8}}
 
+    /* ===== MOBILE (default) ===== */
     @media (max-width:480px){
       .field-row{grid-template-columns:1fr}
       .truck-grid{grid-template-columns:repeat(2,1fr)}
+    }
+
+    /* ===== TABLET (600–1024px) ===== */
+    @media (min-width:600px) and (max-width:1024px){
+      .header{
+        padding-top:4px;
+        padding-bottom:4px;
+      }
+
+      .profile-header{
+        padding-top:4px;
+        padding-bottom:8px;
+      }
+
+      .avatar{
+        width:76px;
+        height:76px;
+      }
+
+      .profile-name{
+        font-size:18px;
+      }
+
+      .profile-role{
+        font-size:12px;
+      }
+
+      :root{
+        --top-offset:6px;
+      }
+    }
+
+    /* ===== DESKTOP / LARGE TABLET (1024px+) ===== */
+    @media (min-width:1024px){
+      .header,
+      .profile-header,
+      .content,
+      .bottom-bar,
+      .bottom-nav{
+        max-width:720px;
+        margin-left:auto;
+        margin-right:auto;
+      }
+
+      .header{
+        padding-top:2px;
+        padding-bottom:2px;
+      }
+
+      .profile-header{
+        padding-top:2px;
+        padding-bottom:8px;
+      }
+
+      .avatar{
+        width:70px;
+        height:70px;
+      }
+
+      .profile-name{
+        font-size:18px;
+      }
+
+      .status-badge{
+        transform:scale(.9);
+      }
+    }
+
+    /* ===== VERY WIDE (1400px+) — чуть шире ===== */
+    @media (min-width:1400px){
+      .header,
+      .profile-header,
+      .content,
+      .bottom-bar,
+      .bottom-nav{
+        max-width:780px;
+      }
     }
   </style>
 </head>
@@ -631,7 +709,8 @@
       const user = tg.initDataUnsafe?.user;
       if(user){
         userId = user.id;
-        document.getElementById('telegramId').value = user.id;
+        const tgIdInput = document.getElementById('telegramId');
+        if (tgIdInput) tgIdInput.value = user.id;
       }
       tg.BackButton?.hide?.();
     }
@@ -639,22 +718,31 @@
     function applyLayoutSizes(){
       const header = document.getElementById('topHeader');
       const prof   = document.getElementById('profileHeader');
-      const bottom = document.getElementById('bottomBar');
+      const bottomBar = document.getElementById('bottomBar');
+      const bottomNav = document.getElementById('bottomNav');
 
       const headerH = header?.getBoundingClientRect().height || 40;
-      prof.style.marginTop = headerH + 'px';
 
-      const profileH = prof?.getBoundingClientRect().height || 110;
-      const contentTop =
-        (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tg-safe-area-inset-top')) || 0)
-        + (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--top-offset')) || 0)
-        + headerH + profileH - 24; // меньше, чтобы контент начинался выше
+      if (prof) {
+        // профиль под заголовком
+        prof.style.marginTop = headerH + 'px';
+      }
 
+      const profileH = prof?.getBoundingClientRect().height || 120;
+      const rootStyles = getComputedStyle(document.documentElement);
+      const safeTop = parseFloat(rootStyles.getPropertyValue('--tg-safe-area-inset-top')) || 0;
+      const topOffset = parseFloat(rootStyles.getPropertyValue('--top-offset')) || 0;
+
+      // Контент начинается ниже header + profile
+      const contentTop = safeTop + topOffset + headerH + profileH + 8;
       document.documentElement.style.setProperty('--content-top', contentTop + 'px');
 
-      const bottomH = bottom?.getBoundingClientRect().height || 76;
-      const pad = bottomH + 12;
-      document.documentElement.style.setProperty('--content-bottom-pad', pad + 'px');
+      const bottomBarH = bottomBar?.getBoundingClientRect().height || 76;
+      const bottomNavH = bottomNav?.getBoundingClientRect().height || 64;
+
+      // Учитываем и кнопку обновления, и нижнюю навигацию
+      const contentBottom = bottomBarH + bottomNavH + 12;
+      document.documentElement.style.setProperty('--content-bottom-pad', contentBottom + 'px');
     }
 
     /* Навигация */
@@ -677,9 +765,11 @@
           document.querySelectorAll('.truck-card').forEach(c=>c.classList.remove('selected'));
           this.classList.add('selected');
           const t=this.dataset.type;
-          document.getElementById('truckType').value=t;
+          const truckType = document.getElementById('truckType');
+          if (truckType) truckType.value=t;
           const names={small:'Кіші', medium:'Орта', large:'Үлкен', refrigerator:'Рефрижератор', tow:'Эвакуатор'};
-          document.getElementById('currentTruckType').textContent=names[t]||t;
+          const curr = document.getElementById('currentTruckType');
+          if (curr) curr.textContent=names[t]||t;
           window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
         });
       });
@@ -745,8 +835,15 @@
         e.target.value = out;
       });
 
-      new ResizeObserver(applyLayoutSizes).observe(document.getElementById('bottomBar'));
-      new ResizeObserver(applyLayoutSizes).observe(document.getElementById('profileHeader'));
+      const bottomBar = document.getElementById('bottomBar');
+      const profileHeader = document.getElementById('profileHeader');
+
+      if (bottomBar && 'ResizeObserver' in window) {
+        new ResizeObserver(applyLayoutSizes).observe(bottomBar);
+      }
+      if (profileHeader && 'ResizeObserver' in window) {
+        new ResizeObserver(applyLayoutSizes).observe(profileHeader);
+      }
     }
 
     function getCurrentLocation(){
@@ -823,11 +920,13 @@
       if(d.start_city) document.getElementById('startCity').value=d.start_city;
 
       if(d.truck_type){
-        document.getElementById('truckType').value=d.truck_type;
+        const truckType = document.getElementById('truckType');
+        if (truckType) truckType.value=d.truck_type;
         const card=document.querySelector(`.truck-card[data-type="${d.truck_type}"]`);
         card?.classList.add('selected');
         const names={small:'Кіші', medium:'Орта', large:'Үлкен', refrigerator:'Рефрижератор', tow:'Эвакуатор'};
-        document.getElementById('currentTruckType').textContent=names[d.truck_type]||d.truck_type;
+        const curr = document.getElementById('currentTruckType');
+        if (curr) curr.textContent=names[d.truck_type]||d.truck_type;
       }
 
       if(d.latitude){ document.getElementById('latitude').value=d.latitude; }
