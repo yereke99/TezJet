@@ -5,9 +5,11 @@
   <meta name="viewport"
         content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>Alash Go – Тарих</title>
+
+  <!-- Telegram SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <!-- Leaflet (OpenStreetMap) -->
+  <!-- Leaflet (map) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -37,7 +39,9 @@
       --tg-safe-area-inset-left:env(safe-area-inset-left,0px);
       --tg-safe-area-inset-right:env(safe-area-inset-right,0px);
 
+      /* дополнительный контент-отступ сверху (чтоб не прятаться под системные кнопки/iOS бар) */
       --tg-content-safe-area-inset-top:15px;
+
       --bottom-nav-height:72px;
     }
 
@@ -67,7 +71,6 @@
         var(--tg-safe-area-inset-top,0px) +
         var(--tg-content-safe-area-inset-top,15px)
       );
-
       padding-bottom:calc(
         var(--bottom-nav-height)+
         max(10px,var(--tg-safe-area-inset-bottom,0px))
@@ -86,7 +89,6 @@
       background:radial-gradient(circle at top,rgba(0,0,0,.04),transparent 55%),var(--bg-secondary);
       z-index:-2;
     }
-
     .background::before{
       content:"";
       position:absolute;
@@ -146,6 +148,7 @@
       transform:translateY(0);
     }
 
+    /* ======= TOP BAR ======= */
     .top-bar{
       display:flex;
       align-items:center;
@@ -260,6 +263,7 @@
       color:#e5e7eb;
     }
 
+    /* ======= MAIN CONTENT ======= */
     .content-scroll{
       flex:1;
       min-height:0;
@@ -359,6 +363,11 @@
       flex-direction:column;
       gap:6px;
       cursor:pointer;
+      transition:transform .12s ease, box-shadow .12s ease;
+    }
+    .order-card:active{
+      transform:scale(.98);
+      box-shadow:none;
     }
 
     .order-route{
@@ -433,30 +442,22 @@
       background:rgba(251,191,36,.15);
       color:#92400e;
     }
-    .status-pending .status-dot{
-      background:#fbbf24;
-    }
+    .status-pending .status-dot{background:#fbbf24;}
     .status-active{
       background:rgba(34,197,94,.15);
       color:#166534;
     }
-    .status-active .status-dot{
-      background:#22c55e;
-    }
+    .status-active .status-dot{background:#22c55e;}
     .status-completed{
       background:rgba(59,130,246,.15);
       color:#1d4ed8;
     }
-    .status-completed .status-dot{
-      background:#3b82f6;
-    }
+    .status-completed .status-dot{background:#3b82f6;}
     .status-cancelled{
       background:rgba(239,68,68,.15);
       color:#b91c1c;
     }
-    .status-cancelled .status-dot{
-      background:#ef4444;
-    }
+    .status-cancelled .status-dot{background:#ef4444;}
 
     .meta-right{
       font-size:11px;
@@ -478,6 +479,7 @@
       color:var(--text-secondary);
     }
 
+    /* ======= BOTTOM NAV ======= */
     .bottom-nav{
       position:fixed;
       left:0;right:0;bottom:0;
@@ -530,189 +532,190 @@
     }
     .nav-spacer{width:100%;height:100%;}
 
-    /* Detail bottom sheet */
-    .detail-overlay{
-      position:fixed;
-      inset:0;
-      padding-top:var(--tg-safe-area-inset-top,0px);
-      padding-bottom:var(--tg-safe-area-inset-bottom,0px);
-      padding-left:var(--tg-safe-area-inset-left,0px);
-      padding-right:var(--tg-safe-area-inset-right,0px);
-      display:none;
-      align-items:flex-end;
-      justify-content:center;
-      background:rgba(15,23,42,.45);
-      backdrop-filter:blur(8px);
-      z-index:40;
-    }
-    .detail-overlay.visible{
-      display:flex;
-    }
-    .detail-sheet{
-      width:100%;
-      max-width:420px;
-      margin:0 auto;
-      background:#f9fafb;
-      border-radius:22px 22px 0 0;
-      box-shadow:0 -10px 30px rgba(15,23,42,.5);
-      max-height:calc(100% - 70px - var(--tg-safe-area-inset-top,0px));
-      display:flex;
-      flex-direction:column;
-      overflow:hidden;
-      transform:translateY(12px);
-      opacity:0;
-      transition:transform .22s ease,opacity .22s ease;
-    }
-    .detail-overlay.visible .detail-sheet{
-      transform:translateY(0);
-      opacity:1;
-    }
-    .detail-header{
-      padding:10px 16px 6px 16px;
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-      border-bottom:1px solid rgba(148,163,184,.4);
-      background:#fff;
-    }
-    .detail-handle{
-      width:46px;
-      height:4px;
-      border-radius:999px;
-      background:rgba(148,163,184,.7);
-      margin:4px auto 6px auto;
-    }
-    .detail-header-main{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:10px;
-    }
-    .detail-title{
-      font-size:15px;
-      font-weight:600;
-      color:#0f172a;
-    }
-    .detail-subtitle{
-      font-size:11px;
-      color:#6b7280;
-    }
-    .detail-price{
-      padding:4px 10px;
-      border-radius:999px;
-      background:#000;
-      color:#fff;
-      font-size:12px;
-      font-weight:600;
-      white-space:nowrap;
-    }
-    .detail-status-row{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin-top:4px;
-    }
-    .detail-status-info{
-      display:flex;
-      align-items:center;
-      gap:6px;
-      font-size:11px;
-      color:#4b5563;
-    }
-    .detail-body{
-      flex:1;
-      min-height:0;
-      display:flex;
-      flex-direction:column;
-      overflow:hidden;
-    }
-    .detail-map{
-      height:170px;
-      background:#ffffff;
-    }
-    .detail-content{
-      padding:10px 14px 14px 14px;
-      overflow-y:auto;
-    }
-    .detail-row{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:10px;
-      font-size:12px;
-      margin-bottom:6px;
-    }
-    .detail-label{
-      color:#6b7280;
-      min-width:80px;
-    }
-    .detail-value{
-      color:#111827;
-      text-align:right;
-      flex:1;
-    }
-    .detail-address-block{
-      margin-top:6px;
-      padding:8px 9px;
-      border-radius:12px;
-      background:#fff;
-      border:1px solid #e5e7eb;
-      font-size:12px;
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-    }
-    .addr-line{
-      display:flex;
-      gap:6px;
-      align-items:flex-start;
-    }
-    .addr-icon{
-      width:16px;
-      margin-top:1px;
-    }
-    .addr-text{
-      flex:1;
-      color:#111827;
-    }
-
-    .detail-close-btn{
-      border:none;
-      background:rgba(0,0,0,.04);
-      width:30px;
-      height:30px;
-      border-radius:999px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:18px;
-      cursor:pointer;
-      flex-shrink:0;
-    }
-
     @media (max-height:640px){
-      :root{
-        --tg-content-safe-area-inset-top:10px;
-      }
+      :root{ --tg-content-safe-area-inset-top:10px; }
       .summary-card{
         padding:14px 12px 10px 12px;
         border-radius:18px;
       }
-      .detail-map{
-        height:150px;
-      }
     }
 
-    /* Leaflet cosmetics – white "Uber-style" map */
+    /* ======= ORDER DETAIL MODAL / SHEET ======= */
+    .order-detail-modal{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:flex-end;
+      justify-content:center;
+      background:rgba(0,0,0,.55);
+      backdrop-filter:blur(8px);
+      -webkit-backdrop-filter:blur(8px);
+      z-index:200;
+    }
+    .order-detail-modal.show{display:flex;}
+
+    .order-detail-sheet{
+      width:100%;
+      max-width:460px;
+      max-height:calc(
+        var(--tg-viewport-stable-height,100vh)
+        - var(--tg-safe-area-inset-top,0px)
+        - 32px
+      );
+      margin-top:calc(var(--tg-safe-area-inset-top,0px) + 16px);
+      border-radius:22px 22px 0 0;
+      background:#ffffff;
+      box-shadow:0 20px 40px rgba(15,23,42,.5);
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
+
+    .order-detail-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:14px 16px 10px 16px;
+      border-bottom:1px solid var(--border-light);
+    }
+    .order-detail-title{
+      font-size:16px;
+      font-weight:600;
+    }
+    .order-detail-subtitle{
+      font-size:11px;
+      color:var(--text-muted);
+      margin-top:2px;
+    }
+    .order-detail-close{
+      width:32px;
+      height:32px;
+      border-radius:999px;
+      border:none;
+      background:#f3f4f6;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:20px;
+      cursor:pointer;
+    }
+
+    .order-detail-content{
+      flex:1;
+      min-height:0;
+      overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+
+    .order-detail-map-wrap{
+      position:relative;
+      width:100%;
+      height:240px;
+      border-bottom:1px solid var(--border-light);
+      background:#ffffff;
+    }
+    #detailMap{
+      width:100%;
+      height:100%;
+    }
+    .order-detail-map-chip{
+      position:absolute;
+      left:12px;
+      top:12px;
+      padding:8px 10px;
+      border-radius:999px;
+      background:#111827;
+      color:#f9fafb;
+      font-size:11px;
+      font-weight:500;
+      box-shadow:0 10px 24px rgba(0,0,0,.35);
+    }
+
+    .order-detail-body{
+      padding:14px 16px 18px 16px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .detail-route-block{
+      background:#f9fafb;
+      border-radius:16px;
+      padding:10px 10px 10px 10px;
+      border:1px solid var(--border-light);
+    }
+    .detail-route-line{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+    }
+    .detail-pin{
+      width:28px;
+      height:28px;
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:13px;
+      color:#fff;
+      font-weight:700;
+      box-shadow:0 4px 10px rgba(0,0,0,.25);
+    }
+    .detail-pin.a{background:#000;}
+    .detail-pin.b{background:#0b63f6;}
+    .detail-route-text{
+      flex:1;
+      min-width:0;
+    }
+    .detail-route-label{
+      font-size:11px;
+      color:var(--text-muted);
+      text-transform:uppercase;
+      letter-spacing:.4px;
+    }
+    .detail-route-address{
+      font-size:13px;
+      font-weight:600;
+      color:#0f172a;
+    }
+
+    .detail-meta-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+    .detail-chip{
+      border-radius:999px;
+      padding:6px 10px;
+      border:1px solid var(--border-light);
+      background:#fff;
+      font-size:11px;
+      color:var(--text-secondary);
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    .detail-price-main{
+      font-size:18px;
+      font-weight:700;
+    }
+    .detail-status-pill{
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:11px;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    /* Leaflet cosmetics */
     .leaflet-control-attribution,
     .leaflet-control-zoom,
-    .leaflet-control{
-      display:none !important;
-    }
+    .leaflet-control{display:none!important;}
     .leaflet-container{
-      background:#ffffff !important;
-      font-family:inherit !important;
+      background:#ffffff!important;
+      font-family:inherit!important;
     }
   </style>
 </head>
@@ -858,54 +861,66 @@
   </div>
 </nav>
 
-<!-- Мини-окно с деталями заказа + карта -->
-<div class="detail-overlay" id="detailOverlay">
-  <div class="detail-sheet">
-    <div class="detail-header">
-      <div class="detail-handle"></div>
-      <div class="detail-header-main">
-        <div>
-          <div class="detail-title" id="detailTitle">—</div>
-          <div class="detail-subtitle" id="detailSubtitle">—</div>
+<!-- ORDER DETAIL SHEET WITH MAP -->
+<div class="order-detail-modal" id="orderDetailModal">
+  <div class="order-detail-sheet">
+    <div class="order-detail-header">
+      <div>
+        <div class="order-detail-title"
+             data-kz="Тапсырыс мәліметтері"
+             data-ru="Детали заказа">
+          Детали заказа
         </div>
-        <div class="detail-price" id="detailPrice">—</div>
-        <button class="detail-close-btn" id="detailCloseBtn">✕</button>
+        <div class="order-detail-subtitle" id="detailCreatedText">—</div>
       </div>
-      <div class="detail-status-row">
-        <div class="status-pill status-pending" id="detailStatusPill">
-          <span class="status-dot"></span>
-          <span id="detailStatusText">—</span>
-        </div>
-        <div class="detail-status-info" id="detailMetaSmall">
-          <!-- distance / time here -->
-        </div>
-      </div>
+      <button class="order-detail-close" id="detailCloseBtn" aria-label="Close">×</button>
     </div>
 
-    <div class="detail-body">
-      <div id="detailMap" class="detail-map"></div>
-      <div class="detail-content">
-        <div class="detail-row">
-          <div class="detail-label" data-kz="Қашықтық" data-ru="Расстояние">Қашықтық</div>
-          <div class="detail-value" id="detailDistance">—</div>
-        </div>
-        <div class="detail-row">
-          <div class="detail-label" data-kz="Уақыты" data-ru="Время в пути">Уақыты</div>
-          <div class="detail-value" id="detailEta">—</div>
-        </div>
-        <div class="detail-row">
-          <div class="detail-label" data-kz="Құрылған" data-ru="Создан">Құрылған</div>
-          <div class="detail-value" id="detailCreatedAt">—</div>
+    <div class="order-detail-content">
+      <div class="order-detail-map-wrap">
+        <div id="detailMap"></div>
+        <div class="order-detail-map-chip" id="detailRouteChip">Маршрут...</div>
+      </div>
+
+      <div class="order-detail-body">
+        <div class="detail-route-block">
+          <div class="detail-route-line" style="margin-bottom:8px;">
+            <div class="detail-pin a">A</div>
+            <div class="detail-route-text">
+              <div class="detail-route-label"
+                   data-kz="Қайдан"
+                   data-ru="Откуда">Откуда</div>
+              <div class="detail-route-address" id="detailFrom">—</div>
+            </div>
+          </div>
+          <div class="detail-route-line">
+            <div class="detail-pin b">B</div>
+            <div class="detail-route-text">
+              <div class="detail-route-label"
+                   data-kz="Қайда"
+                   data-ru="Куда">Куда</div>
+              <div class="detail-route-address" id="detailTo">—</div>
+            </div>
+          </div>
         </div>
 
-        <div class="detail-address-block">
-          <div class="addr-line">
-            <div class="addr-icon">📍</div>
-            <div class="addr-text" id="detailFrom">—</div>
+        <div class="detail-meta-row">
+          <div class="detail-chip">
+            <span data-kz="Құны" data-ru="Стоимость">Стоимость</span>
+            <span class="detail-price-main" id="detailPrice">0 ₸</span>
           </div>
-          <div class="addr-line">
-            <div class="addr-icon">🏁</div>
-            <div class="addr-text" id="detailTo">—</div>
+          <div class="detail-chip">
+            <span id="detailDistance">— км</span>
+          </div>
+          <div class="detail-chip">
+            <span id="detailEta">— мин</span>
+          </div>
+        </div>
+
+        <div class="detail-meta-row">
+          <div class="detail-status-pill" id="detailStatusPill">
+            <span class="status-dot"></span>
+            <span id="detailStatusText">—</span>
           </div>
         </div>
       </div>
@@ -918,26 +933,10 @@
   let allOrders = [];
   let currentFilter = "all";
 
-  let detailOverlay, detailStatusPill, detailStatusText, detailTitle,
-      detailSubtitle, detailPrice, detailDistance, detailEta,
-      detailCreatedAt, detailFrom, detailTo, detailMetaSmall;
-
-  let mapInstance = null;
+  let detailMap = null;
+  let currentOrder = null;
 
   document.addEventListener("DOMContentLoaded", () => {
-    detailOverlay = document.getElementById("detailOverlay");
-    detailStatusPill = document.getElementById("detailStatusPill");
-    detailStatusText = document.getElementById("detailStatusText");
-    detailTitle = document.getElementById("detailTitle");
-    detailSubtitle = document.getElementById("detailSubtitle");
-    detailPrice = document.getElementById("detailPrice");
-    detailDistance = document.getElementById("detailDistance");
-    detailEta = document.getElementById("detailEta");
-    detailCreatedAt = document.getElementById("detailCreatedAt");
-    detailFrom = document.getElementById("detailFrom");
-    detailTo = document.getElementById("detailTo");
-    detailMetaSmall = document.getElementById("detailMetaSmall");
-
     initTelegramViewport();
     initTelegramUser();
     bindEvents();
@@ -1010,7 +1009,8 @@
     const backBtn = document.getElementById("backBtn");
     const tabHome = document.getElementById("tabHome");
     const tabHistory = document.getElementById("tabHistory");
-    const detailCloseBtn = document.getElementById("detailCloseBtn");
+    const modal = document.getElementById("orderDetailModal");
+    const closeBtn = document.getElementById("detailCloseBtn");
 
     if (backBtn) backBtn.addEventListener("click", () => {
       window.location.href = "/main-client";
@@ -1036,16 +1036,24 @@
       });
     });
 
-    if (detailCloseBtn) {
-      detailCloseBtn.addEventListener("click", closeDetailOverlay);
-    }
-    if (detailOverlay) {
-      detailOverlay.addEventListener("click", (e) => {
-        if (e.target === detailOverlay) {
-          closeDetailOverlay();
+    if (modal) {
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+          closeOrderDetail();
         }
       });
     }
+    if (closeBtn) {
+      closeBtn.addEventListener("click", closeOrderDetail);
+    }
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        const modalEl = document.getElementById("orderDetailModal");
+        if (modalEl && modalEl.classList.contains("show")) {
+          closeOrderDetail();
+        }
+      }
+    });
   }
 
   async function loadHistory() {
@@ -1203,6 +1211,7 @@
     filtered.forEach(o => {
       const card = document.createElement("article");
       card.className = "order-card";
+      card.tabIndex = 0;
 
       const from = o.from_address || o.FromAddress || "";
       const to = o.to_address || o.ToAddress || "";
@@ -1224,7 +1233,7 @@
               ${formatDate(created)}
             </div>
           </div>
-          <div class="price-pill">${price.toLocaleString("ru-RU")} ₸</div>
+          <div class="price-pill">${Number(price).toLocaleString("ru-RU")} ₸</div>
         </div>
 
         <div class="order-meta-row">
@@ -1239,8 +1248,12 @@
         </div>
       `;
 
-      card.addEventListener("click", () => {
-        openDetailOverlay(o);
+      card.addEventListener("click", () => openOrderDetail(o));
+      card.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openOrderDetail(o);
+        }
       });
 
       list.appendChild(card);
@@ -1255,6 +1268,223 @@
       .replace(/>/g,"&gt;");
   }
 
+  /* ===== DETAIL SHEET + MAP ===== */
+
+  function openOrderDetail(order){
+    currentOrder = order;
+
+    const modal = document.getElementById("orderDetailModal");
+    if (!modal) return;
+
+    const from = order.from_address || order.FromAddress || "";
+    const to = order.to_address || order.ToAddress || "";
+    const price = order.price || order.Price || 0;
+    const status = order.status || order.Status || "pending";
+    const distance = order.distance_km || order.DistanceKm || null;
+    const eta = order.eta_min || order.EtaMin || null;
+    const created = order.created_at || order.CreatedAt || order.createdAt;
+
+    document.getElementById("detailFrom").textContent = from || "—";
+    document.getElementById("detailTo").textContent = to || "—";
+    document.getElementById("detailPrice").textContent =
+      `${Number(price).toLocaleString("ru-RU")} ₸`;
+    document.getElementById("detailCreatedText").textContent = formatDate(created);
+
+    const distLabel = document.getElementById("detailDistance");
+    const etaLabel = document.getElementById("detailEta");
+    const chip = document.getElementById("detailRouteChip");
+
+    const distText = distance ? `${Number(distance).toFixed(1)} км` : "— км";
+    const etaText = eta ? `~${eta} мин` : "— мин";
+
+    distLabel.textContent = distText;
+    etaLabel.textContent = etaText;
+    chip.textContent = (distance || eta) ? `${distText} • ${etaText}` : "Маршрут";
+
+    const pill = document.getElementById("detailStatusPill");
+    const text = document.getElementById("detailStatusText");
+    pill.className = "detail-status-pill " + statusClass(status);
+    text.textContent = statusToLabel(status);
+
+    modal.classList.add("show");
+
+    setTimeout(() => {
+      initDetailMap(order);
+    }, 200);
+  }
+
+  function closeOrderDetail(){
+    const modal = document.getElementById("orderDetailModal");
+    if (modal) modal.classList.remove("show");
+    currentOrder = null;
+    if (detailMap) {
+      detailMap.remove();
+      detailMap = null;
+    }
+  }
+
+  function getNum(v){
+    const n = parseFloat(v);
+    return isNaN(n) ? null : n;
+  }
+
+  async function initDetailMap(order){
+    const mapContainer = document.getElementById("detailMap");
+    if (!mapContainer) return;
+
+    const fromLat = getNum(order.from_lat || order.FromLat || order.fromLat);
+    const fromLon = getNum(order.from_lon || order.FromLon || order.fromLon || order.from_lng || order.fromLng);
+    const toLat   = getNum(order.to_lat   || order.ToLat   || order.toLat);
+    const toLon   = getNum(order.to_lon   || order.ToLon   || order.toLon   || order.to_lng   || order.toLng);
+
+    const hasFrom = fromLat !== null && fromLon !== null;
+    const hasTo   = toLat   !== null && toLon   !== null;
+
+    if (!detailMap) {
+      detailMap = L.map(mapContainer, {
+        zoomControl:false,
+        attributionControl:false
+      }).setView([43.238949, 76.889709], 11);
+
+      // 🤍 Uber-style white map
+      L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+        {maxZoom:19, subdomains:"abcd"}
+      ).addTo(detailMap);
+    }
+
+    // Удаляем все слои кроме тайлов
+    detailMap.eachLayer(l => {
+      if (!(l instanceof L.TileLayer)) {
+        detailMap.removeLayer(l);
+      }
+    });
+
+    if (!hasFrom && !hasTo) {
+      detailMap.setView([43.238949, 76.889709], 11);
+      setTimeout(() => detailMap.invalidateSize(), 150);
+      return;
+    }
+
+    // Пины A и B
+    if (hasFrom) {
+      const iconA = L.divIcon({
+        html:'<div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;background:#000;border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.25)">A</div>',
+        className:"",
+        iconSize:[32,32],
+        iconAnchor:[16,32]
+      });
+      L.marker([fromLat, fromLon], {icon:iconA}).addTo(detailMap);
+    }
+
+    if (hasTo) {
+      const iconB = L.divIcon({
+        html:'<div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;background:#0B63F6;border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.25)">B</div>',
+        className:"",
+        iconSize:[32,32],
+        iconAnchor:[16,32]
+      });
+      L.marker([toLat, toLon], {icon:iconB}).addTo(detailMap);
+    }
+
+    if (hasFrom && hasTo) {
+      await drawRouteUberStyle({fromLat, fromLon, toLat, toLon});
+    } else if (hasFrom) {
+      detailMap.setView([fromLat, fromLon], 13);
+      setTimeout(() => detailMap.invalidateSize(), 150);
+    } else if (hasTo) {
+      detailMap.setView([toLat, toLon], 13);
+      setTimeout(() => detailMap.invalidateSize(), 150);
+    }
+  }
+
+  async function drawRouteUberStyle(coords){
+    if (!detailMap) return;
+    const {fromLat, fromLon, toLat, toLon} = coords;
+    const chip = document.getElementById("detailRouteChip");
+    const distLabel = document.getElementById("detailDistance");
+    const etaLabel = document.getElementById("detailEta");
+
+    try {
+      chip.textContent = currentLang === "ru" ? "Расчёт маршрута..." : "Маршрут есептелуде...";
+
+      const url =
+        `https://router.project-osrm.org/route/v1/driving/` +
+        `${fromLon},${fromLat};${toLon},${toLat}` +
+        `?overview=full&geometries=geojson&steps=true`;
+
+      const r = await fetch(url);
+      if (!r.ok) throw new Error("OSRM");
+      const data = await r.json();
+      if (!(data.routes && data.routes.length)) throw new Error("no route");
+
+      const route = data.routes[0];
+      const coordsList = route.geometry.coordinates.map(c => [c[1], c[0]]);
+
+      const main = L.polyline(coordsList, {
+        color:"#000000",
+        weight:5,
+        opacity:0.9
+      }).addTo(detailMap);
+
+      const shadow = L.polyline(coordsList, {
+        color:"#00000030",
+        weight:7,
+        opacity:0.3
+      }).addTo(detailMap);
+      shadow.bringToBack();
+
+      const bounds = L.latLngBounds(coordsList);
+      detailMap.fitBounds(bounds, {padding:[24,24], maxZoom:16});
+      setTimeout(() => detailMap.invalidateSize(), 150);
+
+      const km = (route.distance/1000).toFixed(1);
+      const min = Math.round(route.duration/60);
+
+      const distText = `${km} км`;
+      const etaText = `~${min} мин`;
+
+      distLabel.textContent = distText;
+      etaLabel.textContent = etaText;
+      chip.textContent = `${distText} • ${etaText}`;
+    } catch(e){
+      console.warn("route error", e);
+      // Фоллбек: прямая линия между точками
+      const coordsAB = [[fromLat, fromLon],[toLat, toLon]];
+      L.polyline(coordsAB, {
+        color:"#000000",
+        weight:4,
+        opacity:0.8,
+        dashArray:"10,5"
+      }).addTo(detailMap);
+
+      const bounds = L.latLngBounds(coordsAB);
+      detailMap.fitBounds(bounds, {padding:[24,24], maxZoom:16});
+      setTimeout(() => detailMap.invalidateSize(), 150);
+
+      const R = 6371;
+      const dLat = (toLat - fromLat) * Math.PI/180;
+      const dLon = (toLon - fromLon) * Math.PI/180;
+      const a = Math.sin(dLat/2)**2 +
+                Math.cos(fromLat*Math.PI/180) *
+                Math.cos(toLat*Math.PI/180) *
+                Math.sin(dLon/2)**2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const d = R * c;
+
+      const km = d.toFixed(1);
+      const min = Math.round((d / 40) * 60); // ~40км/ч
+
+      const distText = `${km} км`;
+      const etaText = `~${min} мин`;
+
+      distLabel.textContent = distText;
+      etaLabel.textContent = etaText;
+      chip.textContent = `${distText} • ${etaText}`;
+    }
+  }
+
+  /* ===== LANG ===== */
   function setLang(lang){
     currentLang = lang;
 
@@ -1271,185 +1501,6 @@
     updateSummary();
   }
   window.setLang = setLang;
-
-  /* ===== DETAIL SHEET + UBER-STYLE MAP ===== */
-
-  function openDetailOverlay(order){
-    if (!order || !detailOverlay) return;
-
-    const from = order.from_address || order.FromAddress || "";
-    const to = order.to_address || order.ToAddress || "";
-    const price = order.price || order.Price || 0;
-    const status = order.status || order.Status || "pending";
-    const distance = order.distance_km || order.DistanceKm || null;
-    const eta = order.eta_min || order.EtaMin || null;
-    const created = order.created_at || order.CreatedAt || order.createdAt;
-
-    detailTitle.textContent = from && to
-      ? `${shorten(from)} → ${shorten(to)}`
-      : (from || to || "Жеткізу");
-
-    detailSubtitle.textContent = formatDate(created);
-    detailPrice.textContent = `${(price || 0).toLocaleString("ru-RU")} ₸`;
-
-    detailStatusPill.className = "status-pill " + statusClass(status);
-    detailStatusText.textContent = statusToLabel(status);
-
-    detailDistance.textContent = distance
-      ? `${Number(distance).toFixed(1)} км`
-      : "—";
-
-    detailEta.textContent = eta ? `~${eta} мин` : "—";
-    detailCreatedAt.textContent = formatDate(created);
-
-    detailFrom.textContent = from || "—";
-    detailTo.textContent = to || "—";
-
-    detailMetaSmall.textContent = "";
-    const parts = [];
-    if (distance) parts.push(`${Number(distance).toFixed(1)} км`);
-    if (eta) parts.push(`~${eta} мин`);
-    detailMetaSmall.textContent = parts.join(" • ");
-
-    detailOverlay.classList.add("visible");
-
-    setTimeout(() => {
-      initOrUpdateMap(order);
-    }, 50);
-  }
-
-  function closeDetailOverlay(){
-    if (!detailOverlay) return;
-    detailOverlay.classList.remove("visible");
-    if (mapInstance) {
-      mapInstance.remove();
-      mapInstance = null;
-    }
-  }
-
-  function shorten(text){
-    if (!text) return "";
-    const maxLen = 26;
-    return text.length > maxLen ? text.slice(0,maxLen-1) + "…" : text;
-  }
-
-  function initOrUpdateMap(order){
-    const mapContainer = document.getElementById("detailMap");
-    if (!mapContainer) return;
-
-    const fromLat = parseFloat(order.from_lat || order.FromLat);
-    const fromLng = parseFloat(order.from_lng || order.FromLng);
-    const toLat = parseFloat(order.to_lat || order.ToLat);
-    const toLng = parseFloat(order.to_lng || order.ToLng);
-
-    const hasFrom = !isNaN(fromLat) && !isNaN(fromLng);
-    const hasTo = !isNaN(toLat) && !isNaN(toLng);
-
-    if (!mapInstance) {
-      mapInstance = L.map(mapContainer, {
-        zoomControl:false,
-        attributionControl:false
-      }).setView([43.238949, 76.889709], 11); // fallback Almaty
-
-      // Uber-style white basemap (Carto light)
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-        maxZoom:19,
-        subdomains:"abcd"
-      }).addTo(mapInstance);
-    }
-
-    // Remove all layers except tileLayer
-    mapInstance.eachLayer(l => {
-      if (!(l instanceof L.TileLayer)) {
-        mapInstance.removeLayer(l);
-      }
-    });
-
-    // Custom markers A/B
-    if (hasFrom) {
-      const iconA = L.divIcon({
-        html:'<div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;background:#000;border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.25)">A</div>',
-        className:"",
-        iconSize:[32,32],
-        iconAnchor:[16,32]
-      });
-      L.marker([fromLat, fromLng], {icon:iconA}).addTo(mapInstance);
-    }
-
-    if (hasTo) {
-      const iconB = L.divIcon({
-        html:'<div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;background:#0B63F6;border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.25)">B</div>',
-        className:"",
-        iconSize:[32,32],
-        iconAnchor:[16,32]
-      });
-      L.marker([toLat, toLng], {icon:iconB}).addTo(mapInstance);
-    }
-
-    if (hasFrom && hasTo) {
-      drawRouteUberStyle({fromLat, fromLng, toLat, toLng});
-    } else if (hasFrom) {
-      mapInstance.setView([fromLat, fromLng], 12);
-      setTimeout(() => mapInstance.invalidateSize(), 150);
-    } else if (hasTo) {
-      mapInstance.setView([toLat, toLng], 12);
-      setTimeout(() => mapInstance.invalidateSize(), 150);
-    } else {
-      mapInstance.setView([43.238949, 76.889709], 11);
-      setTimeout(() => mapInstance.invalidateSize(), 150);
-    }
-  }
-
-  async function drawRouteUberStyle(coords){
-    if (!mapInstance) return;
-    const {fromLat, fromLng, toLat, toLng} = coords;
-
-    if ([fromLat, fromLng, toLat, toLng].some(v => isNaN(v))) return;
-
-    try {
-      const url = `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson&steps=true`;
-      const r = await fetch(url);
-      if (!r.ok) throw new Error("OSRM error");
-      const data = await r.json();
-      if (!(data.routes && data.routes.length)) throw new Error("No route");
-
-      const route = data.routes[0];
-      const coordsList = route.geometry.coordinates.map(c => [c[1], c[0]]);
-
-      const main = L.polyline(coordsList, {
-        color:"#000000",
-        weight:5,
-        opacity:0.9
-      }).addTo(mapInstance);
-      const shadow = L.polyline(coordsList, {
-        color:"#00000030",
-        weight:7,
-        opacity:0.3
-      }).addTo(mapInstance);
-      shadow.bringToBack();
-
-      const bounds = L.latLngBounds(coordsList);
-      mapInstance.fitBounds(bounds, {padding:[24,24], maxZoom:16});
-
-      const km = (route.distance/1000).toFixed(1);
-      const min = Math.round(route.duration/60);
-      detailEta.textContent = `~${min} мин`;
-      detailDistance.textContent = `${km} км`;
-      detailMetaSmall.textContent = `${km} км • ${min} мин`;
-    } catch(e) {
-      // Fallback: simple line A→B + bounds
-      const coordsAB = [[fromLat, fromLng],[toLat, toLng]];
-      L.polyline(coordsAB, {
-        color:"#000000",
-        weight:4,
-        opacity:0.75,
-        dashArray:"10,5"
-      }).addTo(mapInstance);
-      const bounds = L.latLngBounds(coordsAB);
-      mapInstance.fitBounds(bounds, {padding:[24,24], maxZoom:16});
-      setTimeout(() => mapInstance.invalidateSize(), 150);
-    }
-  }
 </script>
 </body>
 </html>
