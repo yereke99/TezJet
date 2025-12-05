@@ -1368,6 +1368,19 @@ func (h *Handler) adminHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, path)
 }
 
+// userHistoryHandler serves the user history page
+func (h *Handler) userHistoryHandler(w http.ResponseWriter, r *http.Request) {
+	path := "./static/user-history.html"
+	w.Header().Set("Content-Type", "text/html")
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		h.logger.Error("User history page not found", zap.String("path", path))
+		http.Error(w, "User history page not found", http.StatusNotFound)
+		return
+	}
+	h.logger.Info("Serving user history page", zap.String("user_agent", r.Header.Get("User-Agent")))
+	http.ServeFile(w, r, path)
+}
+
 func (h *Handler) SetBot(b *bot.Bot) {
 	h.bot = b
 }
@@ -1398,6 +1411,8 @@ func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 	r.HandleFunc("/admin", h.adminHandler).Methods("GET")
 	r.HandleFunc("/delivery-list", h.deliveryListHandler).Methods("GET")
 	r.HandleFunc("/main-client", h.mainClientHandler).Methods("GET")
+	r.HandleFunc("/user-history", h.userHistoryHandler).Methods("GET")
+
 	r.HandleFunc("/live", h.liveHandler).Methods("GET")
 
 	r.HandleFunc("/driver", h.driverHandler).Methods("GET")
@@ -1423,6 +1438,7 @@ func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 
 	// Driver matching routes
 	r.HandleFunc("/driver-list", h.handleDriverList).Methods("GET")
+	r.HandleFunc("/api/user/history", h.handleUserHistory).Methods("GET", "POST", "OPTIONS")
 	r.HandleFunc("/api/driver-list", h.handleDriverListAPI).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/driver-request", h.handleDriverRequest).Methods("POST", "OPTIONS")
 
@@ -1467,6 +1483,125 @@ func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		h.logger.Error("Server shutdown error", zap.Error(err))
 	}
+}
+
+// getUserOrders returns last N delivery requests for given client telegram_id
+func (h *Handler) getUserOrders(telegramID int64) ([]domain.DeliveryRequest, error) {
+	h.logger.Info("Loading user orders",
+		zap.Int64("telegram_id", telegramID))
+
+	const query = `
+SELECT 
+  id,
+  telegram_id,
+  from_address,
+  from_lat,
+  from_lon,
+  to_address,
+  to_lat,
+  to_lon,
+  distance_km,
+  eta_min,
+  price,
+  COALESCE(truck_type, ''),
+  COALESCE(contact, ''),
+  COALESCE(time_start, ''),
+  COALESCE(comment, ''),
+  COALESCE(item_photo_path, ''),
+  status,
+  created_at
+FROM delivery_requests
+WHERE telegram_id = ?
+ORDER BY created_at DESC
+LIMIT 100;
+`
+
+	rows, err := h.db.Query(query, telegramID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orders []domain.DeliveryRequest
+	for rows.Next() {
+		var o domain.DeliveryRequest
+		if err := rows.Scan(
+			&o.ID, &o.TelegramID,
+			&o.FromAddress, &o.FromLat, &o.FromLon,
+			&o.ToAddress, &o.ToLat, &o.ToLon,
+			&o.DistanceKm, &o.EtaMin, &o.Price,
+			&o.TruckType, &o.Contact, &o.TimeStart,
+			&o.Comment, &o.CargoPhoto,
+			&o.Status, &o.CreatedAt,
+		); err != nil {
+			h.logger.Error("Failed to scan user order", zap.Error(err))
+			continue
+		}
+
+		// привести путь к имени файла (как в getDeliveryOrdersInRadius)
+		if p := strings.TrimSpace(o.CargoPhoto); p != "" {
+			o.CargoPhoto = filepath.Base(p)
+		}
+
+		orders = append(orders, o)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	h.logger.Info("User orders loaded",
+		zap.Int64("telegram_id", telegramID),
+		zap.Int("count", len(orders)))
+
+	return orders, nil
+}
+
+// handleUserHistory returns delivery history for a client by telegram_id
+func (h *Handler) handleUserHistory(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	h.logger.Info("Received user history request",
+		zap.String("method", r.Method))
+
+	var telegramID int64
+
+	if r.Method == http.MethodGet {
+		if s := r.URL.Query().Get("telegram_id"); s != "" {
+			if id, err := strconv.ParseInt(s, 10, 64); err == nil {
+				telegramID = id
+			}
+		}
+	} else { // POST / OPTIONS
+		var req struct {
+			TelegramID int64 `json:"telegram_id"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err == nil {
+			telegramID = req.TelegramID
+		}
+	}
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if telegramID == 0 {
+		h.sendErrorResponse(w, "Telegram ID обязателен", http.StatusBadRequest)
+		return
+	}
+
+	orders, err := h.getUserOrders(telegramID)
+	if err != nil {
+		h.logger.Error("Failed to get user orders", zap.Error(err))
+		h.sendErrorResponse(w, "Ошибка получения истории заказов", http.StatusInternalServerError)
+		return
+	}
+
+	h.sendSuccessResponse(w, "История заказов получена", map[string]interface{}{
+		"orders": orders,
+		"count":  len(orders),
+	})
 }
 
 // IMPROVED: handleDeliveryList with better debugging and fallback location
