@@ -569,6 +569,38 @@
     }
 
     .leaflet-control-container{display:none;}
+
+    /* Toast notification (modern small notice) */
+    .toast-notice{
+      position:fixed;
+      bottom:calc(var(--tg-safe-bottom) + 24px);
+      left:50%;
+      transform:translateX(-50%) translateY(12px);
+      background:rgba(15,23,42,0.96);
+      color:#fff;
+      padding:10px 18px;
+      border-radius:999px;
+      font-size:13px;
+      font-weight:500;
+      box-shadow:0 10px 30px rgba(15,23,42,0.55);
+      z-index:4000;
+      opacity:0;
+      pointer-events:none;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      transition:opacity .25s ease, transform .25s ease;
+    }
+    .toast-notice svg{
+      width:16px;
+      height:16px;
+      flex-shrink:0;
+    }
+    .toast-notice.show{
+      opacity:1;
+      pointer-events:auto;
+      transform:translateX(-50%) translateY(-4px);
+    }
   </style>
 </head>
 <body>
@@ -768,6 +800,16 @@
     </button>
   </div>
 
+  <!-- Toast notification -->
+  <div class="toast-notice" id="toastNotice">
+    <svg viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" stroke="white" stroke-width="1.5" opacity="0.8"></circle>
+      <path d="M12 7V13" stroke="white" stroke-width="1.5" stroke-linecap="round"></path>
+      <circle cx="12" cy="16" r="1" fill="white"></circle>
+    </svg>
+    <span id="toastText"></span>
+  </div>
+
   <script>
     const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org';
 
@@ -777,6 +819,28 @@
 
     function langHeader(){
       return currentLang === 'ru' ? 'ru-RU' : 'kk-KZ';
+    }
+
+    // Simple Kazakhstan bounding box check
+    function isInKazakhstan(lat, lng){
+      // Approx Kazakhstan bounds: lat 40–56, lon 46–88
+      return lat >= 40 && lat <= 56 && lng >= 46 && lng <= 88;
+    }
+
+    // Toast
+    let toastTimeout = null;
+    function showToast(messageKey){
+      const el = document.getElementById('toastNotice');
+      const textEl = document.getElementById('toastText');
+      const msg = messageKey === 'outside_kz'
+        ? (currentLang === 'ru'
+            ? 'Сервис работает только на территории Казахстана. Выберите точку внутри Казахстана.'
+            : 'Сервис тек Қазақстан аумағында жұмыс істейді. Қазақстан ішіндегі нүктені таңдаңыз.')
+        : messageKey;
+      textEl.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(()=>el.classList.remove('show'), 2600);
     }
 
     let state = {
@@ -826,7 +890,7 @@
         attributionControl: false
       });
 
-      /* Carto Voyager (как в driver.html, светлая Uber-стилистика) */
+      /* Carto Voyager: светлая Uber-стилистика */
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         maxZoom: 19
       }).addTo(map);
@@ -835,6 +899,12 @@
         navigator.geolocation.getCurrentPosition(
           (pos)=>{
             currentUserLocation = [pos.coords.latitude, pos.coords.longitude];
+            if (!isInKazakhstan(currentUserLocation[0], currentUserLocation[1])){
+              addUserLocationMarker(defaultCenter);
+              showToast('outside_kz');
+              return;
+            }
+
             state.userLoc = {
               lat: pos.coords.latitude,
               lng: pos.coords.longitude,
@@ -857,6 +927,10 @@
 
     async function setUserLocationAsPickup(){
       if (!currentUserLocation) return;
+      if (!isInKazakhstan(currentUserLocation[0], currentUserLocation[1])){
+        showToast('outside_kz');
+        return;
+      }
       const addr = await reverseGeocode(currentUserLocation[0], currentUserLocation[1]);
       state.pickup = {
         lat: currentUserLocation[0],
@@ -938,6 +1012,18 @@
 
       marker.on('dragend', async (e)=>{
         const ll = e.target.getLatLng();
+
+        if (!isInKazakhstan(ll.lat, ll.lng)){
+          showToast('outside_kz');
+          // Вернём маркер обратно на старое место
+          if (type === 'pickup' && state.pickup){
+            marker.setLatLng([state.pickup.lat, state.pickup.lng]);
+          } else if (type === 'dropoff' && state.dropoff){
+            marker.setLatLng([state.dropoff.lat, state.dropoff.lng]);
+          }
+          return;
+        }
+
         const addr = await reverseGeocode(ll.lat, ll.lng);
         if (type === 'pickup'){
           state.pickup = { lat:ll.lat, lng:ll.lng, address:addr };
@@ -983,14 +1069,20 @@
       return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
-    /* === REVERSE (как в driver.html, с номером дома) === */
+    /* === REVERSE === */
     async function reverseGeocode(lat,lng){
       try{
         const url = `${NOMINATIM_BASE}/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=${encodeURIComponent(langHeader())}`;
         const res = await fetch(url);
         const data = await res.json();
+
+        // доп.проверка по страна-коду, если есть
+        if (data?.address?.country_code && data.address.country_code.toLowerCase() !== 'kz'){
+          showToast('outside_kz');
+          return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        }
+
         if (data?.display_name){
-          // первые 3–4 части: улица + дом + район + город
           return data.display_name.split(',').slice(0,4).join(', ').trim();
         }
         return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
@@ -1005,7 +1097,7 @@
       return `${c.lng-d},${c.lat-d},${c.lng+d},${c.lat+d}`;
     }
 
-    /* === SEARCH (логика похожа на driver.html) === */
+    /* === SEARCH === */
     async function searchAddress(query){
       const s = document.getElementById('suggestions');
       if (query.length < 2){
@@ -1053,7 +1145,7 @@
           .map(r=>{
             const display = r.display_name || '';
             const parts = display.split(',');
-            const short = parts.slice(0,4).join(', ').trim(); // улица + дом + …
+            const short = parts.slice(0,4).join(', ').trim();
             const sub   = parts.slice(4,7).join(', ').trim();
             return {
               full: display,
@@ -1094,6 +1186,12 @@
     function selectSuggestionFromElement(el){
       const lat = parseFloat(el.dataset.lat);
       const lng = parseFloat(el.dataset.lng);
+
+      if (!isInKazakhstan(lat, lng)){
+        showToast('outside_kz');
+        return;
+      }
+
       const label = el.dataset.label;
       if (pickerMap){
         pickerMap.setView([lat,lng], 17, { animate:true });
@@ -1185,6 +1283,11 @@
       const lat = latlng.lat;
       const lng = latlng.lng;
 
+      if (!isInKazakhstan(lat, lng)){
+        showToast('outside_kz');
+        return;
+      }
+
       if (placedPinMarker){
         pickerMap.removeLayer(placedPinMarker);
       }
@@ -1201,6 +1304,16 @@
 
       placedPinMarker.on('dragend', async (e)=>{
         const ll = e.target.getLatLng();
+
+        if (!isInKazakhstan(ll.lat, ll.lng)){
+          showToast('outside_kz');
+          const c = pickerMap.getCenter();
+          placedPinMarker.setLatLng(c);
+          state.manuallyPlacedPin = { lat:c.lat, lng:c.lng };
+          await updatePickerAddress(c.lat, c.lng);
+          return;
+        }
+
         state.manuallyPlacedPin = { lat:ll.lat, lng:ll.lng };
         await updatePickerAddress(ll.lat, ll.lng);
       });
@@ -1242,13 +1355,19 @@
         } else if (currentUserLocation){
           state.manuallyPlacedPin = { lat:currentUserLocation[0], lng:currentUserLocation[1] };
         } else {
-          alert('✅ Нүкте таңдалды');
+          showToast('outside_kz');
           return;
         }
       }
 
       try{
         const { lat, lng } = state.manuallyPlacedPin;
+
+        if (!isInKazakhstan(lat, lng)){
+          showToast('outside_kz');
+          return;
+        }
+
         const addr = await reverseGeocode(lat,lng);
 
         if (state.pickingFor === 'pickup'){
@@ -1487,7 +1606,7 @@
       if (mapUpdateInterval) clearInterval(mapUpdateInterval);
     }
 
-    /* ==== fit A/B c учётом bottom-sheet ==== */
+    /* ==== fit A/B ==== */
     let fitABScheduled = false;
 
     function queueFitAB(){

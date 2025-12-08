@@ -11,16 +11,14 @@
   <style>
     :root {
       --bg: #050814;
-      --bg-elevated: #0c1020;
+      --bg-elevated: #0b1020;
       --accent: #ff3b6a;
-      --accent-soft: rgba(255, 59, 106, 0.15);
-      --accent-strong: rgba(255, 59, 106, 0.4);
       --text-main: #ffffff;
       --text-secondary: #9fa4c0;
       --border-soft: rgba(255, 255, 255, 0.08);
-      --radius-lg: 20px;
+      --radius-lg: 18px;
       --radius-pill: 999px;
-      --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.55);
+      --shadow-soft: 0 16px 32px rgba(0, 0, 0, 0.6);
     }
 
     * {
@@ -49,6 +47,7 @@
       gap: 14px;
     }
 
+    /* HEADER */
     .header {
       display: flex;
       align-items: center;
@@ -63,8 +62,8 @@
     }
 
     .bot-avatar {
-      width: 38px;
-      height: 38px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       background: linear-gradient(135deg, #ff3b6a, #ffa63b);
       display: flex;
@@ -101,7 +100,7 @@
       border: none;
       cursor: pointer;
       border-radius: var(--radius-pill);
-      padding: 8px 14px;
+      padding: 7px 14px;
       font-size: 13px;
       font-weight: 500;
       display: inline-flex;
@@ -114,31 +113,32 @@
     .btn-ghost {
       background: rgba(255, 255, 255, 0.04);
       color: var(--text-main);
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.06);
     }
 
     .btn-ghost:active {
-      transform: scale(0.96);
+      transform: scale(0.95);
       background: rgba(255, 255, 255, 0.08);
     }
 
     .btn-primary {
       background: var(--accent);
       color: #ffffff;
-      box-shadow: 0 10px 24px rgba(255, 59, 106, 0.35);
+      box-shadow: 0 8px 20px rgba(255, 59, 106, 0.4);
     }
 
     .btn-primary:active {
-      transform: scale(0.97);
-      box-shadow: 0 6px 16px rgba(255, 59, 106, 0.3);
+      transform: scale(0.96);
+      box-shadow: 0 5px 14px rgba(255, 59, 106, 0.3);
     }
 
+    /* LIVE CARD */
     .live-card {
-      background: rgba(5, 9, 24, 0.92);
-      border-radius: 24px;
+      background: rgba(4, 7, 20, 0.96);
+      border-radius: 22px;
       padding: 10px;
       box-shadow: var(--shadow-soft);
-      border: 1px solid rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.05);
       overflow: hidden;
       backdrop-filter: blur(18px);
     }
@@ -148,7 +148,7 @@
       border-radius: 18px;
       overflow: hidden;
       background: #000;
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .video-aspect {
@@ -194,7 +194,7 @@
       font-weight: 600;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      box-shadow: 0 0 18px rgba(0, 0, 0, 0.8);
+      box-shadow: 0 0 16px rgba(0, 0, 0, 0.85);
     }
 
     .live-dot {
@@ -202,13 +202,13 @@
       height: 7px;
       border-radius: 50%;
       background: #fff;
-      box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.9);
     }
 
     .viewers-pill {
       padding: 4px 10px;
       border-radius: var(--radius-pill);
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.55);
       color: #f5f5f5;
       font-size: 11px;
       display: inline-flex;
@@ -221,8 +221,8 @@
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: #2ecc71;
-      box-shadow: 0 0 10px rgba(46, 204, 113, 0.8);
+      background: #22c55e;
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.9);
     }
 
     .bottom-row {
@@ -237,7 +237,7 @@
       font-size: 14px;
       font-weight: 600;
       color: #fdfdfd;
-      text-shadow: 0 0 16px rgba(0, 0, 0, 0.85);
+      text-shadow: 0 0 14px rgba(0, 0, 0, 0.9);
     }
 
     .badges {
@@ -249,19 +249,136 @@
 
     .badge {
       font-size: 10px;
-      padding: 4px 10px;
+      padding: 4px 9px;
       border-radius: var(--radius-pill);
-      background: rgba(0, 0, 0, 0.55);
+      background: rgba(0, 0, 0, 0.6);
       color: #f5f5f5;
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .badge.red {
-      background: var(--accent-strong);
-      border-color: rgba(255, 59, 106, 0.8);
+      background: rgba(255, 59, 106, 0.75);
+      border-color: rgba(255, 59, 106, 0.9);
     }
 
+    /* SIMPLE CHAT BLOCK */
+    .live-chat-wrapper {
+      margin-top: 10px;
+      padding: 10px 12px 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .chat-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chat-title::before {
+      content: "💬";
+    }
+
+    .chat-box {
+      border-radius: 14px;
+      background: rgba(12, 18, 36, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      height: 230px;
+      padding: 8px 10px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .chat-empty {
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-align: center;
+      margin-top: 12px;
+    }
+
+    .chat-message {
+      max-width: 90%;
+      padding: 6px 9px;
+      border-radius: 10px;
+      background: #020617;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .chat-message.me {
+      margin-left: auto;
+      background: #0f172a;
+      border-color: rgba(248, 250, 252, 0.4);
+    }
+
+    .chat-author {
+      font-weight: 600;
+      font-size: 11px;
+      margin-bottom: 2px;
+      color: #e5e7eb;
+    }
+
+    .chat-text {
+      font-size: 12px;
+      color: #e5e7eb;
+    }
+
+    .chat-input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .chat-input {
+      flex: 1;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: rgba(15, 23, 42, 0.95);
+      padding: 7px 12px;
+      color: var(--text-main);
+      font-size: 13px;
+      outline: none;
+    }
+
+    .chat-input::placeholder {
+      color: var(--text-secondary);
+    }
+
+    .chat-send-btn {
+      border: none;
+      border-radius: 999px;
+      padding: 7px 13px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 6px 14px rgba(255, 59, 106, 0.4);
+    }
+
+    .chat-send-btn:active {
+      transform: scale(0.96);
+      box-shadow: 0 3px 8px rgba(255, 59, 106, 0.3);
+    }
+
+    .chat-hint {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    /* INFO */
     .live-info {
       margin-top: 10px;
       padding: 10px 12px 6px;
@@ -354,6 +471,10 @@
       .live-card {
         padding: 8px;
       }
+
+      .chat-box {
+        height: 200px;
+      }
     }
   </style>
 </head>
@@ -370,7 +491,7 @@
       </div>
       <div class="header-actions">
         <button class="btn btn-ghost" id="tg-close-btn" type="button">
-          ✕
+          Жабу
         </button>
       </div>
     </header>
@@ -379,13 +500,14 @@
     <section class="live-card">
       <div class="live-video-wrapper">
         <div class="video-aspect">
-          <!-- iframe, сырт көзге жай Esimde эфирі болып көрінеді -->
+          <!-- YouTube iframe -->
           <iframe
-            src="https://www.youtube-nocookie.com/embed/r2_WrEY_hfQ?controls=0&modestbranding=1&rel=0&autoplay=1&mute=0&playsinline=1&enablejsapi=1"
-            title="Esimde тікелей эфирі"
+            src="https://www.youtube.com/embed/r45halG2VxA?si=aph0wIwJHAu0J7Sa&autoplay=1&playsinline=1&rel=0&modestbranding=1"
+            title="YouTube video player"
+            frameborder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowfullscreen
-          ></iframe>
+            allowfullscreen>
+          </iframe>
         </div>
 
         <div class="live-overlay">
@@ -412,6 +534,34 @@
         </div>
       </div>
 
+      <!-- SIMPLE LIVE CHAT -->
+      <div class="live-chat-wrapper">
+        <div class="chat-title">Тікелей эфир чаты</div>
+
+        <div class="chat-box" id="chat-box">
+          <div class="chat-empty" id="chat-empty">
+            Әзірге хабарламалар жоқ. Бірінші болып жазып көріңіз 🙂
+          </div>
+        </div>
+
+        <form class="chat-input-row" id="chat-form">
+          <input
+            type="text"
+            class="chat-input"
+            id="chat-input"
+            maxlength="200"
+            autocomplete="off"
+            placeholder="Хабарлама жазыңыз..."
+          />
+          <button class="chat-send-btn" type="submit">Жіберу</button>
+        </form>
+
+        <div class="chat-hint">
+          Чат Esimde ішінде ғана жұмыс істейді. Спамға қарсы қарапайым шектеулер қойылады.
+        </div>
+      </div>
+
+      <!-- INFO -->
       <div class="live-info">
         <p class="live-main-text" id="stream-description">
           Esimde жобасына қош келдіңіз! Бұл эфирде біз парфюм мен косметика туралы айтып,
@@ -470,24 +620,24 @@
       const chatBtn = document.getElementById("open-chat-btn");
       chatBtn.onclick = function () {
         if (tg) {
-          tg.close(); // чатқа қайта оралады
+          tg.close();
         } else {
           window.scrollTo({ top: 0, behavior: "smooth" });
         }
       };
 
-      // Көрермен санын 19 000–20 000 арасында рандом қылып, әр 2 секундта өзгерту
+      // Фейковый счётчик зрителей
       const viewerSpan = document.getElementById("viewer-count");
       if (viewerSpan) {
         const updateViewers = () => {
-          const value = Math.floor(19000 + Math.random() * 1001); // 19000–20000
+          const value = Math.floor(19000 + Math.random() * 1001);
           viewerSpan.textContent = `~ ${value.toLocaleString("kk-KZ")} көрермен`;
         };
         updateViewers();
         setInterval(updateViewers, 2000);
       }
 
-      // ?title=... &desc=... арқылы текстті өзгерту
+      // Параметры title/desc из query
       const params = new URLSearchParams(window.location.search);
       const customTitle = params.get("title");
       const customDesc = params.get("desc");
@@ -497,6 +647,133 @@
       if (customDesc) {
         document.getElementById("stream-description").textContent = customDesc;
       }
+
+      // ======= ПРОСТОЙ ЛОКАЛЬНЫЙ ЧАТ + WEBSOCKET =======
+      const chatBox = document.getElementById("chat-box");
+      const chatEmpty = document.getElementById("chat-empty");
+      const chatForm = document.getElementById("chat-form");
+      const chatInput = document.getElementById("chat-input");
+
+      function addMessage(author, text, isMe) {
+        if (chatEmpty) {
+          chatEmpty.style.display = "none";
+        }
+
+        const msg = document.createElement("div");
+        msg.className = "chat-message" + (isMe ? " me" : "");
+
+        const authorEl = document.createElement("div");
+        authorEl.className = "chat-author";
+        authorEl.textContent = author;
+
+        const textEl = document.createElement("div");
+        textEl.className = "chat-text";
+        textEl.textContent = text;
+
+        msg.appendChild(authorEl);
+        msg.appendChild(textEl);
+        chatBox.appendChild(msg);
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+
+      // Приветственное сообщение
+      setTimeout(() => {
+        addMessage("Esimde Live", "Қош келдіңіз! Сұрақтарыңызды чатқа жаза беріңіз 🙌", false);
+      }, 700);
+
+      // ======= WEBSOCKET ЧАТ (gorilla backend) =======
+      let ws = null;
+      let wsConnected = false;
+      let currentAuthor = "Қонақ";
+
+      function resolveAuthor() {
+        if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+          const u = tg.initDataUnsafe.user;
+          let a = (u.first_name || "") + (u.last_name ? " " + u.last_name : "");
+          if (a.trim()) {
+            return a;
+          }
+        }
+        return "Қонақ";
+      }
+
+      currentAuthor = resolveAuthor();
+
+      function connectWebSocket() {
+        const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+        const host = window.location.host;
+        const room = "esimde-live";
+
+        const wsUrl =
+          protocol +
+          host +
+          "/ws/live-chat?room=" +
+          encodeURIComponent(room) +
+          "&author=" +
+          encodeURIComponent(currentAuthor);
+
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+          wsConnected = true;
+          console.log("WS connected");
+        };
+
+        ws.onclose = () => {
+          wsConnected = false;
+          console.log("WS disconnected");
+          setTimeout(connectWebSocket, 3000);
+        };
+
+        ws.onerror = (e) => {
+          console.log("WS error", e);
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (!data.text) return;
+
+            const author = data.author || "Қатысушы";
+            const text = data.text;
+
+            // Показываем всё, но отмечаем свои сообщения как "me"
+            const isMe = author === currentAuthor;
+            addMessage(author, text, isMe);
+          } catch (e) {
+            console.log("WS parse error", e);
+          }
+        };
+      }
+
+      connectWebSocket();
+
+      chatForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        const value = chatInput.value.trim();
+        if (!value) return;
+
+        const room = "esimde-live";
+
+        if (ws && wsConnected) {
+          const payload = {
+            author: currentAuthor,
+            text: value,
+            room: room,
+          };
+          try {
+            ws.send(JSON.stringify(payload));
+            // не добавляем сразу, ждём echo от сервера
+            chatInput.value = "";
+          } catch (err) {
+            console.log("WS send error", err);
+          }
+        } else {
+          // если WS не подключен – просто локально рисуем и очищаем
+          addMessage(currentAuthor, value, true);
+          chatInput.value = "";
+        }
+      });
     })();
   </script>
 </body>

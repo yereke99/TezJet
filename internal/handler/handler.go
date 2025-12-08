@@ -74,6 +74,8 @@ type Handler struct {
 	bot        *bot.Bot
 	userRepo   *repository.UserRepository
 	driverRepo *repository.DriverRepository
+
+	chatHub *Hub
 }
 
 func NewHandler(cfg *config.Config, logger *zap.Logger, db *sql.DB, userRepo *repository.UserRepository, driverRepo *repository.DriverRepository) *Handler {
@@ -88,6 +90,7 @@ func NewHandler(cfg *config.Config, logger *zap.Logger, db *sql.DB, userRepo *re
 		db:         db,
 		userRepo:   userRepo,
 		driverRepo: driverRepo,
+		chatHub:    newHub(),
 	}
 }
 
@@ -1414,6 +1417,7 @@ func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 	r.HandleFunc("/user-history", h.userHistoryHandler).Methods("GET")
 
 	r.HandleFunc("/live", h.liveHandler).Methods("GET")
+	r.HandleFunc("/ws/live-chat", h.LiveChatWS)
 
 	r.HandleFunc("/driver", h.driverHandler).Methods("GET")
 	r.HandleFunc("/api/driver/start", h.handleDriverStart(b)).Methods("POST", "OPTIONS")

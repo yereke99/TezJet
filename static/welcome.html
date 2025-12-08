@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport"
         content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <title>QazLine - Тез жеткізу қызметі</title>
+  <title>Alash Go - Тез жеткізу қызметі</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
@@ -15,8 +15,10 @@
       --text-secondary: #666666;
       --text-muted: #999999;
       --text-white: #ffffff;
+
       --accent-primary: #000000;
       --accent-secondary: #007AFF;
+
       --border: #e5e5e5;
       --border-light: #f0f0f0;
       --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -194,24 +196,45 @@
     }
 
     .logo {
-      width: 72px;
-      height: 72px;
+      width: 80px;
+      height: 80px;
       background: var(--accent-primary);
-      border-radius: var(--radius-lg);
+      border-radius: 24px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 32px;
+      font-size: 26px;
       font-weight: 800;
       color: var(--text-white);
       margin: 0 auto;
       position: relative;
       box-shadow: var(--shadow-medium);
+      letter-spacing: 0;
       animation: logoFloat 6s ease-in-out infinite;
-      letter-spacing: -2px;
       transform: translateZ(0);
       -webkit-transform: translateZ(0);
       will-change: transform;
+    }
+
+    .logo-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      line-height: 1;
+    }
+
+    .logo-main {
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .logo-sub {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      opacity: 0.8;
+      letter-spacing: 1.2px;
     }
 
     @keyframes logoFloat {
@@ -445,7 +468,7 @@
       .brand-name { font-size: 32px; }
       .brand-slogan { font-size: 15px; }
       .brand-description { font-size: 13px; }
-      .logo { width: 68px; height: 68px; font-size: 28px; }
+      .logo { width: 72px; height: 72px; }
       .action-btn { padding: 15px 16px; min-height: 68px; }
       .action-btn-title { font-size: 15px; }
       .action-btn-subtitle { font-size: 12px; }
@@ -454,7 +477,7 @@
 
     @media (max-height: 700px) {
       .header-section { padding: 15px 0; max-height: calc(100vh - 160px); min-height: 150px; }
-      .logo { width: 60px; height: 60px; font-size: 24px; }
+      .logo { width: 60px; height: 60px; }
       .logo-container { margin-bottom: 24px; }
       .brand-name { font-size: 28px; margin-bottom: 6px; }
       .brand-slogan { font-size: 14px; }
@@ -465,7 +488,7 @@
 
     @media (max-height: 500px) {
       .header-section { padding: 10px 0; max-height: calc(100vh - 140px); min-height: 120px; }
-      .logo { width: 50px; height: 50px; font-size: 20px; }
+      .logo { width: 50px; height: 50px; }
       .logo-container { margin-bottom: 16px; }
       .brand-name { font-size: 24px; margin-bottom: 4px; }
       .brand-slogan { font-size: 13px; }
@@ -516,17 +539,24 @@
   <div class="main-container welcome-sequence">
     <div class="header-section">
       <div class="logo-container">
-        <div class="logo">Q</div>
+        <div class="logo">
+          <div class="logo-inner">
+            <div class="logo-main">AG</div>
+            <div class="logo-sub">Alash Go</div>
+          </div>
+        </div>
       </div>
 
       <div class="brand-text">
-        <h1 class="brand-name">QazLine</h1>
+        <h1 class="brand-name">Alash Go</h1>
         <p class="brand-slogan"
            data-kz="Тез жеткізу қызметі"
            data-ru="Быстрая доставка">Тез жеткізу қызметі</p>
         <p class="brand-description"
-           data-kz="Алматы қаласында сенімді және тез жеткізу"
-           data-ru="Надежная и быстрая доставка по Алматы">Алматы қаласында сенімді және тез жеткізу</p>
+           data-kz="Қазақстан бойынша сенімді және тез жеткізу"
+           data-ru="Надежная и быстрая доставка по Казахстану">
+          Қазақстан бойынша сенімді және тез жеткізу
+        </p>
       </div>
     </div>
 
@@ -537,7 +567,6 @@
           <p data-kz="Бағыттау..." data-ru="Перенаправление...">Бағыттау...</p>
         </div>
 
-        <!-- КНОПКА КЛИЕНТА: теперь ведёт на /main-client -->
         <a href="/main-client" class="action-btn primary" id="deliveryBtn">
           <div class="action-btn-content">
             <div class="action-btn-icon">📦</div>
@@ -585,7 +614,7 @@
         redirectingClient: 'Қол жетімді жүргізушілерге бағыттау...',
         error: 'Қате пайда болды',
         brandSlogan: 'Тез жеткізу қызметі',
-        brandDescription: 'Алматы қаласында сенімді және тез жеткізу',
+        brandDescription: 'Қазақстан бойынша сенімді және тез жеткізу',
         deliveryTitle: 'Жеткізу тапсырысы',
         deliverySubtitle: 'Жүкті тез әрі қауіпсіз жеткіземіз',
         driverTitle: 'Жүргізуші болу',
@@ -600,7 +629,7 @@
         redirectingClient: 'Перенаправление к доступным водителям...',
         error: 'Произошла ошибка',
         brandSlogan: 'Быстрая доставка',
-        brandDescription: 'Надежная и быстрая доставка по Алматы',
+        brandDescription: 'Надежная и быстрая доставка по Казахстану',
         deliveryTitle: 'Заказать доставку',
         deliverySubtitle: 'Быстро и безопасно доставим ваш груз',
         driverTitle: 'Стать водителем',
@@ -610,7 +639,7 @@
     };
 
     document.addEventListener('DOMContentLoaded', function () {
-      console.log('🚀 QazLine Welcome Page loaded');
+      console.log('🚀 Alash Go Welcome Page loaded');
 
       initializeTelegram();
       setupEventListeners();
@@ -823,7 +852,7 @@
 
     window.setLang = setLang;
 
-    console.log('🎉 QazLine Welcome Page initialized');
+    console.log('🎉 Alash Go Welcome Page initialized');
     console.log('📋 Redirect rules:');
     console.log('  - driver → delivery-list.html');
     console.log('  - client → main-client.html');
