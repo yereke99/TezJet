@@ -39,9 +39,7 @@
       --tg-safe-area-inset-left:env(safe-area-inset-left,0px);
       --tg-safe-area-inset-right:env(safe-area-inset-right,0px);
 
-      /* дополнительный контент-отступ сверху (чтоб не прятаться под системные кнопки/iOS бар) */
       --tg-content-safe-area-inset-top:15px;
-
       --bottom-nav-height:72px;
     }
 
@@ -362,12 +360,15 @@
       display:flex;
       flex-direction:column;
       gap:6px;
-      cursor:pointer;
+      position:relative;
       transition:transform .12s ease, box-shadow .12s ease;
     }
-    .order-card:active{
-      transform:scale(.98);
-      box-shadow:none;
+
+    .order-card-content{
+      cursor:pointer;
+    }
+    .order-card-content:active{
+      transform:scale(.99);
     }
 
     .order-route{
@@ -466,6 +467,47 @@
       gap:10px;
       align-items:center;
       flex-wrap:wrap;
+    }
+
+    /* NEW: Cancel button styles */
+    .order-actions{
+      display:flex;
+      gap:6px;
+      margin-top:6px;
+      padding-top:6px;
+      border-top:1px solid var(--border-light);
+    }
+    .cancel-btn{
+      flex:1;
+      padding:7px 12px;
+      border-radius:999px;
+      border:1px solid #ef4444;
+      background:#fff;
+      color:#dc2626;
+      font-size:11px;
+      font-weight:600;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:4px;
+      transition:all .15s ease;
+    }
+    .cancel-btn:hover{
+      background:#fef2f2;
+    }
+    .cancel-btn:active{
+      transform:scale(.97);
+      background:#fee2e2;
+    }
+    .cancel-btn:disabled{
+      opacity:.4;
+      cursor:not-allowed;
+      border-color:#d1d5db;
+      color:#9ca3af;
+    }
+    .cancel-btn:disabled:hover{
+      background:#fff;
     }
 
     .empty-state{
@@ -709,6 +751,70 @@
       gap:6px;
     }
 
+    /* NEW: Confirmation Dialog */
+    .confirm-dialog{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:rgba(0,0,0,.6);
+      backdrop-filter:blur(6px);
+      z-index:300;
+      padding:20px;
+    }
+    .confirm-dialog.show{display:flex;}
+    .confirm-dialog-box{
+      background:#fff;
+      border-radius:18px;
+      padding:20px;
+      max-width:340px;
+      width:100%;
+      box-shadow:0 20px 40px rgba(0,0,0,.3);
+    }
+    .confirm-dialog-title{
+      font-size:16px;
+      font-weight:700;
+      margin-bottom:8px;
+    }
+    .confirm-dialog-message{
+      font-size:13px;
+      color:var(--text-secondary);
+      line-height:1.5;
+      margin-bottom:16px;
+    }
+    .confirm-dialog-actions{
+      display:flex;
+      gap:8px;
+    }
+    .confirm-dialog-btn{
+      flex:1;
+      padding:10px 16px;
+      border-radius:999px;
+      border:none;
+      font-size:13px;
+      font-weight:600;
+      cursor:pointer;
+      transition:all .15s ease;
+    }
+    .confirm-dialog-btn.secondary{
+      background:#f3f4f6;
+      color:#4b5563;
+    }
+    .confirm-dialog-btn.secondary:hover{
+      background:#e5e7eb;
+    }
+    .confirm-dialog-btn.danger{
+      background:#ef4444;
+      color:#fff;
+    }
+    .confirm-dialog-btn.danger:hover{
+      background:#dc2626;
+    }
+    .confirm-dialog-btn:active{
+      transform:scale(.97);
+    }
+
     /* Leaflet cosmetics */
     .leaflet-control-attribution,
     .leaflet-control-zoom,
@@ -765,8 +871,8 @@
   <main class="content-scroll">
     <section class="summary-card">
       <div class="lang-switch">
-        <button class="lang-btn active" id="lang-kz" onclick="setLang('kz')">ҚАЗ</button>
-        <button class="lang-btn" id="lang-ru" onclick="setLang('ru')">РУС</button>
+        <button class="lang-btn active" id="lang-kz" data-lang="kz">ҚАЗ</button>
+        <button class="lang-btn" id="lang-ru" data-lang="ru">РУС</button>
       </div>
 
       <div class="summary-header">
@@ -928,6 +1034,30 @@
   </div>
 </div>
 
+<!-- NEW: Confirmation Dialog -->
+<div class="confirm-dialog" id="confirmDialog">
+  <div class="confirm-dialog-box">
+    <div class="confirm-dialog-title" id="confirmTitle"
+         data-kz="Тапсырысты бас тарту?"
+         data-ru="Отменить заказ?">
+      Отменить заказ?
+    </div>
+    <div class="confirm-dialog-message" id="confirmMessage"
+         data-kz="Сіз тапсырысты бас тартқыңыз келетініне сенімдісіз бе? Бұл әрекетті қайтару мүмкін емес."
+         data-ru="Вы уверены, что хотите отменить этот заказ? Это действие нельзя будет отменить.">
+      Вы уверены, что хотите отменить этот заказ? Это действие нельзя будет отменить.
+    </div>
+    <div class="confirm-dialog-actions">
+      <button class="confirm-dialog-btn secondary" id="confirmCancel"
+              data-kz="Жоқ"
+              data-ru="Нет">Нет</button>
+      <button class="confirm-dialog-btn danger" id="confirmOk"
+              data-kz="Иә, бас тарту"
+              data-ru="Да, отменить">Да, отменить</button>
+    </div>
+  </div>
+</div>
+
 <script>
   let currentLang = "kz";
   let allOrders = [];
@@ -935,6 +1065,7 @@
 
   let detailMap = null;
   let currentOrder = null;
+  let orderToCancel = null;
 
   document.addEventListener("DOMContentLoaded", () => {
     initTelegramViewport();
@@ -1027,6 +1158,7 @@
       });
     }
 
+    // Filter pills
     document.querySelectorAll(".filter-pill").forEach(btn => {
       btn.addEventListener("click", () => {
         document.querySelectorAll(".filter-pill").forEach(b => b.classList.remove("active"));
@@ -1036,6 +1168,15 @@
       });
     });
 
+    // Language buttons
+    document.querySelectorAll(".lang-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const lang = e.currentTarget.getAttribute("data-lang");
+        setLang(lang);
+      });
+    });
+
+    // Modal close
     if (modal) {
       modal.addEventListener("click", (e) => {
         if (e.target === modal) {
@@ -1052,8 +1193,22 @@
         if (modalEl && modalEl.classList.contains("show")) {
           closeOrderDetail();
         }
+        const confirmEl = document.getElementById("confirmDialog");
+        if (confirmEl && confirmEl.classList.contains("show")) {
+          closeConfirmDialog();
+        }
       }
     });
+
+    // Confirm dialog
+    const confirmCancel = document.getElementById("confirmCancel");
+    const confirmOk = document.getElementById("confirmOk");
+    if (confirmCancel) {
+      confirmCancel.addEventListener("click", closeConfirmDialog);
+    }
+    if (confirmOk) {
+      confirmOk.addEventListener("click", confirmCancelOrder);
+    }
   }
 
   async function loadHistory() {
@@ -1143,6 +1298,11 @@
     return status === "pending" || status === "matched" || status === "in_progress";
   }
 
+  function canCancelOrder(status){
+    status = (status || "").toLowerCase();
+    return status === "pending" || status === "matched" || status === "in_progress";
+  }
+
   function formatDate(str){
     if (!str) return "—";
     const d = new Date(str);
@@ -1208,10 +1368,14 @@
       empty.style.display = "none";
     }
 
+    const cancelBtnText = {
+      kz: "Бас тарту",
+      ru: "Отменить"
+    };
+
     filtered.forEach(o => {
       const card = document.createElement("article");
       card.className = "order-card";
-      card.tabIndex = 0;
 
       const from = o.from_address || o.FromAddress || "";
       const to = o.to_address || o.ToAddress || "";
@@ -1221,40 +1385,62 @@
       const eta = o.eta_min || o.EtaMin || null;
       const created = o.created_at || o.CreatedAt || o.createdAt;
 
+      const canCancel = canCancelOrder(status);
+
       card.innerHTML = `
-        <div class="order-route">
-          <div class="route-main">
-            <div class="route-line">
-              <span class="route-city">${escapeHTML(from)}</span>
-              <span class="route-arrow">→</span>
-              <span class="route-city">${escapeHTML(to)}</span>
+        <div class="order-card-content" data-order-id="${escapeHTML(o.id || o.ID || o.Id)}">
+          <div class="order-route">
+            <div class="route-main">
+              <div class="route-line">
+                <span class="route-city">${escapeHTML(from)}</span>
+                <span class="route-arrow">→</span>
+                <span class="route-city">${escapeHTML(to)}</span>
+              </div>
+              <div class="route-sub">
+                ${formatDate(created)}
+              </div>
             </div>
-            <div class="route-sub">
-              ${formatDate(created)}
+            <div class="price-pill">${Number(price).toLocaleString("ru-RU")} ₸</div>
+          </div>
+
+          <div class="order-meta-row">
+            <div class="status-pill ${statusClass(status)}">
+              <span class="status-dot"></span>
+              <span>${statusToLabel(status)}</span>
+            </div>
+            <div class="meta-right">
+              ${distance ? `<span>${Number(distance).toFixed(1)} км</span>` : ""}
+              ${eta ? `<span>~${eta} мин</span>` : ""}
             </div>
           </div>
-          <div class="price-pill">${Number(price).toLocaleString("ru-RU")} ₸</div>
         </div>
 
-        <div class="order-meta-row">
-          <div class="status-pill ${statusClass(status)}">
-            <span class="status-dot"></span>
-            <span>${statusToLabel(status)}</span>
+        ${canCancel ? `
+          <div class="order-actions">
+            <button class="cancel-btn" data-order-id="${escapeHTML(o.id || o.ID || o.Id)}">
+              <span>✕</span>
+              <span>${cancelBtnText[currentLang]}</span>
+            </button>
           </div>
-          <div class="meta-right">
-            ${distance ? `<span>${Number(distance).toFixed(1)} км</span>` : ""}
-            ${eta ? `<span>~${eta} мин</span>` : ""}
-          </div>
-        </div>
+        ` : ''}
       `;
 
-      card.addEventListener("click", () => openOrderDetail(o));
-      card.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          openOrderDetail(o);
+      // Click on card content to open details
+      const cardContent = card.querySelector('.order-card-content');
+      if (cardContent) {
+        cardContent.addEventListener("click", () => openOrderDetail(o));
+      }
+
+      // Cancel button handler
+      if (canCancel) {
+        const cancelBtn = card.querySelector('.cancel-btn');
+        if (cancelBtn) {
+          cancelBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            showConfirmDialog(o);
+          });
         }
-      });
+      }
 
       list.appendChild(card);
     });
@@ -1266,6 +1452,104 @@
       .replace(/&/g,"&amp;")
       .replace(/</g,"&lt;")
       .replace(/>/g,"&gt;");
+  }
+
+  /* ===== CANCEL ORDER FUNCTIONALITY ===== */
+  
+  function showConfirmDialog(order) {
+    orderToCancel = order;
+    const dialog = document.getElementById("confirmDialog");
+    if (dialog) {
+      dialog.classList.add("show");
+      
+      // Apply language to dialog
+      applyLangToElement(document.getElementById("confirmTitle"));
+      applyLangToElement(document.getElementById("confirmMessage"));
+      applyLangToElement(document.getElementById("confirmCancel"));
+      applyLangToElement(document.getElementById("confirmOk"));
+    }
+  }
+
+  function closeConfirmDialog() {
+    orderToCancel = null;
+    const dialog = document.getElementById("confirmDialog");
+    if (dialog) {
+      dialog.classList.remove("show");
+    }
+  }
+
+  async function confirmCancelOrder() {
+    if (!orderToCancel) return;
+
+    const orderId = orderToCancel.id || orderToCancel.ID || orderToCancel.Id;
+    const tgId = getTelegramId();
+
+    if (!orderId || !tgId) {
+      alert(currentLang === "kz" ? "Қате: тапсырыс анықталмады" : "Ошибка: заказ не найден");
+      closeConfirmDialog();
+      return;
+    }
+
+    // Disable confirm button to prevent double-clicks
+    const confirmBtn = document.getElementById("confirmOk");
+    if (confirmBtn) {
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = currentLang === "kz" ? "Күте тұрыңыз..." : "Подождите...";
+    }
+
+    try {
+      const res = await fetch("/api/user/cancel-order", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          telegram_id: tgId,
+          order_id: orderId
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to cancel order");
+      }
+
+      // Update the order status in local array
+      const orderIndex = allOrders.findIndex(o => 
+        (o.id || o.ID || o.Id) === orderId
+      );
+      if (orderIndex !== -1) {
+        allOrders[orderIndex].status = "cancelled";
+        allOrders[orderIndex].Status = "cancelled";
+      }
+
+      // Close dialog and refresh UI
+      closeConfirmDialog();
+      updateSummary();
+      renderOrders();
+
+      // Show success message (optional)
+      if (window.Telegram?.WebApp?.showAlert) {
+        const successMsg = currentLang === "kz" 
+          ? "Тапсырыс сәтті бас тартылды"
+          : "Заказ успешно отменён";
+        window.Telegram.WebApp.showAlert(successMsg);
+      }
+
+    } catch (error) {
+      console.error("Cancel order error:", error);
+      
+      const errorMsg = currentLang === "kk"
+        ? "Тапсырысты бас тарту кезінде қате пайда болды. Қайталап көріңіз."
+        : "Ошибка при отмене заказа. Попробуйте снова.";
+      
+      if (window.Telegram?.WebApp?.showAlert) {
+        window.Telegram.WebApp.showAlert(errorMsg);
+      } else {
+        alert(errorMsg);
+      }
+      
+      closeConfirmDialog();
+    }
   }
 
   /* ===== DETAIL SHEET + MAP ===== */
@@ -1346,14 +1630,12 @@
         attributionControl:false
       }).setView([43.238949, 76.889709], 11);
 
-      // 🤍 Uber-style white map
       L.tileLayer(
         "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
         {maxZoom:19, subdomains:"abcd"}
       ).addTo(detailMap);
     }
 
-    // Удаляем все слои кроме тайлов
     detailMap.eachLayer(l => {
       if (!(l instanceof L.TileLayer)) {
         detailMap.removeLayer(l);
@@ -1366,7 +1648,6 @@
       return;
     }
 
-    // Пины A и B
     if (hasFrom) {
       const iconA = L.divIcon({
         html:'<div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;background:#000;border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.25)">A</div>',
@@ -1449,7 +1730,6 @@
       chip.textContent = `${distText} • ${etaText}`;
     } catch(e){
       console.warn("route error", e);
-      // Фоллбек: прямая линия между точками
       const coordsAB = [[fromLat, fromLon],[toLat, toLon]];
       L.polyline(coordsAB, {
         color:"#000000",
@@ -1473,7 +1753,7 @@
       const d = R * c;
 
       const km = d.toFixed(1);
-      const min = Math.round((d / 40) * 60); // ~40км/ч
+      const min = Math.round((d / 40) * 60);
 
       const distText = `${km} км`;
       const etaText = `~${min} мин`;
@@ -1493,13 +1773,19 @@
     if (active) active.classList.add("active");
 
     document.querySelectorAll("[data-kz]").forEach(el => {
-      const text = el.getAttribute("data-" + lang);
-      if (text) el.textContent = text;
+      applyLangToElement(el);
     });
 
     renderOrders();
     updateSummary();
   }
+
+  function applyLangToElement(el) {
+    if (!el) return;
+    const text = el.getAttribute("data-" + currentLang);
+    if (text) el.textContent = text;
+  }
+
   window.setLang = setLang;
 </script>
 </body>

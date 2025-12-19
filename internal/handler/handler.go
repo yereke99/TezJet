@@ -21,6 +21,7 @@ import (
 	"github.com/go-telegram/bot/models"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 
 	"tezjet/config"
@@ -74,11 +75,12 @@ type Handler struct {
 	bot        *bot.Bot
 	userRepo   *repository.UserRepository
 	driverRepo *repository.DriverRepository
+	redisRepo  *repository.RedisRepository
 
 	chatHub *Hub
 }
 
-func NewHandler(cfg *config.Config, logger *zap.Logger, db *sql.DB, userRepo *repository.UserRepository, driverRepo *repository.DriverRepository) *Handler {
+func NewHandler(cfg *config.Config, logger *zap.Logger, db *sql.DB, userRepo *repository.UserRepository, driverRepo *repository.DriverRepository, redisClient *redis.Client) *Handler {
 	// Create directories for file uploads
 	os.MkdirAll("./ava", 0755)
 	os.MkdirAll("./documents", 0755)
@@ -90,7 +92,8 @@ func NewHandler(cfg *config.Config, logger *zap.Logger, db *sql.DB, userRepo *re
 		db:         db,
 		userRepo:   userRepo,
 		driverRepo: driverRepo,
-		chatHub:    newHub(),
+		redisRepo:  repository.NewRedisRepository(redisClient),
+		chatHub:    NewHub(),
 	}
 }
 
@@ -1445,6 +1448,8 @@ func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 	r.HandleFunc("/api/user/history", h.handleUserHistory).Methods("GET", "POST", "OPTIONS")
 	r.HandleFunc("/api/driver-list", h.handleDriverListAPI).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/driver-request", h.handleDriverRequest).Methods("POST", "OPTIONS")
+	// Add this line after the user history route
+	r.HandleFunc("/api/user/cancel-order", h.handleUserCancelOrder).Methods("POST", "OPTIONS")
 
 	// Health check
 	r.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -2276,6 +2281,88 @@ func (h *Handler) rankDriversByRouteMatch(drivers []MatchedDriver, params Driver
 	})
 
 	return drivers
+}
+
+// handleUserCancelOrder handles user canceling their order
+func (h *Handler) handleUserCancelOrder(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	h.logger.Info("Received user cancel order request",
+		zap.String("method", r.Method))
+
+	// Parse request
+	var reqData struct {
+		TelegramID int64  `json:"telegram_id"`
+		OrderID    string `json:"order_id"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
+		h.logger.Error("Failed to parse request body", zap.Error(err))
+		h.sendErrorResponse(w, "Неверные данные запроса", http.StatusBadRequest)
+		return
+	}
+
+	if reqData.TelegramID == 0 || reqData.OrderID == "" {
+		h.sendErrorResponse(w, "Telegram ID и Order ID обязательны", http.StatusBadRequest)
+		return
+	}
+
+	// Verify order belongs to this user and is cancellable
+	var currentStatus string
+	var orderTelegramID int64
+	query := `SELECT status, telegram_id FROM delivery_requests WHERE id = ?`
+	err := h.db.QueryRow(query, reqData.OrderID).Scan(&currentStatus, &orderTelegramID)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			h.sendErrorResponse(w, "Заказ не найден", http.StatusNotFound)
+			return
+		}
+		h.logger.Error("Failed to query order", zap.Error(err))
+		h.sendErrorResponse(w, "Ошибка проверки заказа", http.StatusInternalServerError)
+		return
+	}
+
+	// Verify ownership
+	if orderTelegramID != reqData.TelegramID {
+		h.sendErrorResponse(w, "Нет доступа к этому заказу", http.StatusForbidden)
+		return
+	}
+
+	// Check if order can be cancelled
+	currentStatus = strings.ToLower(currentStatus)
+	if currentStatus == "completed" || currentStatus == "cancelled" {
+		h.sendErrorResponse(w, "Этот заказ нельзя отменить", http.StatusConflict)
+		return
+	}
+
+	// Update order status to cancelled
+	updateQuery := `
+		UPDATE delivery_requests 
+		SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
+		WHERE id = ? AND telegram_id = ?`
+
+	result, err := h.db.Exec(updateQuery, reqData.OrderID, reqData.TelegramID)
+	if err != nil {
+		h.logger.Error("Failed to cancel order", zap.Error(err))
+		h.sendErrorResponse(w, "Ошибка отмены заказа", http.StatusInternalServerError)
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		h.sendErrorResponse(w, "Заказ не найден или уже отменён", http.StatusNotFound)
+		return
+	}
+
+	h.logger.Info("Order cancelled successfully",
+		zap.String("order_id", reqData.OrderID),
+		zap.Int64("telegram_id", reqData.TelegramID))
+
+	h.sendSuccessResponse(w, "Заказ успешно отменён", map[string]interface{}{
+		"order_id": reqData.OrderID,
+		"status":   "cancelled",
+	})
 }
 
 // Add real-time availability and status data

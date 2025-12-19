@@ -3,9 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Esimde Live</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <!-- Telegram WebApp JS -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
@@ -13,157 +11,153 @@
       --bg: #050814;
       --bg-elevated: #0b1020;
       --accent: #ff3b6a;
+      --accent2: #ff8b3b;
+
       --text-main: #ffffff;
       --text-secondary: #9fa4c0;
+
       --border-soft: rgba(255, 255, 255, 0.08);
       --radius-lg: 18px;
       --radius-pill: 999px;
       --shadow-soft: 0 16px 32px rgba(0, 0, 0, 0.6);
+
+      --tg-viewport-stable-height: 100vh;
+      --tg-safe-area-inset-top: 0px;
+      --tg-safe-area-inset-bottom: 0px;
+      --tg-content-safe-area-inset-top: 0px;
+
+      --top-gap: 16px;
+      --side-pad: 16px;
+      --bottom-gap: 12px;
+
+      --card-radius: 22px;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
 
     body {
-      min-height: 100vh;
+      height: var(--tg-viewport-stable-height, 100vh);
+      overflow: hidden;
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #182345 0, #050814 45%, #02030a 100%);
+      background: radial-gradient(circle at top, #1b2a55 0, #050814 44%, #02030a 100%);
       color: var(--text-main);
+    }
+
+    .app {
+      height: 100%;
+      padding-top: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px) + var(--top-gap));
+      padding-bottom: calc(var(--tg-safe-area-inset-bottom, 0px) + var(--bottom-gap));
+      padding-left: var(--side-pad);
+      padding-right: var(--side-pad);
       display: flex;
       justify-content: center;
       align-items: stretch;
-      padding: 16px;
+      position: relative;
     }
 
     .page {
       width: 100%;
-      max-width: 540px;
-      margin: auto;
+      max-width: 620px;
+      height: 100%;
+      min-height: 0;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
     }
 
     /* HEADER */
     .header {
+      flex: 0 0 auto;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+      justify-content: flex-start;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      padding: 6px 0;
+      background: linear-gradient(to bottom, rgba(5,8,20,0.90), rgba(5,8,20,0.0));
+      backdrop-filter: blur(10px);
     }
 
-    .bot-info {
-      display: flex;
+    /* USER CHIP (LEFT) */
+    .user-chip {
+      display: none;
       align-items: center;
+      gap: 8px;
+      padding: 6px 10px 6px 6px;
+      border-radius: var(--radius-pill);
+      background: rgba(11, 16, 32, 0.78);
+      border: 1px solid rgba(255,255,255,0.10);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.40);
+      max-width: 100%;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .user-chip-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 13px; color: #fff;
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+      flex-shrink: 0;
+    }
+    .user-chip-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .user-chip-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+    .user-chip-name {
+      font-size: 12px;
+      font-weight: 900;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+      line-height: 1.15;
+      max-height: 2.4em;
+    }
+
+    .user-chip-username {
+      font-size: 11px;
+      color: var(--text-secondary);
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+      line-height: 1.15;
+      max-height: 2.3em;
+      word-break: break-word;
+    }
+
+    /* MAIN CARD */
+    .live-card {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      background: rgba(4, 7, 20, 0.96);
+      border-radius: var(--card-radius);
+      padding: 10px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(255,255,255,0.06);
+      backdrop-filter: blur(18px);
+      display: flex;
+      flex-direction: column;
       gap: 10px;
     }
 
-    .bot-avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #ff3b6a, #ffa63b);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 16px;
-      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08);
-    }
-
-    .bot-text {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .bot-name {
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: 0.01em;
-    }
-
-    .bot-subtitle {
-      font-size: 12px;
-      color: var(--text-secondary);
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .btn {
-      border: none;
-      cursor: pointer;
-      border-radius: var(--radius-pill);
-      padding: 7px 14px;
-      font-size: 13px;
-      font-weight: 500;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: transform 0.12s ease-out, box-shadow 0.12s ease-out, background 0.15s;
-      white-space: nowrap;
-    }
-
-    .btn-ghost {
-      background: rgba(255, 255, 255, 0.04);
-      color: var(--text-main);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .btn-ghost:active {
-      transform: scale(0.95);
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    .btn-primary {
-      background: var(--accent);
-      color: #ffffff;
-      box-shadow: 0 8px 20px rgba(255, 59, 106, 0.4);
-    }
-
-    .btn-primary:active {
-      transform: scale(0.96);
-      box-shadow: 0 5px 14px rgba(255, 59, 106, 0.3);
-    }
-
-    /* LIVE CARD */
-    .live-card {
-      background: rgba(4, 7, 20, 0.96);
-      border-radius: 22px;
-      padding: 10px;
-      box-shadow: var(--shadow-soft);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      overflow: hidden;
-      backdrop-filter: blur(18px);
-    }
-
+    /* VIDEO */
     .live-video-wrapper {
+      flex: 0 0 auto;
       position: relative;
       border-radius: 18px;
       overflow: hidden;
       background: #000;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255,255,255,0.10);
     }
-
-    .video-aspect {
-      position: relative;
-      width: 100%;
-      padding-top: 56.25%; /* 16:9 */
-    }
-
-    .video-aspect iframe {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      border: 0;
-    }
+    .video-aspect { position: relative; width: 100%; padding-top: 56.25%; }
+    .video-aspect iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 
     .live-overlay {
       position: absolute;
@@ -174,126 +168,93 @@
       padding: 10px 12px;
       pointer-events: none;
     }
-
-    .top-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-    }
-
+    .top-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
     .live-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 3px 10px;
-      border-radius: var(--radius-pill);
-      background: linear-gradient(135deg, #ff3b6a, #ff8b3b);
-      color: #fff;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      box-shadow: 0 0 16px rgba(0, 0, 0, 0.85);
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 10px; border-radius: var(--radius-pill);
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff; font-size: 11px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase;
+      box-shadow: 0 0 16px rgba(0,0,0,0.85);
     }
-
-    .live-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #fff;
-      box-shadow: 0 0 10px rgba(255, 255, 255, 0.9);
-    }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.9); }
 
     .viewers-pill {
-      padding: 4px 10px;
-      border-radius: var(--radius-pill);
-      background: rgba(0, 0, 0, 0.55);
-      color: #f5f5f5;
-      font-size: 11px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+      padding: 4px 10px; border-radius: var(--radius-pill);
+      background: rgba(0,0,0,0.55);
+      color: #f5f5f5; font-size: 11px;
+      display: inline-flex; align-items: center; gap: 6px;
       backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.10);
     }
+    .viewers-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 10px rgba(34,197,94,0.9); }
+    .viewers-pill.is-waiting { opacity: 0.80; }
+    .viewers-pill.is-offline { opacity: 0.60; }
+    .viewers-pill b { font-weight: 900; }
 
-    .viewers-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #22c55e;
-      box-shadow: 0 0 10px rgba(34, 197, 94, 0.9);
-    }
-
-    .bottom-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      gap: 8px;
-    }
-
+    .bottom-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; }
     .live-title {
       max-width: 75%;
-      font-size: 14px;
-      font-weight: 600;
-      color: #fdfdfd;
-      text-shadow: 0 0 14px rgba(0, 0, 0, 0.9);
+      font-size: 14px; font-weight: 850; color: #fdfdfd;
+      text-shadow: 0 0 14px rgba(0,0,0,0.9);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-
-    .badges {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
+    .badges { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
     .badge {
-      font-size: 10px;
-      padding: 4px 9px;
-      border-radius: var(--radius-pill);
-      background: rgba(0, 0, 0, 0.6);
-      color: #f5f5f5;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 10px; padding: 4px 9px; border-radius: var(--radius-pill);
+      background: rgba(0,0,0,0.55); color: #f5f5f5;
+      border: 1px solid rgba(255,255,255,0.10); user-select: none;
     }
+    .badge.red { background: rgba(255,59,106,0.78); border-color: rgba(255,59,106,0.95); }
 
-    .badge.red {
-      background: rgba(255, 59, 106, 0.75);
-      border-color: rgba(255, 59, 106, 0.9);
-    }
-
-    /* SIMPLE CHAT BLOCK */
-    .live-chat-wrapper {
-      margin-top: 10px;
-      padding: 10px 12px 10px;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    /* CHAT */
+    .chat-area {
+      flex: 1 1 auto;
+      min-height: 0;
       display: flex;
       flex-direction: column;
       gap: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255,255,255,0.08);
     }
-
     .chat-title {
+      flex: 0 0 auto;
       font-size: 13px;
-      font-weight: 500;
-      color: var(--text-main);
+      font-weight: 900;
       display: flex;
       align-items: center;
       gap: 6px;
+      user-select: none;
+      justify-content: space-between;
     }
+    .chat-title .left { display: inline-flex; align-items: center; gap: 6px; }
+    .chat-title .left::before { content: "💬"; }
 
-    .chat-title::before {
-      content: "💬";
+    .anti-spam {
+      display: none;
+      flex: 0 0 auto;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255, 59, 106, 0.12);
+      padding: 8px 10px;
+      font-size: 12px;
+      line-height: 1.4;
+      color: #ffd6e0;
     }
+    .anti-spam b { color: #fff; }
 
     .chat-box {
+      flex: 1 1 auto;
+      min-height: 0;
       border-radius: 14px;
-      background: rgba(12, 18, 36, 0.95);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      height: 230px;
-      padding: 8px 10px;
+      background: rgba(12, 18, 36, 0.92);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 10px 10px;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
     }
 
     .chat-empty {
@@ -301,366 +262,495 @@
       color: var(--text-secondary);
       text-align: center;
       margin-top: 12px;
+      user-select: none;
     }
 
     .chat-message {
-      max-width: 90%;
-      padding: 6px 9px;
-      border-radius: 10px;
-      background: #020617;
-      border: 1px solid rgba(148, 163, 184, 0.4);
+      max-width: 92%;
+      padding: 8px 10px;
+      border-radius: 14px;
+      background: rgba(2, 6, 23, 0.88);
+      border: 1px solid rgba(148,163,184,0.28);
       font-size: 12px;
-      line-height: 1.4;
+      line-height: 1.35;
+      word-break: break-word;
+      white-space: pre-wrap;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.20);
     }
-
     .chat-message.me {
       margin-left: auto;
-      background: #0f172a;
-      border-color: rgba(248, 250, 252, 0.4);
+      background: rgba(15, 23, 42, 0.92);
+      border-color: rgba(248,250,252,0.28);
     }
-
-    .chat-author {
-      font-weight: 600;
-      font-size: 11px;
-      margin-bottom: 2px;
-      color: #e5e7eb;
-    }
-
-    .chat-text {
-      font-size: 12px;
-      color: #e5e7eb;
+    .chat-author { font-weight: 900; font-size: 11px; margin-bottom: 3px; color: #e5e7eb; }
+    .chat-text { color: #e5e7eb; }
+    .chat-meta {
+      margin-top: 6px;
+      font-size: 10px;
+      color: rgba(159,164,192,0.95);
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      user-select: none;
     }
 
     .chat-input-row {
+      flex: 0 0 auto;
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-top: 6px;
     }
 
     .chat-input {
       flex: 1;
       border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.7);
-      background: rgba(15, 23, 42, 0.95);
-      padding: 7px 12px;
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      background: rgba(15, 23, 42, 0.92);
+      padding: 10px 12px;
       color: var(--text-main);
       font-size: 13px;
       outline: none;
     }
-
-    .chat-input::placeholder {
-      color: var(--text-secondary);
-    }
+    .chat-input::placeholder { color: var(--text-secondary); }
 
     .chat-send-btn {
       border: none;
       border-radius: 999px;
-      padding: 7px 13px;
+      padding: 10px 14px;
       background: var(--accent);
       color: #fff;
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 950;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(255,59,106,0.35);
+      user-select: none;
+    }
+    .chat-send-btn:active { transform: scale(0.97); }
+    .chat-send-btn[disabled] { opacity: .6; cursor: not-allowed; }
+
+    .chat-hint { flex: 0 0 auto; font-size: 11px; color: var(--text-secondary); }
+
+    /* PAYMENT BUTTON CENTER */
+    .pay-center {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 9999;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px;
+      padding: 14px 18px;
+      background: linear-gradient(135deg, rgba(255,59,106,0.98), rgba(255,138,59,0.92));
+      color: #fff;
+      font-weight: 950;
+      font-size: 14px;
+      letter-spacing: 0.02em;
+      box-shadow: 0 18px 34px rgba(0,0,0,0.55);
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.12s ease-out, opacity 0.15s ease;
+    }
+    .pay-center:active { transform: translate(-50%, -50%) scale(0.97); }
+    .pay-center[disabled] { opacity: 0.6; cursor: not-allowed; }
+    .pay-center.hidden { display: none; }
+
+    /* ADMIN CONTROL (lower side) */
+    .admin-control {
+      display: none;
+      position: sticky;
+      bottom: calc(var(--tg-safe-area-inset-bottom, 0px) + 6px);
+      z-index: 50;
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid rgba(255,255,255,0.14);
+      padding: 10px 12px;
+      box-shadow: 0 12px 26px rgba(0,0,0,0.55);
+      backdrop-filter: blur(14px);
+    }
+    .admin-control.show { display: block; }
+
+    .admin-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .admin-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      user-select: none;
+    }
+    .toggle-btn {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: none;
+      font-size: 12px;
+      font-weight: 950;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+      user-select: none;
+      min-width: 120px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
-      box-shadow: 0 6px 14px rgba(255, 59, 106, 0.4);
-    }
-
-    .chat-send-btn:active {
-      transform: scale(0.96);
-      box-shadow: 0 3px 8px rgba(255, 59, 106, 0.3);
-    }
-
-    .chat-hint {
-      font-size: 11px;
-      color: var(--text-secondary);
-    }
-
-    /* INFO */
-    .live-info {
-      margin-top: 10px;
-      padding: 10px 12px 6px;
-      display: flex;
-      flex-direction: column;
       gap: 8px;
     }
-
-    .live-main-text {
-      font-size: 14px;
-      color: var(--text-main);
-      font-weight: 500;
-      line-height: 1.4;
-    }
-
-    .live-sub-text {
-      font-size: 12px;
-      color: var(--text-secondary);
-      line-height: 1.5;
-    }
-
-    .live-actions {
-      margin-top: 4px;
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .pill-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .pill {
-      font-size: 11px;
-      padding: 5px 10px;
-      border-radius: var(--radius-pill);
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      color: var(--text-secondary);
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .pill-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--accent);
-    }
-
-    .bottom-bar {
-      margin-top: 6px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: flex-start;
-      align-items: center;
-    }
-
-    .hint {
-      font-size: 11px;
-      color: var(--text-secondary);
-    }
+    .toggle-btn:active { transform: scale(0.97); }
+    .toggle-btn.enabled { background: #22c55e; color: #06110a; }
+    .toggle-btn.disabled { background: #ef4444; color: #fff; }
+    .toggle-btn[disabled] { opacity: 0.6; cursor: not-allowed; }
 
     @media (max-width: 420px) {
-      .page {
-        padding-bottom: 6px;
-      }
-
-      .header {
-        gap: 8px;
-      }
-
-      .bot-name {
-        font-size: 14px;
-      }
-
-      .live-title {
-        font-size: 13px;
-      }
-
-      .live-main-text {
-        font-size: 13px;
-      }
-
-      .live-card {
-        padding: 8px;
-      }
-
-      .chat-box {
-        height: 200px;
-      }
+      :root { --top-gap: 14px; --side-pad: 12px; }
+      .user-chip-avatar { width: 32px; height: 32px; }
+      .pay-center { padding: 13px 16px; font-size: 13px; }
     }
   </style>
 </head>
+
 <body>
-  <div class="page">
-    <!-- HEADER -->
-    <header class="header">
-      <div class="bot-info">
-        <div class="bot-avatar">E</div>
-        <div class="bot-text">
-          <div class="bot-name">Esimde Live</div>
-          <div class="bot-subtitle">Парфюм &amp; косметика тікелей эфирі</div>
-        </div>
-      </div>
-      <div class="header-actions">
-        <button class="btn btn-ghost" id="tg-close-btn" type="button">
-          Жабу
-        </button>
-      </div>
-    </header>
+  <div class="app">
+    <button class="pay-center hidden" id="pay-btn" type="button">💳 Төлем жасау</button>
 
-    <!-- LIVE CARD -->
-    <section class="live-card">
-      <div class="live-video-wrapper">
-        <div class="video-aspect">
-          <!-- YouTube iframe -->
-          <iframe
-            src="https://www.youtube.com/embed/r45halG2VxA?si=aph0wIwJHAu0J7Sa&autoplay=1&playsinline=1&rel=0&modestbranding=1"
-            title="YouTube video player"
-            frameborder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowfullscreen>
-          </iframe>
+    <div class="page">
+      <header class="header">
+        <div class="user-chip" id="user-chip">
+          <div class="user-chip-avatar" id="user-avatar">?</div>
+          <div class="user-chip-info">
+            <div class="user-chip-name" id="user-name">Қонақ</div>
+            <div class="user-chip-username" id="user-username"></div>
+          </div>
         </div>
+      </header>
 
-        <div class="live-overlay">
-          <div class="top-row">
-            <div class="live-pill">
-              <span class="live-dot"></span>
-              LIVE
-            </div>
-            <div class="viewers-pill">
-              <span class="viewers-dot"></span>
-              <span id="viewer-count"></span>
-            </div>
+      <section class="live-card">
+        <div class="live-video-wrapper">
+          <div class="video-aspect">
+            <!-- ✅ UPDATED VIDEO + MINIMIZED UI -->
+            <iframe
+              width="560"
+              height="315"
+              src="https://www.youtube.com/embed/r2_WrEY_hfQ?si=U6FJXn_F7Xi55_N5&controls=0&modestbranding=1&rel=0&iv_load_policy=3&fs=0&disablekb=1&playsinline=1&origin="
+              title="YouTube video player"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerpolicy="strict-origin-when-cross-origin"
+              allowfullscreen
+            ></iframe>
           </div>
 
-          <div class="bottom-row">
-            <div class="live-title" id="stream-title">
-              Esimde парфюм &amp; косметика тікелей эфир
+          <div class="live-overlay">
+            <div class="top-row">
+              <div class="live-pill"><span class="live-dot"></span>LIVE</div>
+              <div class="viewers-pill is-waiting" id="viewers-pill">
+                <span class="viewers-dot"></span>
+                <span id="viewer-count"><b>—</b> көрермен</span>
+              </div>
             </div>
-            <div class="badges">
-              <div class="badge red">HD 1080p</div>
-              <div class="badge">Esimde Live</div>
+
+            <div class="bottom-row">
+              <div class="live-title">Esimde парфюм &amp; косметика тікелей эфир</div>
+              <div class="badges">
+                <div class="badge red">HD 1080p</div>
+                <div class="badge">Esimde Live</div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- SIMPLE LIVE CHAT -->
-      <div class="live-chat-wrapper">
-        <div class="chat-title">Тікелей эфир чаты</div>
-
-        <div class="chat-box" id="chat-box">
-          <div class="chat-empty" id="chat-empty">
-            Әзірге хабарламалар жоқ. Бірінші болып жазып көріңіз 🙂
+        <div class="chat-area">
+          <div class="chat-title">
+            <span class="left">Тікелей эфир чаты</span>
           </div>
-        </div>
 
-        <form class="chat-input-row" id="chat-form">
-          <input
-            type="text"
-            class="chat-input"
-            id="chat-input"
-            maxlength="200"
-            autocomplete="off"
-            placeholder="Хабарлама жазыңыз..."
-          />
-          <button class="chat-send-btn" type="submit">Жіберу</button>
-        </form>
+          <div class="anti-spam" id="anti-spam-box"></div>
 
-        <div class="chat-hint">
-          Чат Esimde ішінде ғана жұмыс істейді. Спамға қарсы қарапайым шектеулер қойылады.
-        </div>
-      </div>
-
-      <!-- INFO -->
-      <div class="live-info">
-        <p class="live-main-text" id="stream-description">
-          Esimde жобасына қош келдіңіз! Бұл эфирде біз парфюм мен косметика туралы айтып,
-          эксклюзивті ұсыныстар көрсетеміз және клиенттерге арналған ынталандыру сыйлықтарын береміз.
-        </p>
-        <p class="live-sub-text">
-          Эфир Telegram ішіндегі WebApp арқылы ашылады — қолданбадан шықпай-ақ парфюм таңдап,
-          жеңілдіктер алып, чек жіберу арқылы ынталандыру сыйлықтарына қатыса аласыз.
-        </p>
-
-        <div class="live-actions">
-          <div class="pill-group">
-            <div class="pill">
-              <span class="pill-dot"></span> Telegram-нан шықпай қарау
-            </div>
-            <div class="pill">
-              🎁 Чек жіберіп, ынталандыру сыйлығын алу
+          <div class="chat-box" id="chat-box">
+            <div class="chat-empty" id="chat-empty">
+              Әзірше хабарламалар жоқ. Бірінші болып жазып көріңіз 🙂
             </div>
           </div>
 
-          <button class="btn btn-primary" id="open-chat-btn" type="button">
-            💬 Ботпен жазысу
-          </button>
-        </div>
+          <div class="admin-control" id="admin-control">
+            <div class="admin-row">
+              <div class="admin-label">⚙️ Төлем батырмасы</div>
+              <button class="toggle-btn" id="toggle-btn" type="button">
+                <span id="toggle-text">Loading...</span>
+              </button>
+            </div>
+          </div>
 
-        <div class="bottom-bar">
-          <span class="hint">
-            Тікелей эфир барысында Esimde өнімдері мен ынталандыру сыйлықтары туралы барлық ақпарат осы бетте көрсетіледі.
-          </span>
+          <form class="chat-input-row" id="chat-form">
+            <input
+              type="text"
+              class="chat-input"
+              id="chat-input"
+              maxlength="100"
+              autocomplete="off"
+              placeholder="Хабарлама жазыңыз..."
+            />
+            <button class="chat-send-btn" id="chat-send-btn" type="submit">Жіберу</button>
+          </form>
+
+          <div class="chat-hint">
+            Чат Esimde ішінде ғана жұмыс істейді. Спамға қарсы қарапайым шектеулер қойылады.
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   </div>
 
   <script>
     (function () {
       const tg = window.Telegram ? window.Telegram.WebApp : null;
 
-      if (tg) {
-        tg.ready();
-        document.body.style.backgroundColor = tg.themeParams.bg_color || "#050814";
+      const ROOM = "esimde-live";
+      const PAY_API = "/api/pay";
+      const PAY_STATUS_API = "/api/pay/status";
+      const PAY_TOGGLE_API = "/api/pay/toggle";
+      const ADMIN_ID = 800703982;
 
-        const closeBtn = document.getElementById("tg-close-btn");
-        closeBtn.onclick = function () {
-          try {
-            tg.close();
-          } catch (e) {
-            closeBtn.style.display = "none";
-          }
-        };
-      } else {
-        const closeBtn = document.getElementById("tg-close-btn");
-        closeBtn.style.display = "none";
-      }
+      const payBtn = document.getElementById("pay-btn");
+      const adminControl = document.getElementById("admin-control");
+      const toggleBtn = document.getElementById("toggle-btn");
+      const toggleText = document.getElementById("toggle-text");
 
-      const chatBtn = document.getElementById("open-chat-btn");
-      chatBtn.onclick = function () {
-        if (tg) {
-          tg.close();
-        } else {
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        }
-      };
-
-      // Фейковый счётчик зрителей
       const viewerSpan = document.getElementById("viewer-count");
-      if (viewerSpan) {
-        const updateViewers = () => {
-          const value = Math.floor(19000 + Math.random() * 1001);
-          viewerSpan.textContent = `~ ${value.toLocaleString("kk-KZ")} көрермен`;
-        };
-        updateViewers();
-        setInterval(updateViewers, 2000);
-      }
+      const viewersPill = document.getElementById("viewers-pill");
 
-      // Параметры title/desc из query
-      const params = new URLSearchParams(window.location.search);
-      const customTitle = params.get("title");
-      const customDesc = params.get("desc");
-      if (customTitle) {
-        document.getElementById("stream-title").textContent = customTitle;
-      }
-      if (customDesc) {
-        document.getElementById("stream-description").textContent = customDesc;
-      }
-
-      // ======= ПРОСТОЙ ЛОКАЛЬНЫЙ ЧАТ + WEBSOCKET =======
+      const antiBox = document.getElementById("anti-spam-box");
       const chatBox = document.getElementById("chat-box");
       const chatEmpty = document.getElementById("chat-empty");
       const chatForm = document.getElementById("chat-form");
       const chatInput = document.getElementById("chat-input");
+      const sendBtn = document.getElementById("chat-send-btn");
 
-      function addMessage(author, text, isMe) {
-        if (chatEmpty) {
-          chatEmpty.style.display = "none";
+      const userChip = document.getElementById("user-chip");
+      const userAvatar = document.getElementById("user-avatar");
+      const userName = document.getElementById("user-name");
+      const userUsername = document.getElementById("user-username");
+
+      let currentUserID = null;
+      let isAdmin = false;
+      let statusCheckInterval = null;
+
+      // ========================================
+      // 👤 DISPLAY USER
+      // ========================================
+      function displayUserProfile() {
+        if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+          const user = tg.initDataUnsafe.user;
+
+          const firstName = user.first_name || "";
+          const lastName = user.last_name || "";
+          const fullName = (firstName + (lastName ? " " + lastName : "")).trim() || "Қонақ";
+          const username = user.username ? "@" + user.username : "ID: " + user.id;
+
+          if (user.photo_url) {
+            const img = document.createElement("img");
+            img.src = user.photo_url;
+            img.alt = fullName;
+            userAvatar.innerHTML = "";
+            userAvatar.appendChild(img);
+          } else {
+            const initial = firstName ? firstName.charAt(0).toUpperCase() : "?";
+            userAvatar.textContent = initial;
+          }
+
+          userName.textContent = fullName;
+          userUsername.textContent = username;
+
+          userChip.style.display = "flex";
+        } else {
+          userChip.style.display = "flex";
+          userName.textContent = "Қонақ";
+          userUsername.textContent = "";
+          userAvatar.textContent = "?";
         }
+      }
+
+      function initUser() {
+        if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+          currentUserID = tg.initDataUnsafe.user.id;
+          isAdmin = (currentUserID === ADMIN_ID);
+          if (isAdmin) adminControl.classList.add("show");
+        }
+        displayUserProfile();
+      }
+
+      // ========================================
+      // 💳 PAY BUTTON STATUS
+      // ========================================
+      async function checkPayButtonStatus() {
+        try {
+          const res = await fetch(PAY_STATUS_API, { cache: "no-store" });
+          const data = await res.json();
+
+          if (data.enabled) payBtn.classList.remove("hidden");
+          else payBtn.classList.add("hidden");
+
+          if (isAdmin) updateToggleButton(!!data.enabled);
+        } catch (err) {
+          console.error("Failed to check pay button status:", err);
+        }
+      }
+
+      function updateToggleButton(enabled) {
+        if (enabled) {
+          toggleBtn.className = "toggle-btn enabled";
+          toggleText.textContent = "✅ Қосулы";
+        } else {
+          toggleBtn.className = "toggle-btn disabled";
+          toggleText.textContent = "❌ Өшірулі";
+        }
+      }
+
+      async function togglePayButton() {
+        if (!isAdmin) return;
+        try {
+          toggleBtn.disabled = true;
+
+          const res = await fetch(PAY_TOGGLE_API, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Telegram-User-ID": String(currentUserID)
+            },
+            body: JSON.stringify({ ts: Date.now() })
+          });
+
+          const data = await res.json();
+
+          if (data.ok) {
+            updateToggleButton(data.enabled);
+            showAntiSpam(data.enabled ? "✅ Төлем батырмасы қосылды" : "❌ Төлем батырмасы өшірілді");
+          } else {
+            showAntiSpam("⛔ Қате: " + (data.error || "unknown"));
+          }
+        } catch (err) {
+          console.error("Toggle failed:", err);
+          showAntiSpam("⛔ Қате орын алды");
+        } finally {
+          toggleBtn.disabled = false;
+        }
+      }
+
+      function startStatusPolling() {
+        checkPayButtonStatus();
+        statusCheckInterval = setInterval(checkPayButtonStatus, 3000);
+      }
+      function stopStatusPolling() {
+        if (statusCheckInterval) {
+          clearInterval(statusCheckInterval);
+          statusCheckInterval = null;
+        }
+      }
+
+      // ========================================
+      // TELEGRAM VIEWPORT VARS
+      // ========================================
+      function applyTgViewportVars() {
+        const stableH = (tg && (tg.viewportStableHeight || tg.viewportHeight)) || window.innerHeight || 700;
+        document.documentElement.style.setProperty("--tg-viewport-stable-height", stableH + "px");
+        if (!tg) return;
+        try {
+          const s = tg.safeAreaInset || {};
+          const c = tg.contentSafeAreaInset || {};
+          if (typeof s.top === "number") document.documentElement.style.setProperty("--tg-safe-area-inset-top", s.top + "px");
+          if (typeof s.bottom === "number") document.documentElement.style.setProperty("--tg-safe-area-inset-bottom", s.bottom + "px");
+          if (typeof c.top === "number") document.documentElement.style.setProperty("--tg-content-safe-area-inset-top", c.top + "px");
+        } catch (e) {}
+      }
+
+      if (tg) {
+        tg.ready();
+        try { tg.expand(); } catch(e) {}
+        applyTgViewportVars();
+        try { tg.onEvent("viewportChanged", function () { applyTgViewportVars(); }); } catch(e) {}
+      } else {
+        applyTgViewportVars();
+      }
+      window.addEventListener("resize", () => { applyTgViewportVars(); }, { passive: true });
+
+      // ✅ Fix: set origin param for iframe to reduce overlays issues
+      (function setIframeOrigin() {
+        try {
+          const ifr = document.querySelector(".video-aspect iframe");
+          if (!ifr) return;
+          const u = new URL(ifr.src);
+          u.searchParams.set("origin", window.location.origin);
+          ifr.src = u.toString();
+        } catch (e) {}
+      })();
+
+      // ========================================
+      // VIEWERS & UTILS
+      // ========================================
+      function setViewerCountUI(count) {
+        if (!viewerSpan) return;
+        if (typeof count === "number" && isFinite(count) && count >= 0) {
+          viewersPill && viewersPill.classList.remove("is-waiting", "is-offline");
+          viewerSpan.innerHTML = `<b>${count.toLocaleString("kk-KZ")}</b> көрермен`;
+        }
+      }
+      function setViewerStateWaiting() {
+        viewersPill && viewersPill.classList.add("is-waiting");
+        viewersPill && viewersPill.classList.remove("is-offline");
+        if (viewerSpan) viewerSpan.innerHTML = `<b>—</b> көрермен`;
+      }
+      function setViewerStateOffline() {
+        viewersPill && viewersPill.classList.remove("is-waiting");
+        viewersPill && viewersPill.classList.add("is-offline");
+      }
+
+      function showAntiSpam(msg) {
+        if (!antiBox) return;
+        antiBox.style.display = "block";
+        antiBox.innerHTML = msg;
+        window.clearTimeout(showAntiSpam._t);
+        showAntiSpam._t = window.setTimeout(() => {
+          antiBox.style.display = "none";
+          antiBox.innerHTML = "";
+        }, 2600);
+      }
+
+      function nowTimeHHMM() {
+        const d = new Date();
+        const hh = String(d.getHours()).padStart(2, "0");
+        const mm = String(d.getMinutes()).padStart(2, "0");
+        return `${hh}:${mm}`;
+      }
+
+      function smartScrollToBottom(force) {
+        if (!chatBox) return;
+        const nearBottom = (chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight) < 120;
+        if (!force && !nearBottom) return;
+        requestAnimationFrame(() => { chatBox.scrollTop = chatBox.scrollHeight; });
+      }
+
+      const pendingMap = new Map();
+      const recentKeys = new Map();
+      const RECENT_MS = 5000;
+
+      function cleanupRecent() {
+        const now = Date.now();
+        for (const [k, ts] of recentKeys.entries()) {
+          if (now - ts > RECENT_MS) recentKeys.delete(k);
+        }
+      }
+
+      function addMessage(author, text, isMe, opts) {
+        if (chatEmpty) chatEmpty.style.display = "none";
+        const clientId = opts && opts.client_id ? String(opts.client_id) : "";
+        const pending = !!(opts && opts.pending);
+        const delivered = !!(opts && opts.delivered);
+        const time = (opts && opts.time) ? String(opts.time) : nowTimeHHMM();
 
         const msg = document.createElement("div");
         msg.className = "chat-message" + (isMe ? " me" : "");
+        if (clientId) msg.dataset.clientId = clientId;
 
         const authorEl = document.createElement("div");
         authorEl.className = "chat-author";
@@ -670,110 +760,299 @@
         textEl.className = "chat-text";
         textEl.textContent = text;
 
+        const meta = document.createElement("div");
+        meta.className = "chat-meta";
+
+        const timeEl = document.createElement("span");
+        timeEl.textContent = time;
+
+        const statusEl = document.createElement("span");
+        statusEl.className = "chat-status";
+        if (isMe) {
+          if (pending) statusEl.textContent = "⏳";
+          else if (delivered) statusEl.textContent = "✓";
+        }
+
+        meta.appendChild(timeEl);
+        meta.appendChild(statusEl);
+
         msg.appendChild(authorEl);
         msg.appendChild(textEl);
+        msg.appendChild(meta);
+
         chatBox.appendChild(msg);
-        chatBox.scrollTop = chatBox.scrollHeight;
+        smartScrollToBottom(true);
+        return { statusEl };
       }
 
-      // Приветственное сообщение
-      setTimeout(() => {
-        addMessage("Esimde Live", "Қош келдіңіз! Сұрақтарыңызды чатқа жаза беріңіз 🙌", false);
-      }, 700);
+      function markDelivered(clientId) {
+        const rec = pendingMap.get(clientId);
+        if (!rec) return false;
+        try { if (rec.statusEl) rec.statusEl.textContent = "✓"; } catch (e) {}
+        pendingMap.delete(clientId);
+        return true;
+      }
 
-      // ======= WEBSOCKET ЧАТ (gorilla backend) =======
-      let ws = null;
-      let wsConnected = false;
-      let currentAuthor = "Қонақ";
+      setTimeout(() => {
+        addMessage("Esimde Live", "Қош келдіңіз! Сұрақтарыңызды чатқа жаза беріңіз 🙌", false, { delivered: true });
+      }, 600);
 
       function resolveAuthor() {
         if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
           const u = tg.initDataUnsafe.user;
-          let a = (u.first_name || "") + (u.last_name ? " " + u.last_name : "");
-          if (a.trim()) {
-            return a;
-          }
+          const a = ((u.first_name || "") + (u.last_name ? " " + u.last_name : "")).trim();
+          if (a) return a;
         }
         return "Қонақ";
       }
+      const currentAuthor = resolveAuthor();
 
-      currentAuthor = resolveAuthor();
+      const COOL_MS = 5000;
+      let lastSendAt = 0;
+
+      function hasLink(text) {
+        const t = text.toLowerCase();
+        if (t.includes("http://") || t.includes("https://") || t.includes("www.") || t.includes("t.me/") || t.includes("telegram.me/")) return true;
+        const domainRe = /\b[a-z0-9-]+\.(com|net|org|ru|kz|io|me|app|dev|site|xyz|info|biz)\b/i;
+        return domainRe.test(text);
+      }
+
+      function hasPhone(text) {
+        if (text.toLowerCase().includes("оплата")) return false;
+        const digits = text.replace(/\D/g, "");
+        if (/(\+?7|8)\d{10}\b/.test(text.replace(/\s+/g, ""))) return true;
+        if ((digits.startsWith("87") || digits.startsWith("77") || digits.startsWith("7") || digits.startsWith("8")) && digits.length >= 10) return true;
+        return /\b\d{10,11}\b/.test(digits);
+      }
+
+      function hasBankCard(text) {
+        const digits = text.replace(/\D/g, "");
+        if (digits.length >= 16 && digits.length <= 19) return true;
+        return /\b\d{4}([ -]?\d{4}){3,4}\b/.test(text);
+      }
+
+      function validateMessage(text) {
+        const msg = (text || "").trim();
+        if (!msg) return { ok: false, reason: "Бос хабарлама жіберуге болмайды." };
+        if (msg.length > 100) return { ok: false, reason: "Хабарлама ұзындығы 100 таңбадан аспау керек." };
+        if (hasLink(msg)) return { ok: false, reason: "Сілтеме жіберуге болмайды (анти-спам)." };
+        if (hasBankCard(msg)) return { ok: false, reason: "Банк картасы деректерін жіберуге болмайды (анти-спам)." };
+        if (hasPhone(msg)) return { ok: false, reason: "Телефон нөмірін жіберуге болмайды (анти-спам)." };
+        const now = Date.now();
+        if (now - lastSendAt < COOL_MS) {
+          const left = Math.ceil((COOL_MS - (now - lastSendAt)) / 1000);
+          return { ok: false, reason: `Тым жиі жіберіп жатырсыз. ${left} сек күтіңіз.` };
+        }
+        return { ok: true };
+      }
+
+      function genClientId() {
+        return "c_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 10);
+      }
+
+      // ========================================
+      // WEBSOCKET
+      // ========================================
+      let ws = null;
+      let wsConnected = false;
+      let reconnectTry = 0;
+      let hbTimer = null;
+
+      function wsSend(obj) {
+        if (!ws || !wsConnected) return false;
+        try { ws.send(JSON.stringify(obj)); return true; } catch (e) { return false; }
+      }
+
+      function startHeartbeat() {
+        stopHeartbeat();
+        hbTimer = setInterval(() => {
+          wsSend({ type: "ping", room: ROOM, ts: Date.now() });
+          wsSend({ type: "presence_get", room: ROOM, ts: Date.now() });
+        }, 10000);
+      }
+
+      function stopHeartbeat() {
+        if (hbTimer) clearInterval(hbTimer);
+        hbTimer = null;
+      }
 
       function connectWebSocket() {
+        setViewerStateWaiting();
         const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
         const host = window.location.host;
-        const room = "esimde-live";
+        const wsUrl = protocol + host + "/ws/live-chat?room=" + encodeURIComponent(ROOM) + "&author=" + encodeURIComponent(currentAuthor);
 
-        const wsUrl =
-          protocol +
-          host +
-          "/ws/live-chat?room=" +
-          encodeURIComponent(room) +
-          "&author=" +
-          encodeURIComponent(currentAuthor);
-
-        ws = new WebSocket(wsUrl);
+        try { ws = new WebSocket(wsUrl); } catch (e) { scheduleReconnect(); return; }
 
         ws.onopen = () => {
           wsConnected = true;
-          console.log("WS connected");
+          reconnectTry = 0;
+          wsSend({ type: "presence_join", room: ROOM, author: currentAuthor, ts: Date.now() });
+          wsSend({ type: "presence_get", room: ROOM, ts: Date.now() });
+          startHeartbeat();
         };
 
         ws.onclose = () => {
           wsConnected = false;
-          console.log("WS disconnected");
-          setTimeout(connectWebSocket, 3000);
+          stopHeartbeat();
+          setViewerStateOffline();
+          scheduleReconnect();
         };
 
-        ws.onerror = (e) => {
-          console.log("WS error", e);
-        };
+        ws.onerror = () => {};
 
         ws.onmessage = (event) => {
           try {
-            const data = JSON.parse(event.data);
+            const data = JSON.parse(event.data || "{}");
+            const maybeRoom = data.room || data.Room;
+
+            if (maybeRoom === ROOM) {
+              const v =
+                (typeof data.viewers === "number") ? data.viewers :
+                (typeof data.count === "number") ? data.count :
+                (typeof data.Viewers === "number") ? data.Viewers :
+                (typeof data.Count === "number") ? data.Count : null;
+
+              const t = (data.type || data.Type || "").toLowerCase();
+              const isPresenceType = (t === "presence" || t === "viewers" || t === "presence_update" || t === "presence_state");
+              if (isPresenceType && v !== null) { setViewerCountUI(v); return; }
+              if (!t && v !== null) { setViewerCountUI(v); return; }
+            }
+
             if (!data.text) return;
 
             const author = data.author || "Қатысушы";
-            const text = data.text;
+            const text = String(data.text);
 
-            // Показываем всё, но отмечаем свои сообщения как "me"
+            const chk = validateMessage(text);
+            if (!chk.ok) return;
+
+            const clientId = data.client_id ? String(data.client_id) : "";
+            if (clientId && pendingMap.has(clientId)) {
+              markDelivered(clientId);
+              return;
+            }
+
+            cleanupRecent();
+            const key = author + "||" + text;
+            if (recentKeys.has(key)) return;
+            recentKeys.set(key, Date.now());
+
             const isMe = author === currentAuthor;
-            addMessage(author, text, isMe);
-          } catch (e) {
-            console.log("WS parse error", e);
-          }
+            addMessage(author, text, isMe, { delivered: isMe ? true : false });
+          } catch (e) {}
         };
       }
 
+      function scheduleReconnect() {
+        reconnectTry++;
+        const backoff = Math.min(30000, 1500 + reconnectTry * 1200);
+        setTimeout(connectWebSocket, backoff);
+      }
+
+      window.addEventListener("beforeunload", () => {
+        try { wsSend({ type: "presence_leave", room: ROOM, author: currentAuthor, ts: Date.now() }); } catch(e) {}
+        try { stopHeartbeat(); } catch(e) {}
+        try { ws && ws.close(); } catch(e) {}
+        stopStatusPolling();
+      });
+
       connectWebSocket();
 
-      chatForm.addEventListener("submit", function (e) {
-        e.preventDefault();
-        const value = chatInput.value.trim();
-        if (!value) return;
+      if (chatForm) {
+        chatForm.addEventListener("submit", function (e) {
+          e.preventDefault();
+          const value = (chatInput.value || "").trim();
 
-        const room = "esimde-live";
-
-        if (ws && wsConnected) {
-          const payload = {
-            author: currentAuthor,
-            text: value,
-            room: room,
-          };
-          try {
-            ws.send(JSON.stringify(payload));
-            // не добавляем сразу, ждём echo от сервера
-            chatInput.value = "";
-          } catch (err) {
-            console.log("WS send error", err);
+          const check = validateMessage(value);
+          if (!check.ok) {
+            showAntiSpam("⛔ <b>Анти-спам</b><br/>" + check.reason);
+            return;
           }
-        } else {
-          // если WS не подключен – просто локально рисуем и очищаем
-          addMessage(currentAuthor, value, true);
+
+          lastSendAt = Date.now();
+          if (sendBtn) {
+            sendBtn.disabled = true;
+            setTimeout(() => { sendBtn.disabled = false; }, 900);
+          }
+
+          const clientId = genClientId();
+          const created = addMessage(currentAuthor, value, true, {
+            client_id: clientId,
+            pending: true,
+            time: nowTimeHHMM()
+          });
+          pendingMap.set(clientId, { statusEl: created.statusEl });
+
           chatInput.value = "";
+
+          if (ws && wsConnected) {
+            const payload = { author: currentAuthor, text: value, room: ROOM, client_id: clientId };
+            try { ws.send(JSON.stringify(payload)); }
+            catch (err) { try { created.statusEl.textContent = "⚠️"; } catch (e) {} }
+          } else {
+            try { created.statusEl.textContent = "⚠️"; } catch(e) {}
+          }
+        }, { passive: false });
+      }
+
+      // ========================================
+      // ✅ PAYMENT
+      // ========================================
+      async function handlePayment() {
+        if (!tg) {
+          showAntiSpam("⛔ <b>Төлем</b><br/>Бұл батырма тек Telegram ішінде жұмыс істейді.");
+          return;
         }
-      });
+
+        const userID = tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : null;
+        if (!userID) {
+          showAntiSpam("⛔ <b>Төлем</b><br/>User ID табылмады.");
+          return;
+        }
+
+        try {
+          payBtn && payBtn.setAttribute("disabled", "disabled");
+
+          const res = await fetch(PAY_API, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Telegram-User-ID": String(userID)
+            },
+            body: JSON.stringify({ room: ROOM, ts: Date.now() })
+          });
+
+          const data = await res.json().catch(() => ({}));
+
+          if (!res.ok || !data.ok) {
+            showAntiSpam("⛔ <b>Төлем</b><br/>Қате: " + (data.error || ("HTTP " + res.status)));
+            try { payBtn && payBtn.removeAttribute("disabled"); } catch(e) {}
+            return;
+          }
+
+          showAntiSpam("✅ <b>Сәтті!</b><br/>Төлем сілтемесі жіберілді. Бот чатын тексеріңіз.");
+
+          if (tg.HapticFeedback && tg.HapticFeedback.notificationOccurred) {
+            try { tg.HapticFeedback.notificationOccurred("success"); } catch(e) {}
+          }
+
+          setTimeout(() => {
+            try { tg.close(); } catch(e) {}
+          }, 800);
+
+        } catch (e) {
+          console.error("Payment request failed:", e);
+          showAntiSpam("⛔ <b>Төлем</b><br/>Желі қатесі. Қайтадан байқап көріңіз.");
+          try { payBtn && payBtn.removeAttribute("disabled"); } catch(err) {}
+        }
+      }
+
+      if (payBtn) payBtn.addEventListener("click", handlePayment, { passive: true });
+      if (toggleBtn) toggleBtn.addEventListener("click", togglePayButton, { passive: true });
+
+      initUser();
+      startStatusPolling();
     })();
   </script>
 </body>
