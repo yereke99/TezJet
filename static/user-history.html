@@ -41,6 +41,9 @@
 
       --tg-content-safe-area-inset-top:15px;
       --bottom-nav-height:72px;
+
+      /* extra breathing below list so last card + cancel button always clickable */
+      --orders-scroll-bottom-padding: 18px;
     }
 
     *{
@@ -51,10 +54,11 @@
     }
 
     html,body{
-      height:100vh;
+      height:100%;
       height:100dvh;
     }
 
+    /* Body fixed */
     body{
       font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter",system-ui,sans-serif;
       background:var(--bg-secondary);
@@ -65,17 +69,7 @@
       width:100%;
       height:var(--tg-viewport-stable-height,100vh);
 
-      padding-top:calc(
-        var(--tg-safe-area-inset-top,0px) +
-        var(--tg-content-safe-area-inset-top,15px)
-      );
-      padding-bottom:calc(
-        var(--bottom-nav-height)+
-        max(10px,var(--tg-safe-area-inset-bottom,0px))
-      );
-      padding-left:max(16px,var(--tg-safe-area-inset-left,0px));
-      padding-right:max(16px,var(--tg-safe-area-inset-right,0px));
-
+      padding:0;
       overflow:hidden;
       overscroll-behavior:contain;
       -webkit-overflow-scrolling:touch;
@@ -135,11 +129,26 @@
       height:100%;
       max-width:420px;
       margin:0 auto;
+
+      padding-top:calc(
+        var(--tg-safe-area-inset-top,0px) +
+        var(--tg-content-safe-area-inset-top,15px)
+      );
+      padding-bottom:calc(
+        var(--bottom-nav-height)+
+        max(10px,var(--tg-safe-area-inset-bottom,0px))
+      );
+      padding-left:max(16px,var(--tg-safe-area-inset-left,0px));
+      padding-right:max(16px,var(--tg-safe-area-inset-right,0px));
+
       display:flex;
       flex-direction:column;
+
       opacity:0;
       transform:translateY(4px);
       transition:opacity .25s ease,transform .25s ease;
+
+      min-height:0;
     }
     .app-root.visible{
       opacity:1;
@@ -261,16 +270,7 @@
       color:#e5e7eb;
     }
 
-    /* ======= MAIN CONTENT ======= */
-    .content-scroll{
-      flex:1;
-      min-height:0;
-      overflow-y:auto;
-      padding:4px 2px 0 2px;
-      -webkit-overflow-scrolling:touch;
-    }
-    .content-scroll::-webkit-scrollbar{width:0;height:0;}
-
+    /* ======= STATIC SUMMARY (NOT SCROLLING) ======= */
     .summary-card{
       position:relative;
       border-radius:var(--radius-xl);
@@ -278,8 +278,9 @@
       color:var(--text-white);
       padding:18px 14px 14px 14px;
       box-shadow:0 8px 26px rgba(15,23,42,.7);
-      margin-bottom:14px;
+      margin:0 2px 12px 2px;
       overflow:hidden;
+      flex-shrink:0; /* key: keep it static */
     }
     .summary-header{
       display:flex;
@@ -319,10 +320,40 @@
       font-weight:600;
     }
 
+    /* ======= ORDERS SCROLL ONLY ======= */
+    .orders-scroll{
+      flex:1;
+      min-height:0;
+
+      overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
+      overscroll-behavior:contain;
+
+      padding:0 2px calc(
+        var(--orders-scroll-bottom-padding) +
+        var(--bottom-nav-height) +
+        max(10px,var(--tg-safe-area-inset-bottom,0px))
+      ) 2px;
+
+      position:relative;
+      touch-action:pan-y;
+    }
+    .orders-scroll::-webkit-scrollbar{width:0;height:0;}
+
     .filters-row{
       display:flex;
       gap:8px;
-      margin:0 2px 10px 2px;
+      margin:0 0 10px 0;
+
+      /* sticky so it's always visible while list scrolls */
+      position:sticky;
+      top:0;
+      z-index:10;
+
+      padding:8px 0;
+      background:linear-gradient(to bottom, rgba(255,255,255,.98), rgba(255,255,255,.92));
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
     .filter-pill{
       border-radius:999px;
@@ -336,6 +367,7 @@
       align-items:center;
       gap:6px;
       box-shadow:0 1px 2px rgba(0,0,0,.04);
+      white-space:nowrap;
     }
     .filter-pill.active{
       background:#000;
@@ -469,7 +501,6 @@
       flex-wrap:wrap;
     }
 
-    /* NEW: Cancel button styles */
     .order-actions{
       display:flex;
       gap:6px;
@@ -492,23 +523,18 @@
       justify-content:center;
       gap:4px;
       transition:all .15s ease;
+      /* ensure reliable taps in iOS */
+      touch-action:manipulation;
     }
-    .cancel-btn:hover{
-      background:#fef2f2;
-    }
-    .cancel-btn:active{
-      transform:scale(.97);
-      background:#fee2e2;
-    }
+    .cancel-btn:hover{background:#fef2f2;}
+    .cancel-btn:active{transform:scale(.97);background:#fee2e2;}
     .cancel-btn:disabled{
       opacity:.4;
       cursor:not-allowed;
       border-color:#d1d5db;
       color:#9ca3af;
     }
-    .cancel-btn:disabled:hover{
-      background:#fff;
-    }
+    .cancel-btn:disabled:hover{background:#fff;}
 
     .empty-state{
       margin-top:24px;
@@ -534,6 +560,9 @@
       z-index:30;
       display:flex;
       justify-content:center;
+
+      /* don't block clicks above */
+      pointer-events:auto;
     }
     .bottom-nav-inner{
       width:100%;
@@ -561,6 +590,7 @@
       user-select:none;
       text-decoration:none;
       min-width:0;
+      touch-action:manipulation;
     }
     .nav-item span.icon{font-size:16px;}
     .nav-item.active{
@@ -569,10 +599,7 @@
       border-color:#000;
       box-shadow:0 8px 24px rgba(15,23,42,.45);
     }
-    .nav-item:active:not(.active){
-      background:rgba(0,0,0,.05);
-    }
-    .nav-spacer{width:100%;height:100%;}
+    .nav-item:active:not(.active){background:rgba(0,0,0,.05);}
 
     @media (max-height:640px){
       :root{ --tg-content-safe-area-inset-top:10px; }
@@ -611,6 +638,7 @@
       display:flex;
       flex-direction:column;
       overflow:hidden;
+      min-height:0;
     }
 
     .order-detail-header{
@@ -619,27 +647,14 @@
       justify-content:space-between;
       padding:14px 16px 10px 16px;
       border-bottom:1px solid var(--border-light);
+      flex-shrink:0;
     }
-    .order-detail-title{
-      font-size:16px;
-      font-weight:600;
-    }
-    .order-detail-subtitle{
-      font-size:11px;
-      color:var(--text-muted);
-      margin-top:2px;
-    }
+    .order-detail-title{font-size:16px;font-weight:600;}
+    .order-detail-subtitle{font-size:11px;color:var(--text-muted);margin-top:2px;}
     .order-detail-close{
-      width:32px;
-      height:32px;
-      border-radius:999px;
-      border:none;
-      background:#f3f4f6;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:20px;
-      cursor:pointer;
+      width:32px;height:32px;border-radius:999px;border:none;background:#f3f4f6;
+      display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;
+      touch-action:manipulation;
     }
 
     .order-detail-content{
@@ -647,6 +662,7 @@
       min-height:0;
       overflow-y:auto;
       -webkit-overflow-scrolling:touch;
+      overscroll-behavior:contain;
     }
 
     .order-detail-map-wrap{
@@ -656,14 +672,10 @@
       border-bottom:1px solid var(--border-light);
       background:#ffffff;
     }
-    #detailMap{
-      width:100%;
-      height:100%;
-    }
+    #detailMap{width:100%;height:100%;}
     .order-detail-map-chip{
       position:absolute;
-      left:12px;
-      top:12px;
+      left:12px;top:12px;
       padding:8px 10px;
       border-radius:999px;
       background:#111827;
@@ -683,49 +695,26 @@
     .detail-route-block{
       background:#f9fafb;
       border-radius:16px;
-      padding:10px 10px 10px 10px;
+      padding:10px;
       border:1px solid var(--border-light);
     }
-    .detail-route-line{
-      display:flex;
-      gap:10px;
-      align-items:flex-start;
-    }
+    .detail-route-line{display:flex;gap:10px;align-items:flex-start;}
     .detail-pin{
-      width:28px;
-      height:28px;
-      border-radius:50%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:13px;
-      color:#fff;
-      font-weight:700;
+      width:28px;height:28px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:13px;color:#fff;font-weight:700;
       box-shadow:0 4px 10px rgba(0,0,0,.25);
     }
     .detail-pin.a{background:#000;}
     .detail-pin.b{background:#0b63f6;}
-    .detail-route-text{
-      flex:1;
-      min-width:0;
-    }
+    .detail-route-text{flex:1;min-width:0;}
     .detail-route-label{
-      font-size:11px;
-      color:var(--text-muted);
-      text-transform:uppercase;
-      letter-spacing:.4px;
+      font-size:11px;color:var(--text-muted);
+      text-transform:uppercase;letter-spacing:.4px;
     }
-    .detail-route-address{
-      font-size:13px;
-      font-weight:600;
-      color:#0f172a;
-    }
+    .detail-route-address{font-size:13px;font-weight:600;color:#0f172a;}
 
-    .detail-meta-row{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-    }
+    .detail-meta-row{display:flex;flex-wrap:wrap;gap:8px;}
     .detail-chip{
       border-radius:999px;
       padding:6px 10px;
@@ -737,21 +726,13 @@
       align-items:center;
       gap:6px;
     }
-
-    .detail-price-main{
-      font-size:18px;
-      font-weight:700;
-    }
+    .detail-price-main{font-size:18px;font-weight:700;}
     .detail-status-pill{
-      padding:4px 10px;
-      border-radius:999px;
-      font-size:11px;
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
+      padding:4px 10px;border-radius:999px;font-size:11px;
+      display:inline-flex;align-items:center;gap:6px;
     }
 
-    /* NEW: Confirmation Dialog */
+    /* Confirmation Dialog */
     .confirm-dialog{
       position:fixed;
       inset:0;
@@ -772,21 +753,12 @@
       width:100%;
       box-shadow:0 20px 40px rgba(0,0,0,.3);
     }
-    .confirm-dialog-title{
-      font-size:16px;
-      font-weight:700;
-      margin-bottom:8px;
-    }
+    .confirm-dialog-title{font-size:16px;font-weight:700;margin-bottom:8px;}
     .confirm-dialog-message{
-      font-size:13px;
-      color:var(--text-secondary);
-      line-height:1.5;
-      margin-bottom:16px;
+      font-size:13px;color:var(--text-secondary);
+      line-height:1.5;margin-bottom:16px;
     }
-    .confirm-dialog-actions{
-      display:flex;
-      gap:8px;
-    }
+    .confirm-dialog-actions{display:flex;gap:8px;}
     .confirm-dialog-btn{
       flex:1;
       padding:10px 16px;
@@ -796,24 +768,14 @@
       font-weight:600;
       cursor:pointer;
       transition:all .15s ease;
+      touch-action:manipulation;
     }
-    .confirm-dialog-btn.secondary{
-      background:#f3f4f6;
-      color:#4b5563;
-    }
-    .confirm-dialog-btn.secondary:hover{
-      background:#e5e7eb;
-    }
-    .confirm-dialog-btn.danger{
-      background:#ef4444;
-      color:#fff;
-    }
-    .confirm-dialog-btn.danger:hover{
-      background:#dc2626;
-    }
-    .confirm-dialog-btn:active{
-      transform:scale(.97);
-    }
+    .confirm-dialog-btn.secondary{background:#f3f4f6;color:#4b5563;}
+    .confirm-dialog-btn.secondary:hover{background:#e5e7eb;}
+    .confirm-dialog-btn.danger{background:#ef4444;color:#fff;}
+    .confirm-dialog-btn.danger:hover{background:#dc2626;}
+    .confirm-dialog-btn:active{transform:scale(.97);}
+    .confirm-dialog-btn:disabled{opacity:.55;cursor:not-allowed;}
 
     /* Leaflet cosmetics */
     .leaflet-control-attribution,
@@ -862,64 +824,52 @@
         <img id="userAvatarImg" alt="Avatar">
         <span id="userAvatarFallback">👤</span>
       </div>
-      <span id="userNameText"
-            data-kz="Клиент"
-            data-ru="Клиент">Клиент</span>
+      <span id="userNameText">—</span>
     </div>
   </header>
 
-  <main class="content-scroll">
-    <section class="summary-card">
-      <div class="lang-switch">
-        <button class="lang-btn active" id="lang-kz" data-lang="kz">ҚАЗ</button>
-        <button class="lang-btn" id="lang-ru" data-lang="ru">РУС</button>
-      </div>
+  <!-- STATIC SUMMARY (not scroll) -->
+  <section class="summary-card">
+    <div class="lang-switch">
+      <button class="lang-btn active" id="lang-kz" data-lang="kz">ҚАЗ</button>
+      <button class="lang-btn" id="lang-ru" data-lang="ru">РУС</button>
+    </div>
 
-      <div class="summary-header">
-        <div>
-          <div class="summary-title"
-               id="summaryTitle"
-               data-kz="Сіздің жеткізу тарихыңыз"
-               data-ru="История ваших доставок">
-            Сіздің жеткізу тарихыңыз
-          </div>
-          <div class="summary-caption"
-               id="summaryCaption"
-               data-kz="Барлық тапсырыстар бір жерде"
-               data-ru="Все ваши заказы в одном месте">
-            Барлық тапсырыстар бір жерде
-          </div>
+    <div class="summary-header">
+      <div>
+        <div class="summary-title"
+             id="summaryTitle"
+             data-kz="Сіздің жеткізу тарихыңыз"
+             data-ru="История ваших доставок">
+          Сіздің жеткізу тарихыңыз
         </div>
-      </div>
-
-      <div class="summary-metrics">
-        <div class="metric-pill">
-          <div class="metric-label"
-               data-kz="Барлығы"
-               data-ru="Всего">
-            Барлығы
-          </div>
-          <div class="metric-value" id="metricTotal">0</div>
-        </div>
-        <div class="metric-pill">
-          <div class="metric-label"
-               data-kz="Белсенді"
-               data-ru="Активные">
-            Белсенді
-          </div>
-          <div class="metric-value" id="metricActive">0</div>
-        </div>
-        <div class="metric-pill">
-          <div class="metric-label"
-               data-kz="Соңғысы"
-               data-ru="Последний">
-            Соңғысы
-          </div>
-          <div class="metric-value" id="metricLast">—</div>
+        <div class="summary-caption"
+             id="summaryCaption"
+             data-kz="Барлық тапсырыстар бір жерде"
+             data-ru="Все ваши заказы в одном месте">
+          Барлық тапсырыстар бір жерде
         </div>
       </div>
-    </section>
+    </div>
 
+    <div class="summary-metrics">
+      <div class="metric-pill">
+        <div class="metric-label" data-kz="Барлығы" data-ru="Всего">Барлығы</div>
+        <div class="metric-value" id="metricTotal">0</div>
+      </div>
+      <div class="metric-pill">
+        <div class="metric-label" data-kz="Белсенді" data-ru="Активные">Белсенді</div>
+        <div class="metric-value" id="metricActive">0</div>
+      </div>
+      <div class="metric-pill">
+        <div class="metric-label" data-kz="Соңғысы" data-ru="Последний">Соңғысы</div>
+        <div class="metric-value" id="metricLast">—</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ONLY THIS PART SCROLLS -->
+  <main class="orders-scroll" id="ordersScroll">
     <section>
       <div class="filters-row">
         <button class="filter-pill active" data-filter="all" id="filterAll">
@@ -951,19 +901,20 @@
   <div class="bottom-nav-inner">
     <button class="nav-item active" id="tabHistory" type="button">
       <span class="icon">📜</span>
-      <span class="nav-item-label"
-            data-kz="Тарих"
-            data-ru="История">Тарих</span>
+      <span class="nav-item-label" data-kz="Тарих" data-ru="История">Тарих</span>
     </button>
 
     <button class="nav-item" id="tabHome" type="button">
       <span class="icon">🏠</span>
-      <span class="nav-item-label"
-            data-kz="Басты"
-            data-ru="Главная">Басты</span>
+      <span class="nav-item-label" data-kz="Басты" data-ru="Главная">Басты</span>
     </button>
 
-    <div class="nav-spacer"></div>
+    <button class="nav-item" id="tabDrivers" type="button">
+      <span class="icon">🚖</span>
+      <span class="nav-item-label"
+            data-kz="Жүргізушілер"
+            data-ru="Водители">Жүргізушілер</span>
+    </button>
   </div>
 </nav>
 
@@ -972,9 +923,7 @@
   <div class="order-detail-sheet">
     <div class="order-detail-header">
       <div>
-        <div class="order-detail-title"
-             data-kz="Тапсырыс мәліметтері"
-             data-ru="Детали заказа">
+        <div class="order-detail-title" data-kz="Тапсырыс мәліметтері" data-ru="Детали заказа">
           Детали заказа
         </div>
         <div class="order-detail-subtitle" id="detailCreatedText">—</div>
@@ -993,18 +942,14 @@
           <div class="detail-route-line" style="margin-bottom:8px;">
             <div class="detail-pin a">A</div>
             <div class="detail-route-text">
-              <div class="detail-route-label"
-                   data-kz="Қайдан"
-                   data-ru="Откуда">Откуда</div>
+              <div class="detail-route-label" data-kz="Қайдан" data-ru="Откуда">Откуда</div>
               <div class="detail-route-address" id="detailFrom">—</div>
             </div>
           </div>
           <div class="detail-route-line">
             <div class="detail-pin b">B</div>
             <div class="detail-route-text">
-              <div class="detail-route-label"
-                   data-kz="Қайда"
-                   data-ru="Куда">Куда</div>
+              <div class="detail-route-label" data-kz="Қайда" data-ru="Куда">Куда</div>
               <div class="detail-route-address" id="detailTo">—</div>
             </div>
           </div>
@@ -1015,12 +960,8 @@
             <span data-kz="Құны" data-ru="Стоимость">Стоимость</span>
             <span class="detail-price-main" id="detailPrice">0 ₸</span>
           </div>
-          <div class="detail-chip">
-            <span id="detailDistance">— км</span>
-          </div>
-          <div class="detail-chip">
-            <span id="detailEta">— мин</span>
-          </div>
+          <div class="detail-chip"><span id="detailDistance">— км</span></div>
+          <div class="detail-chip"><span id="detailEta">— мин</span></div>
         </div>
 
         <div class="detail-meta-row">
@@ -1034,7 +975,7 @@
   </div>
 </div>
 
-<!-- NEW: Confirmation Dialog -->
+<!-- Confirmation Dialog -->
 <div class="confirm-dialog" id="confirmDialog">
   <div class="confirm-dialog-box">
     <div class="confirm-dialog-title" id="confirmTitle"
@@ -1067,12 +1008,31 @@
   let currentOrder = null;
   let orderToCancel = null;
 
+  // keep username always
+  let currentUserDisplayName = null;
+
+  // preserve scroll position when re-rendering list (cancel action changes card sizes)
+  function getOrdersScrollEl() {
+    return document.getElementById("ordersScroll");
+  }
+  let lastOrdersScrollTop = 0;
+
   document.addEventListener("DOMContentLoaded", () => {
     initTelegramViewport();
     initTelegramUser();
     bindEvents();
     setLang("kz");
     loadHistory();
+
+    // ensure orders scroll works on iOS
+    const os = getOrdersScrollEl();
+    if (os) {
+      os.setAttribute("tabindex", "-1");
+      os.style.webkitOverflowScrolling = "touch";
+      os.addEventListener("scroll", () => {
+        lastOrdersScrollTop = os.scrollTop;
+      }, { passive: true });
+    }
   });
 
   function initTelegramViewport() {
@@ -1092,7 +1052,6 @@
         root.style.setProperty("--tg-safe-area-inset-left", tg.safeAreaInsetLeft + "px");
         root.style.setProperty("--tg-safe-area-inset-right", tg.safeAreaInsetRight + "px");
       }
-
       if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
     } catch (e) {
       console.warn("Telegram viewport init error:", e);
@@ -1114,32 +1073,48 @@
   function initTelegramUser() {
     try {
       const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
-      if (!user) return;
-
       const nameEl = document.getElementById("userNameText");
       const avatarImg = document.getElementById("userAvatarImg");
       const avatarFallback = document.getElementById("userAvatarFallback");
 
+      if (!nameEl) return;
+
+      if (!user) {
+        currentUserDisplayName = currentUserDisplayName || "—";
+        nameEl.textContent = currentUserDisplayName;
+        return;
+      }
+
       const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ");
-      const displayName = user.username ? ("@" + user.username) : (fullName || "Клиент");
-      if (nameEl) nameEl.textContent = displayName;
+      const username = user.username ? ("@" + user.username) : null;
+
+      currentUserDisplayName = username || fullName || "—";
+      nameEl.textContent = currentUserDisplayName;
 
       if (user.photo_url && avatarImg) {
         avatarImg.src = user.photo_url;
         avatarImg.style.display = "block";
         if (avatarFallback) avatarFallback.style.display = "none";
       } else if (avatarFallback) {
-        avatarFallback.textContent = (fullName || "A")[0].toUpperCase();
+        avatarFallback.textContent = (fullName || currentUserDisplayName || "A")[0].toUpperCase();
       }
     } catch(e){
       console.warn("init user error:", e);
     }
   }
 
+  function refreshUserName() {
+    const nameEl = document.getElementById("userNameText");
+    if (!nameEl) return;
+    nameEl.textContent = currentUserDisplayName || "—";
+  }
+
   function bindEvents() {
     const backBtn = document.getElementById("backBtn");
     const tabHome = document.getElementById("tabHome");
     const tabHistory = document.getElementById("tabHistory");
+    const tabDrivers = document.getElementById("tabDrivers");
+
     const modal = document.getElementById("orderDetailModal");
     const closeBtn = document.getElementById("detailCloseBtn");
 
@@ -1153,22 +1128,30 @@
       });
     }
     if (tabHistory) {
-      tabHistory.addEventListener("click", () => {
-        // already here
+      tabHistory.addEventListener("click", () => {});
+    }
+    if (tabDrivers) {
+      tabDrivers.addEventListener("click", () => {
+        window.location.href = "/driver-list";
       });
     }
 
-    // Filter pills
+    // Filters
     document.querySelectorAll(".filter-pill").forEach(btn => {
       btn.addEventListener("click", () => {
         document.querySelectorAll(".filter-pill").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
         currentFilter = btn.getAttribute("data-filter");
+
+        // keep scroll position stable
+        const os = getOrdersScrollEl();
+        if (os) lastOrdersScrollTop = os.scrollTop;
+
         renderOrders();
       });
     });
 
-    // Language buttons
+    // Language
     document.querySelectorAll(".lang-btn").forEach(btn => {
       btn.addEventListener("click", (e) => {
         const lang = e.currentTarget.getAttribute("data-lang");
@@ -1179,36 +1162,26 @@
     // Modal close
     if (modal) {
       modal.addEventListener("click", (e) => {
-        if (e.target === modal) {
-          closeOrderDetail();
-        }
+        if (e.target === modal) closeOrderDetail();
       });
     }
-    if (closeBtn) {
-      closeBtn.addEventListener("click", closeOrderDetail);
-    }
+    if (closeBtn) closeBtn.addEventListener("click", closeOrderDetail);
+
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         const modalEl = document.getElementById("orderDetailModal");
-        if (modalEl && modalEl.classList.contains("show")) {
-          closeOrderDetail();
-        }
+        if (modalEl && modalEl.classList.contains("show")) closeOrderDetail();
+
         const confirmEl = document.getElementById("confirmDialog");
-        if (confirmEl && confirmEl.classList.contains("show")) {
-          closeConfirmDialog();
-        }
+        if (confirmEl && confirmEl.classList.contains("show")) closeConfirmDialog();
       }
     });
 
     // Confirm dialog
     const confirmCancel = document.getElementById("confirmCancel");
     const confirmOk = document.getElementById("confirmOk");
-    if (confirmCancel) {
-      confirmCancel.addEventListener("click", closeConfirmDialog);
-    }
-    if (confirmOk) {
-      confirmOk.addEventListener("click", confirmCancelOrder);
-    }
+    if (confirmCancel) confirmCancel.addEventListener("click", closeConfirmDialog);
+    if (confirmOk) confirmOk.addEventListener("click", confirmCancelOrder);
   }
 
   async function loadHistory() {
@@ -1282,7 +1255,7 @@
       cancelled:{kz:"Бас тартылды",ru:"Отменён"}
     };
     const item = map[status] || map["pending"];
-    return item[currentLang];
+    return (item[currentLang] || item.kz);
   }
 
   function statusClass(status){
@@ -1334,9 +1307,8 @@
     if (totalEl) totalEl.textContent = total;
     if (activeEl) activeEl.textContent = active;
     if (lastEl) {
-      if (!lastDate) {
-        lastEl.textContent = "—";
-      } else {
+      if (!lastDate) lastEl.textContent = "—";
+      else {
         const dd = String(lastDate.getDate()).padStart(2,"0");
         const mm = String(lastDate.getMonth()+1).padStart(2,"0");
         lastEl.textContent = `${dd}.${mm}`;
@@ -1347,6 +1319,11 @@
   function renderOrders(){
     const list = document.getElementById("ordersList");
     const empty = document.getElementById("emptyState");
+    const os = getOrdersScrollEl();
+
+    // preserve scroll before DOM changes
+    const preserve = os ? os.scrollTop : lastOrdersScrollTop;
+
     if (!list) return;
     list.innerHTML = "";
 
@@ -1363,15 +1340,14 @@
         if (t) empty.textContent = t;
         empty.style.display = "block";
       }
+      // restore scroll
+      if (os) requestAnimationFrame(() => { os.scrollTop = 0; });
       return;
     } else if (empty) {
       empty.style.display = "none";
     }
 
-    const cancelBtnText = {
-      kz: "Бас тарту",
-      ru: "Отменить"
-    };
+    const cancelBtnText = { kz: "Бас тарту", ru: "Отменить" };
 
     filtered.forEach(o => {
       const card = document.createElement("article");
@@ -1386,9 +1362,10 @@
       const created = o.created_at || o.CreatedAt || o.createdAt;
 
       const canCancel = canCancelOrder(status);
+      const idVal = (o.id || o.ID || o.Id);
 
       card.innerHTML = `
-        <div class="order-card-content" data-order-id="${escapeHTML(o.id || o.ID || o.Id)}">
+        <div class="order-card-content" data-order-id="${escapeHTML(idVal)}">
           <div class="order-route">
             <div class="route-main">
               <div class="route-line">
@@ -1417,23 +1394,19 @@
 
         ${canCancel ? `
           <div class="order-actions">
-            <button class="cancel-btn" data-order-id="${escapeHTML(o.id || o.ID || o.Id)}">
+            <button class="cancel-btn" data-order-id="${escapeHTML(idVal)}" type="button">
               <span>✕</span>
-              <span>${cancelBtnText[currentLang]}</span>
+              <span>${cancelBtnText[currentLang] || cancelBtnText.kz}</span>
             </button>
           </div>
         ` : ''}
       `;
 
-      // Click on card content to open details
-      const cardContent = card.querySelector('.order-card-content');
-      if (cardContent) {
-        cardContent.addEventListener("click", () => openOrderDetail(o));
-      }
+      const cardContent = card.querySelector(".order-card-content");
+      if (cardContent) cardContent.addEventListener("click", () => openOrderDetail(o));
 
-      // Cancel button handler
       if (canCancel) {
-        const cancelBtn = card.querySelector('.cancel-btn');
+        const cancelBtn = card.querySelector(".cancel-btn");
         if (cancelBtn) {
           cancelBtn.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -1444,6 +1417,14 @@
 
       list.appendChild(card);
     });
+
+    // restore scroll after re-render to avoid jump / weird resizing after cancel
+    if (os) {
+      requestAnimationFrame(() => {
+        os.scrollTop = preserve;
+        lastOrdersScrollTop = preserve;
+      });
+    }
   }
 
   function escapeHTML(str){
@@ -1454,15 +1435,12 @@
       .replace(/>/g,"&gt;");
   }
 
-  /* ===== CANCEL ORDER FUNCTIONALITY ===== */
-  
+  /* ===== CANCEL ORDER ===== */
   function showConfirmDialog(order) {
     orderToCancel = order;
     const dialog = document.getElementById("confirmDialog");
     if (dialog) {
       dialog.classList.add("show");
-      
-      // Apply language to dialog
       applyLangToElement(document.getElementById("confirmTitle"));
       applyLangToElement(document.getElementById("confirmMessage"));
       applyLangToElement(document.getElementById("confirmCancel"));
@@ -1473,8 +1451,12 @@
   function closeConfirmDialog() {
     orderToCancel = null;
     const dialog = document.getElementById("confirmDialog");
-    if (dialog) {
-      dialog.classList.remove("show");
+    if (dialog) dialog.classList.remove("show");
+
+    const confirmBtn = document.getElementById("confirmOk");
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      applyLangToElement(confirmBtn);
     }
   }
 
@@ -1490,7 +1472,6 @@
       return;
     }
 
-    // Disable confirm button to prevent double-clicks
     const confirmBtn = document.getElementById("confirmOk");
     if (confirmBtn) {
       confirmBtn.disabled = true;
@@ -1499,61 +1480,50 @@
 
     try {
       const res = await fetch("/api/user/cancel-order", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          telegram_id: tgId,
-          order_id: orderId
-        })
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ telegram_id: tgId, order_id: orderId })
       });
 
       const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || "Failed to cancel order");
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "Failed to cancel order");
-      }
-
-      // Update the order status in local array
-      const orderIndex = allOrders.findIndex(o => 
-        (o.id || o.ID || o.Id) === orderId
-      );
+      const orderIndex = allOrders.findIndex(o => (o.id || o.ID || o.Id) === orderId);
       if (orderIndex !== -1) {
         allOrders[orderIndex].status = "cancelled";
         allOrders[orderIndex].Status = "cancelled";
       }
 
-      // Close dialog and refresh UI
       closeConfirmDialog();
       updateSummary();
+
+      // keep scroll stable during re-render
+      const os = getOrdersScrollEl();
+      if (os) lastOrdersScrollTop = os.scrollTop;
+
       renderOrders();
 
-      // Show success message (optional)
       if (window.Telegram?.WebApp?.showAlert) {
-        const successMsg = currentLang === "kz" 
+        const successMsg = currentLang === "kz"
           ? "Тапсырыс сәтті бас тартылды"
           : "Заказ успешно отменён";
         window.Telegram.WebApp.showAlert(successMsg);
       }
+    } catch (e) {
+      console.error("Cancel order error:", e);
 
-    } catch (error) {
-      console.error("Cancel order error:", error);
-      
-      const errorMsg = currentLang === "kk"
+      const errorMsg = currentLang === "kz"
         ? "Тапсырысты бас тарту кезінде қате пайда болды. Қайталап көріңіз."
         : "Ошибка при отмене заказа. Попробуйте снова.";
-      
-      if (window.Telegram?.WebApp?.showAlert) {
-        window.Telegram.WebApp.showAlert(errorMsg);
-      } else {
-        alert(errorMsg);
-      }
-      
+
+      if (window.Telegram?.WebApp?.showAlert) window.Telegram.WebApp.showAlert(errorMsg);
+      else alert(errorMsg);
+
       closeConfirmDialog();
     }
   }
 
   /* ===== DETAIL SHEET + MAP ===== */
-
   function openOrderDetail(order){
     currentOrder = order;
 
@@ -1570,8 +1540,7 @@
 
     document.getElementById("detailFrom").textContent = from || "—";
     document.getElementById("detailTo").textContent = to || "—";
-    document.getElementById("detailPrice").textContent =
-      `${Number(price).toLocaleString("ru-RU")} ₸`;
+    document.getElementById("detailPrice").textContent = `${Number(price).toLocaleString("ru-RU")} ₸`;
     document.getElementById("detailCreatedText").textContent = formatDate(created);
 
     const distLabel = document.getElementById("detailDistance");
@@ -1592,9 +1561,7 @@
 
     modal.classList.add("show");
 
-    setTimeout(() => {
-      initDetailMap(order);
-    }, 200);
+    setTimeout(() => { initDetailMap(order); }, 200);
   }
 
   function closeOrderDetail(){
@@ -1625,10 +1592,8 @@
     const hasTo   = toLat   !== null && toLon   !== null;
 
     if (!detailMap) {
-      detailMap = L.map(mapContainer, {
-        zoomControl:false,
-        attributionControl:false
-      }).setView([43.238949, 76.889709], 11);
+      detailMap = L.map(mapContainer, { zoomControl:false, attributionControl:false })
+        .setView([43.238949, 76.889709], 11);
 
       L.tileLayer(
         "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
@@ -1637,9 +1602,7 @@
     }
 
     detailMap.eachLayer(l => {
-      if (!(l instanceof L.TileLayer)) {
-        detailMap.removeLayer(l);
-      }
+      if (!(l instanceof L.TileLayer)) detailMap.removeLayer(l);
     });
 
     if (!hasFrom && !hasTo) {
@@ -1702,17 +1665,8 @@
       const route = data.routes[0];
       const coordsList = route.geometry.coordinates.map(c => [c[1], c[0]]);
 
-      const main = L.polyline(coordsList, {
-        color:"#000000",
-        weight:5,
-        opacity:0.9
-      }).addTo(detailMap);
-
-      const shadow = L.polyline(coordsList, {
-        color:"#00000030",
-        weight:7,
-        opacity:0.3
-      }).addTo(detailMap);
+      L.polyline(coordsList, { color:"#000000", weight:5, opacity:0.9 }).addTo(detailMap);
+      const shadow = L.polyline(coordsList, { color:"#00000030", weight:7, opacity:0.3 }).addTo(detailMap);
       shadow.bringToBack();
 
       const bounds = L.latLngBounds(coordsList);
@@ -1731,12 +1685,7 @@
     } catch(e){
       console.warn("route error", e);
       const coordsAB = [[fromLat, fromLon],[toLat, toLon]];
-      L.polyline(coordsAB, {
-        color:"#000000",
-        weight:4,
-        opacity:0.8,
-        dashArray:"10,5"
-      }).addTo(detailMap);
+      L.polyline(coordsAB, { color:"#000000", weight:4, opacity:0.8, dashArray:"10,5" }).addTo(detailMap);
 
       const bounds = L.latLngBounds(coordsAB);
       detailMap.fitBounds(bounds, {padding:[24,24], maxZoom:16});
@@ -1772,12 +1721,17 @@
     const active = document.getElementById("lang-" + lang);
     if (active) active.classList.add("active");
 
-    document.querySelectorAll("[data-kz]").forEach(el => {
-      applyLangToElement(el);
-    });
+    document.querySelectorAll("[data-kz]").forEach(el => applyLangToElement(el));
+
+    refreshUserName();
+
+    // keep scroll stable when language changes and button labels change size
+    const os = getOrdersScrollEl();
+    if (os) lastOrdersScrollTop = os.scrollTop;
 
     renderOrders();
     updateSummary();
+    updateLoadingText("loading");
   }
 
   function applyLangToElement(el) {

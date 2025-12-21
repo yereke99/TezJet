@@ -270,7 +270,6 @@
       gap: 8px;
     }
 
-    /* LANG SWITCH ТЕПЕРЬ ВНУТРИ КАРТОЧКИ */
     .lang-switch {
       position: absolute;
       top: 10px;
@@ -314,7 +313,7 @@
       align-items: center;
       margin-top: 10px;
       margin-bottom: 4px;
-      padding-right: 84px; /* место под lang-switch */
+      padding-right: 84px;
     }
 
     .pill-badge {
@@ -414,7 +413,6 @@
       color: rgba(255,255,255,0.9);
     }
 
-    /* ETA БОЛЬШЕ НЕ absolute */
     .hero-map-hint {
       margin-top: 8px;
       font-size: 11px;
@@ -524,6 +522,7 @@
       font-size: 11px;
     }
 
+    /* bottom nav */
     .bottom-nav {
       position: fixed;
       left: 0;
@@ -584,17 +583,10 @@
       transform: translateY(-0.5px);
     }
 
-    .nav-item-label {
-      white-space: nowrap;
-    }
+    .nav-item-label { white-space: nowrap; }
 
     .nav-item:active:not(.active) {
       background: rgba(0,0,0,0.05);
-    }
-
-    .nav-spacer {
-      width: 100%;
-      height: 100%;
     }
 
     @media (max-width: 480px) {
@@ -664,7 +656,6 @@
 
     <main class="content-scroll">
       <section class="hero-card">
-        <!-- LANG SWITCH ВНУТРИ КАРТОЧКИ -->
         <div class="lang-switch">
           <button class="lang-btn active" id="lang-kz" onclick="setLang('kz')">ҚАЗ</button>
           <button class="lang-btn" id="lang-ru" onclick="setLang('ru')">РУС</button>
@@ -708,7 +699,6 @@
           </button>
         </div>
 
-        <!-- ETA ПОД КНОПКАМИ -->
         <div class="hero-map-hint">
           <div class="hero-map-dot"></div>
           <span id="etaText"
@@ -820,6 +810,7 @@
     </main>
   </div>
 
+  <!-- ✅ Bottom Nav: now 3 buttons -->
   <nav class="bottom-nav">
     <div class="bottom-nav-inner">
       <button class="nav-item" id="tabHistory" type="button">
@@ -836,7 +827,12 @@
               data-ru="Главная">Басты</span>
       </button>
 
-      <div class="nav-spacer"></div>
+      <button class="nav-item" id="tabDrivers" type="button">
+        <span class="icon">🚚</span>
+        <span class="nav-item-label"
+              data-kz="Жүргізушілер"
+              data-ru="Водители">Жүргізушілер</span>
+      </button>
     </div>
   </nav>
 
@@ -869,15 +865,13 @@
     function bindEvents() {
       const historyBtn = document.getElementById("historyQuickBtn");
       const headerHistory = document.getElementById("goHistoryFromHeader");
+
       const tabHome = document.getElementById("tabHome");
       const tabHistory = document.getElementById("tabHistory");
+      const tabDrivers = document.getElementById("tabDrivers");
 
-      if (historyBtn) {
-        historyBtn.addEventListener("click", () => goHistory());
-      }
-      if (headerHistory) {
-        headerHistory.addEventListener("click", () => goHistory());
-      }
+      if (historyBtn) historyBtn.addEventListener("click", () => goHistory());
+      if (headerHistory) headerHistory.addEventListener("click", () => goHistory());
 
       if (tabHome) {
         tabHome.addEventListener("click", () => {
@@ -891,21 +885,30 @@
           goHistory();
         });
       }
+
+      if (tabDrivers) {
+        tabDrivers.addEventListener("click", () => {
+          setActiveTab("drivers");
+          goDrivers();
+        });
+      }
     }
 
     function setActiveTab(tab) {
       document.querySelectorAll(".nav-item").forEach(btn => btn.classList.remove("active"));
-      if (tab === "home") {
-        const el = document.getElementById("tabHome");
-        el && el.classList.add("active");
-      } else if (tab === "history") {
-        const el = document.getElementById("tabHistory");
-        el && el.classList.add("active");
-      }
+      if (tab === "home") document.getElementById("tabHome")?.classList.add("active");
+      if (tab === "history") document.getElementById("tabHistory")?.classList.add("active");
+      if (tab === "drivers") document.getElementById("tabDrivers")?.classList.add("active");
     }
 
     function goHistory() {
       window.location.href = "/user-history";
+    }
+
+    function goDrivers() {
+      // ✅ если у тебя файл реально /driver-list.html — замени строку ниже:
+      window.location.href = "/driver-list";
+      // window.location.href = "/driver-list.html";
     }
 
     function initTimeLabel() {
@@ -938,8 +941,8 @@
       if (!tgId) {
         updateLoadingText("noUser");
         setTimeout(() => {
-          if (overlay) overlay.classList.add("hidden");
-          if (root) root.classList.add("visible");
+          overlay?.classList.add("hidden");
+          root?.classList.add("visible");
         }, 300);
         return;
       }
@@ -954,9 +957,7 @@
           body: JSON.stringify({ telegram_id: parseInt(tgId, 10) })
         });
 
-        if (!res.ok) {
-          throw new Error("HTTP " + res.status);
-        }
+        if (!res.ok) throw new Error("HTTP " + res.status);
 
         const data = await res.json();
         if (data && data.success && data.data) {
@@ -980,10 +981,8 @@
       } finally {
         isCheckingUser = false;
         setTimeout(() => {
-          const overlay = document.getElementById("loadingOverlay");
-          const root = document.getElementById("appRoot");
-          if (overlay) overlay.classList.add("hidden");
-          if (root) root.classList.add("visible");
+          overlay?.classList.add("hidden");
+          root?.classList.add("visible");
         }, 250);
       }
     }
@@ -1002,9 +1001,7 @@
           ? ("@" + user.username)
           : (fullName || "Клиент");
 
-        if (nameEl && displayName) {
-          nameEl.textContent = displayName;
-        }
+        if (nameEl && displayName) nameEl.textContent = displayName;
 
         if (user.photo_url && avatarImg) {
           avatarImg.src = user.photo_url;
@@ -1048,8 +1045,7 @@
       currentLang = lang;
 
       document.querySelectorAll(".lang-btn").forEach(btn => btn.classList.remove("active"));
-      const activeBtn = document.getElementById("lang-" + lang);
-      if (activeBtn) activeBtn.classList.add("active");
+      document.getElementById("lang-" + lang)?.classList.add("active");
 
       document.querySelectorAll("[data-kz]").forEach(el => {
         const t = el.getAttribute("data-" + lang);
@@ -1059,9 +1055,7 @@
       const root = document.getElementById("appRoot");
       if (root) {
         root.style.transform = "scale(0.99)";
-        setTimeout(() => {
-          root.style.transform = "scale(1)";
-        }, 100);
+        setTimeout(() => { root.style.transform = "scale(1)"; }, 100);
       }
     }
 
