@@ -1,9 +1,13 @@
 <!DOCTYPE html>
 <html lang="kz">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-visual"
+  />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Driver • Жүргізуші</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -11,539 +15,606 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
-    :root{
-      --bg:#f7f7f8; --surface:#fff;
-      --ink:#0f172a; --ink-2:#475569; --ink-3:#94a3b8;
-      --muted:#e2e8f0; --brand:#00d4aa; --danger:#ef4444;
+    :root {
+      --bg: #f7f7f8;
+      --surface: #fff;
+      --ink: #0f172a;
+      --ink-2: #475569;
+      --ink-3: #94a3b8;
+      --muted: #e2e8f0;
+      --brand: #00d4aa;
+      --danger: #ef4444;
 
-      --r-lg:20px; --r-md:14px; --r-sm:10px;
-      --shadow-sm:0 2px 8px rgba(0,0,0,.06);
-      --shadow-md:0 10px 30px rgba(0,0,0,.10);
+      --r-lg: 20px;
+      --r-md: 14px;
+      --r-sm: 10px;
 
-      --page-px:16px; --row-h:64px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,.06);
+      --shadow-md: 0 10px 30px rgba(0,0,0,.10);
 
-      /* отступ от системных кнопок мини-аппа */
-      --sys-pad:48px;
-      --bottom-ui:140px; /* CTA + bottom nav высота */
+      --page-px: 16px;
+      --row-h: 64px;
+
+      /* ===== Telegram safe / viewport vars (set by JS) ===== */
+      --tg-viewport-stable-height: 100vh;
+      --tg-safe-area-inset-top: env(safe-area-inset-top, 0px);
+      --tg-safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+      --tg-content-safe-area-inset-top: 0px;
+      --tg-content-safe-area-inset-bottom: 0px;
+
+      /* this is EXACT requirement you asked */
+      --tg-top-padding: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px) + 15px);
+
+      /* dynamic bottom nav height (set by JS) */
+      --bottom-nav-h: 72px;
     }
-    @media (prefers-color-scheme:dark){
-      :root{
-        --bg:#111214; --surface:#15171a;
-        --ink:#f8fafc; --ink-2:#cbd5e1; --ink-3:#64748b;
-        --muted:#23262b;
-        --shadow-sm:0 2px 8px rgba(0,0,0,.4);
-        --shadow-md:0 10px 30px rgba(0,0,0,.5);
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111214;
+        --surface: #15171a;
+        --ink: #f8fafc;
+        --ink-2: #cbd5e1;
+        --ink-3: #94a3b8;
+        --muted: #2d3139;
+        --shadow-sm: 0 2px 8px rgba(0,0,0,.4);
+        --shadow-md: 0 10px 30px rgba(0,0,0,.5);
       }
     }
 
-    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-    html,body{height:100%;}
-    body{
-      margin:0;
-      background:var(--bg);
-      color:var(--ink);
-      font-family:-apple-system,BlinkMacSystemFont,'SF Pro','Helvetica Neue',Roboto,Arial,sans-serif;
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      /* iOS: avoid "pull to close" / top bar hit by UI */
+      overscroll-behavior: none;
+      touch-action: manipulation;
+    }
 
-      /* реальная высота web-app’а */
+    /* ===== FULLSCREEN / TELEGRAM STABLE HEIGHT FIX ===== */
+    body {
+      position: fixed;
+      inset: 0;
+      width: 100%;
       height: var(--tg-viewport-stable-height, 100vh);
-      overflow-x:hidden;
-      overscroll-behavior:none;
-      -webkit-overflow-scrolling:touch;
-
-      /* опускаем ВСЁ содержимое ниже системного бара + нашего хедера */
-      padding-top: calc(
-        var(--tg-safe-area-inset-top, 0px)
-        + var(--tg-content-safe-area-inset-top, 0px)
-        + 64px          /* примерная высота .header */
-      );
-
-      /* просто safe-area снизу, без лишних отступов */
-      padding-bottom: env(safe-area-inset-bottom, 0px);
-
+      padding-top: var(--tg-top-padding); /* <-- YOUR REQUEST */
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', 'Helvetica Neue', Roboto, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
       transition: background .18s ease;
     }
 
+    /* Main container with proper scrolling */
+    .main-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      min-height: 0;
+    }
+
     /* HEADER */
-    .header{
-      position:fixed;
-      left:0;
-      right:0;
-
-      /* ставим сам header под системный бар Telegram */
-      top: calc(
-        var(--tg-safe-area-inset-top, 0px)
-        + var(--tg-content-safe-area-inset-top, 0px)
-      );
-
-      z-index:50;
-      background:var(--surface);
-      border-bottom:1px solid var(--muted);
-      padding:12px var(--page-px);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      backdrop-filter:blur(12px);
-      -webkit-backdrop-filter:blur(12px);
+    .header {
+      position: relative;
+      z-index: 50;
+      background: var(--surface);
+      border-bottom: 1px solid var(--muted);
+      padding: 12px var(--page-px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      flex-shrink: 0;
     }
 
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      font-weight:700;
-      letter-spacing:.2px;
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: .2px; }
+    .brand-badge {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: var(--brand); color: #fff;
+      display: grid; place-items: center;
+      font-weight: 800; box-shadow: var(--shadow-sm);
     }
-    .brand-badge{
-      width:28px;height:28px;border-radius:8px;
-      background:var(--brand);color:#fff;
-      display:grid;place-items:center;
-      font-weight:800;
-      box-shadow:var(--shadow-sm);
+
+    .controls { display: flex; align-items: center; gap: 10px; }
+    .chip {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 700;
+      padding: 6px 10px; border-radius: 999px;
+      background: #eafaf7; color: #16a34a;
     }
-    .controls{display:flex;align-items:center;gap:10px;}
-    .chip{
-      display:flex;align-items:center;gap:6px;
-      font-size:12px;font-weight:700;
-      padding:6px 10px;border-radius:999px;
-      background:#eafaf7;color:#16a34a;
+    .chip.off { background: #f1f5f9; color: var(--ink-2); }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    .lang { display: flex; gap: 2px; background: var(--muted); padding: 2px; border-radius: 999px; }
+    .lang button {
+      border: 0; background: transparent;
+      padding: 6px 10px; border-radius: 999px;
+      font-weight: 700; color: var(--ink-2);
+      cursor: pointer; transition: all 0.2s;
     }
-    .chip.off{background:#f1f5f9;color:var(--ink-2);}
-    .dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
-    .lang{
-      display:flex;gap:2px;
-      background:#f1f5f9;
-      padding:2px;
-      border-radius:999px;
-    }
-    .lang button{
-      border:0;background:transparent;
-      padding:6px 10px;border-radius:999px;
-      font-weight:700;color:var(--ink-2);
-      cursor:pointer;
-    }
-    .lang button.active{
-      background:var(--surface);
-      color:var(--ink);
-      box-shadow:var(--shadow-sm);
+    .lang button.active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
+
+    /* Scrollable content area */
+    .content-scroll {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding-bottom: calc(var(--bottom-nav-h) + 120px + var(--tg-safe-area-inset-bottom) + var(--tg-content-safe-area-inset-bottom));
     }
 
     /* Card */
-    .card{
-      background:var(--surface);
-      margin:12px var(--page-px);
-      border-radius:var(--r-lg);
-      border:1px solid var(--muted);
-      overflow:hidden;
-      box-shadow:var(--shadow-sm);
+    .card {
+      background: var(--surface);
+      margin: 12px var(--page-px);
+      border-radius: var(--r-lg);
+      border: 1px solid var(--muted);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
     }
+
+    /* When keyboard open */
+    body.keyboard-active .content-scroll { padding-bottom: 20px; }
 
     /* Rows */
-    .row{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      padding:14px;
-      min-height:var(--row-h);
+    .row { display: flex; align-items: center; gap: 12px; padding: 14px; min-height: var(--row-h); }
+    .row + .row { border-top: 1px solid var(--muted); }
+    .row:active { background: rgba(0, 212, 170, 0.05); }
+
+    .pin { width: 14px; height: 14px; border-radius: 50%; flex: 0 0 14px; }
+    .pin.from { background: var(--brand); box-shadow: 0 0 0 4px rgba(0, 212, 170, .15); }
+    .pin.to { background: var(--ink); }
+
+    .col { flex: 1; min-width: 0; }
+    .label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--ink-3);
+      margin-bottom: 4px;
+      font-weight: 800;
     }
-    .row + .row{border-top:1px solid var(--muted);}
-    .row:active{background:rgba(0,0,0,.03);}
-    .pin{width:14px;height:14px;border-radius:50%;flex:0 0 14px;}
-    .pin.from{background:var(--brand);box-shadow:0 0 0 4px rgba(16,224,184,.15);}
-    .pin.to{background:var(--ink);}
-    .col{flex:1;min-width:0;}
-    .label{
-      font-size:11px;text-transform:uppercase;
-      letter-spacing:.5px;color:var(--ink-3);
-      margin-bottom:4px;font-weight:800;
+    .value { font-size: 16px; line-height: 1.3; font-weight: 600; color: var(--ink); }
+    .value.placeholder { color: var(--ink-3); font-weight: 500; }
+
+    .trailing {
+      width: 36px; height: 36px; border-radius: 999px;
+      border: 0; background: var(--muted); color: var(--ink);
+      display: grid; place-items: center;
+      cursor: pointer; transition: all 0.2s; flex-shrink: 0;
     }
-    .value{
-      font-size:16px;line-height:1.3;
-      font-weight:600;color:var(--ink);
-    }
-    .value.placeholder{color:var(--ink-3);font-weight:500;}
-    .trailing{
-      width:36px;height:36px;border-radius:999px;
-      border:0;background:#f3f4f6;color:var(--ink-2);
-      display:grid;place-items:center;
-      cursor:pointer;
+    .trailing:active { transform: scale(0.95); }
+
+    .icon {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: var(--muted);
+      display: grid; place-items: center;
+      font-size: 18px; flex: 0 0 40px;
     }
 
-    .icon{
-      width:40px;height:40px;border-radius:12px;
-      background:#f3f4f6;
-      display:grid;place-items:center;
-      font-size:18px;flex:0 0 40px;
+    .input {
+      width: 100%;
+      border: 0; outline: none;
+      background: transparent;
+      font-size: 16px; font-weight: 600;
+      color: var(--ink);
     }
-    .input{
-      width:100%;border:0;outline:none;
-      background:transparent;
-      font-size:16px;font-weight:600;color:var(--ink);
+    .input::placeholder { color: var(--ink-3); font-weight: 500; }
+
+    .textarea {
+      width: 100%;
+      min-height: 88px;
+      max-height: 220px;
+      resize: vertical;
+      border: 0; outline: none;
+      background: transparent;
+      font-size: 16px; color: var(--ink);
+      font-family: inherit;
+      line-height: 1.5;
     }
-    .input::placeholder{color:var(--ink-3);font-weight:500;}
-    .textarea{
-      width:100%;min-height:88px;max-height:220px;
-      resize:vertical;border:0;outline:none;
-      background:transparent;font-size:16px;color:var(--ink);
+    .textarea::placeholder { color: var(--ink-3); }
+
+    /* CTA - fixed above bottom nav (safe bottom) */
+    .page-footer {
+      position: fixed;
+      left: 0; right: 0;
+      bottom: calc(var(--bottom-nav-h) + 8px + var(--tg-safe-area-inset-bottom) + var(--tg-content-safe-area-inset-bottom));
+      padding: 0 var(--page-px) 12px;
+      z-index: 40;
+      background: linear-gradient(to top, var(--bg) 80%, transparent);
+      padding-top: 18px;
+      transition: transform 0.3s ease, opacity 0.3s ease;
     }
 
-    /* CTA (green button) */
-    .page-footer{
-      position:fixed;
-      left:0;
-      right:0;
-
-      /* поднимаем кнопку чуть выше bottom-nav */
-      bottom: calc(
-        88px                       /* зазор над bottom-nav */
-        + env(safe-area-inset-bottom, 0px)
-      );
-
-      padding:0 var(--page-px) 12px;
-      z-index:40;
+    body.keyboard-active .page-footer {
+      transform: translateY(150px);
+      opacity: 0;
+      pointer-events: none;
     }
 
-    .cta{
-      width:100%;
-      min-height:52px;
-      border-radius:16px;
-      border:0;
-      background:var(--brand);
-      color:#fff;
-      font-weight:800;
-      font-size:16px;
-      box-shadow:var(--shadow-md);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      cursor:pointer;
-      transition:opacity .15s ease, transform .1s ease;
+    .cta {
+      width: 100%;
+      min-height: 52px;
+      border-radius: 16px;
+      border: 0;
+      background: var(--brand);
+      color: #fff;
+      font-weight: 800;
+      font-size: 16px;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all .15s ease;
     }
-    .cta:active{transform:scale(.98);}
-    .cta.disabled{
-      opacity:.4;
-      cursor:default;
-      box-shadow:none;
-      transform:none;
-    }
+    .cta:active { transform: scale(.98); }
+    .cta.disabled { opacity: .4; cursor: default; box-shadow: none; transform: none; }
 
     /* Bottom nav */
-    .bottom-nav{
-      position:fixed;
-      left:0; right:0;
-      bottom:0;
-      padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));
-      background:var(--surface);
-      border-top:1px solid var(--muted);
-      display:flex;
-      justify-content:space-between;
-      gap:8px;
-      z-index:39;
+    .bottom-nav {
+      position: fixed;
+      left: 0; right: 0;
+      bottom: 0;
+      padding: 8px 12px;
+      padding-bottom: calc(max(8px, env(safe-area-inset-bottom)) + var(--tg-content-safe-area-inset-bottom));
+      background: var(--surface);
+      border-top: 1px solid var(--muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      z-index: 39;
+      transition: transform 0.3s ease, opacity 0.3s ease;
     }
-    .tab{
-      flex:1;
-      border:0;
-      background:transparent;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:4px;
-      padding:6px 4px;
-      border-radius:999px;
-      cursor:pointer;
-      color:var(--ink-2);
-      font-size:11px;
-      font-weight:600;
-    }
-    .tab-icon{
-      width:34px;height:34px;border-radius:999px;
-      display:grid;place-items:center;
-      background:#f3f4f6;
-      box-shadow:var(--shadow-sm);
-      font-size:18px;
+    body.keyboard-active .bottom-nav { transform: translateY(100%); opacity: 0; }
+
+    .tab {
+      flex: 1;
+      border: 0;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 4px;
+      border-radius: 999px;
+      cursor: pointer;
+      color: var(--ink-2);
+      font-size: 11px;
+      font-weight: 600;
+      transition: all 0.2s;
     }
 
-    /* Аватарка в bottom-nav — строго круглая и обрезает фото */
-    #navAvatar{
-      width:34px;
-      height:34px;
-      border-radius:999px;
-      overflow:hidden;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-    #navAvatar img{
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      display:block;
-      border-radius:999px;
+    .tab-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: var(--muted);
+      box-shadow: var(--shadow-sm);
+      font-size: 18px;
     }
 
-    .tab-avatar{
-      overflow:hidden;
+    #navAvatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    .tab-avatar img{
-      width:100%;height:100%;object-fit:cover;border-radius:999px;
+    #navAvatar img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 999px; }
+
+    .tab.active { background: var(--ink); color: #fff; }
+    .tab.active .tab-icon { background: rgba(255, 255, 255, 0.15); color: #fff; box-shadow: none; }
+
+    /* Fullscreen picker (safe top + stable height) */
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      z-index: 1000;
+      background: var(--surface);
+
+      /* IMPORTANT: do not overlap Telegram top close area */
+      padding-top: var(--tg-top-padding);
+      height: var(--tg-viewport-stable-height, 100vh);
     }
-    .tab.active{
-      background:#0f172a;
-      color:#fff;
-    }
-    .tab.active .tab-icon{
-      background:#111827;
-      color:#fff;
-      box-shadow:none;
+    .modal.show { display: flex; animation: rise .25s ease-out; }
+    @keyframes rise { from { transform: translateY(10%); opacity: .6; } to { transform: none; opacity: 1; } }
+
+    .m-head {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: var(--surface);
+      border-bottom: 1px solid var(--muted);
+      padding: 10px var(--page-px);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
     }
 
-    /* Fullscreen picker */
-    .modal{
-      position:fixed;
-      inset:0;
-      top:calc(var(--tg-content-safe-area-inset-top,0px) + env(safe-area-inset-top,0px) + var(--sys-pad));
-      background:var(--surface);
-      display:none;
-      flex-direction:column;
-      z-index:1000;
-    }
-    .modal.show{
-      display:flex;
-      animation:rise .25s ease-out;
-    }
-    @keyframes rise{
-      from{transform:translateY(10%);opacity:.6;}
-      to{transform:none;opacity:1;}
+    .back {
+      width: 36px; height: 36px; border-radius: 999px;
+      border: 0; background: var(--muted); color: var(--ink);
+      display: grid; place-items: center;
+      cursor: pointer; font-size: 18px; font-weight: 700;
     }
 
-    .m-head{
-      position:sticky;top:0;z-index:5;
-      background:var(--surface);
-      border-bottom:1px solid var(--muted);
-      padding:10px var(--page-px);
-      display:flex;
-      align-items:center;
-      gap:10px;
+    .search-wrap { position: relative; flex: 1; }
+    .search {
+      width: 100%;
+      border: 1px solid var(--muted);
+      border-radius: 12px;
+      padding: 12px 40px 12px 12px;
+      background: var(--bg);
+      color: var(--ink);
+      font-size: 16px;
+      outline: none;
     }
-    .back{
-      width:36px;height:36px;border-radius:999px;
-      border:0;background:#f3f4f6;color:var(--ink);
-      display:grid;place-items:center;
-      cursor:pointer;
+    .search::placeholder { color: var(--ink-3); }
+    .clear {
+      position: absolute;
+      right: 6px; top: 50%;
+      transform: translateY(-50%);
+      width: 28px; height: 28px;
+      border: 0; border-radius: 999px;
+      background: var(--muted);
+      color: var(--ink);
+      display: none;
+      cursor: pointer;
+      font-size: 16px;
     }
-    .search-wrap{position:relative;flex:1;}
-    .search{
-      width:100%;
-      border:1px solid var(--muted);
-      border-radius:12px;
-      padding:12px 40px 12px 12px;
-      background:#f8fafc;
-      font-size:16px;
-      outline:none;
-    }
-    .clear{
-      position:absolute;
-      right:6px;top:50%;
-      transform:translateY(-50%);
-      width:28px;height:28px;
-      border:0;border-radius:999px;
-      background:#e2e8f0;
-      display:none;
-      cursor:pointer;
-    }
-    .clear.show{display:block;}
+    .clear.show { display: block; }
 
-    .map{position:relative;flex:1;min-height:0;}
-    #map{position:absolute;inset:0;}
-    .center-pin{
-      position:absolute;
-      left:50%;top:50%;
-      transform:translate(-50%,-100%);
-      pointer-events:none;
-      z-index:4;
+    /* Popular cities chip */
+    .cities-chips {
+      padding: 12px var(--page-px);
+      background: var(--surface);
+      border-bottom: 1px solid var(--muted);
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      flex-shrink: 0;
     }
-    .center-pin .b{
-      width:32px;height:32px;border-radius:50%;
-      background:#ef4444;
-      border:4px solid #fff;
-      box-shadow:0 6px 20px rgba(239,68,68,.35);
-      display:grid;place-items:center;
-      color:#fff;font-weight:800;
-      transition:transform .15s ease;
+    .cities-chips::-webkit-scrollbar { display: none; }
+    .city-chip {
+      padding: 8px 14px;
+      background: var(--muted);
+      color: var(--ink);
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      border: 0;
+      transition: all 0.2s;
+    }
+    .city-chip:active { background: var(--brand); color: #fff; }
+
+    .map { position: relative; flex: 1; min-height: 0; }
+    #map { position: absolute; inset: 0; touch-action: none; }
+
+    .center-pin {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -100%);
+      pointer-events: none;
+      z-index: 4;
+    }
+    .center-pin .b {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: #ef4444;
+      border: 4px solid #fff;
+      box-shadow: 0 6px 20px rgba(239, 68, 68, .35);
+      display: grid; place-items: center;
+      color: #fff;
+      font-weight: 800;
+      transition: transform .15s ease;
     }
 
-    .results{
-      max-height:40vh;
-      overflow:auto;
-      border-top:1px solid var(--muted);
+    .results {
+      max-height: 45vh;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      background: var(--surface);
+      flex-shrink: 0;
     }
-    .empty{padding:28px;text-align:center;color:var(--ink-2);}
-    .item{
-      display:flex;
-      gap:12px;
-      padding:12px var(--page-px);
-      border-bottom:1px solid var(--muted);
-      cursor:pointer;
+    .empty {
+      padding: 28px;
+      text-align: center;
+      color: var(--ink-2);
+      font-size: 14px;
+      line-height: 1.5;
     }
-    .item:last-child{border-bottom:0;}
-    .ind{width:10px;height:10px;border-radius:50%;background:var(--brand);margin-top:6px;}
-    .t{font-weight:700;}
-    .s{font-size:14px;color:var(--ink-2);}
 
-    .actions{
-      display:flex;
-      gap:10px;
-      padding:12px var(--page-px) calc(12px + env(safe-area-inset-bottom,0px));
-      border-top:1px solid var(--muted);
-      background:var(--surface);
+    .item {
+      display: flex;
+      gap: 12px;
+      padding: 12px var(--page-px);
+      border-bottom: 1px solid var(--muted);
+      cursor: pointer;
+      background: var(--surface);
+      transition: background 0.15s;
     }
-    .btn{
-      flex:1;
-      min-height:52px;
-      border-radius:14px;
-      border:0;
-      font-weight:800;
-      font-size:15px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:6px;
-      cursor:pointer;
+    .item:active { background: rgba(0, 212, 170, 0.08); }
+    .item:last-child { border-bottom: 0; }
+    .ind { width: 10px; height: 10px; border-radius: 50%; background: var(--brand); margin-top: 6px; flex-shrink: 0; }
+    .t { font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+    .s { font-size: 14px; color: var(--ink-2); line-height: 1.3; }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      padding: 12px var(--page-px);
+      padding-bottom: calc(max(12px, env(safe-area-inset-bottom)) + var(--tg-content-safe-area-inset-bottom));
+      border-top: 1px solid var(--muted);
+      background: var(--surface);
+      flex-shrink: 0;
     }
-    .btn.sec{background:#f3f4f6;color:var(--ink);}
-    .btn.pri{background:var(--brand);color:#fff;}
 
-    .leaflet-control-attribution,
-    .leaflet-control-zoom{display:none!important;}
+    .btn {
+      flex: 1;
+      min-height: 52px;
+      border-radius: 14px;
+      border: 0;
+      font-weight: 800;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn.sec { background: var(--muted); color: var(--ink); }
+    .btn.pri { background: var(--brand); color: #fff; }
+    .btn:active { transform: scale(0.98); }
 
-    /* ===== DESKTOP / LARGE SCREENS ADAPTATION ===== */
-    @media (min-width:1024px){
-      body{
-        background:#020617;
-        display:block;
+    .leaflet-control-attribution, .leaflet-control-zoom { display: none !important; }
+
+    /* Desktop adaptation */
+    @media (min-width: 1024px) {
+      body { background: #020617; }
+
+      .main-wrapper { max-width: 480px; margin: 0 auto; }
+
+      .header {
+        border-radius: 18px 18px 0 0;
+        margin-top: 8px;
+        box-shadow: 0 16px 40px rgba(15, 23, 42, .45);
       }
 
-      /* Центруем контент как “телефон” по середине экрана */
-      .header,
-      .page-footer,
-      .bottom-nav{
-        left:50%;
-        right:auto;
-        transform:translateX(-50%);
-        width:100%;
-        max-width:480px;
+      .card {
+        max-width: 480px;
+        border-radius: 20px;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, .5);
       }
 
-      .header{
-        border-radius:18px 18px 0 0;
-        margin-top:8px;
-        box-shadow:0 16px 40px rgba(15,23,42,.45);
+      .page-footer {
+        max-width: 480px;
+        left: 50%;
+        transform: translateX(-50%);
       }
 
-      .card{
-        max-width:480px;
-        margin-left:auto;
-        margin-right:auto;
-        margin-top:88px;
-        margin-bottom:120px;
-        border-radius:20px;
-        box-shadow:0 18px 40px rgba(15,23,42,.5);
+      body.keyboard-active .page-footer {
+        transform: translate(-50%, 150px);
       }
 
-      .page-footer{
-        max-width:480px;
-        border-radius:18px;
+      .bottom-nav {
+        max-width: 480px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 999px;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, .6);
       }
 
-      .bottom-nav{
-        max-width:480px;
-        border-radius:999px;
-        box-shadow:0 18px 40px rgba(15,23,42,.6);
+      body.keyboard-active .bottom-nav {
+        transform: translate(-50%, 100%);
       }
 
-      /* модалка-карта тоже центрируется и не растягивается */
-      .modal{
-        left:50%;
-        right:auto;
-        width:100%;
-        max-width:480px;
-        transform:translateX(-50%);
-        border-radius:22px;
-        box-shadow:0 24px 60px rgba(0,0,0,.7);
-        overflow:hidden;
+      .modal {
+        left: 50%;
+        right: auto;
+        width: 100%;
+        max-width: 480px;
+        transform: translateX(-50%);
+        border-radius: 22px;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, .7);
+        overflow: hidden;
       }
     }
   </style>
 </head>
+
 <body>
-  <!-- HEADER -->
-  <div class="header">
-    <div class="brand">
-      <div class="brand-badge">D</div>
-      Driver
-    </div>
-    <div class="controls">
-      <div class="chip off" id="chip">
-        <span class="dot"></span><span id="chipText">Желіде емес</span>
+  <div class="main-wrapper">
+    <!-- HEADER -->
+    <div class="header">
+      <div class="brand">
+        <div class="brand-badge">D</div>
+        Driver
       </div>
-      <div class="lang">
-        <button id="btn-ru" onclick="setLang('ru')">RU</button>
-        <button id="btn-kz" class="active" onclick="setLang('kz')">KZ</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MAIN CARD -->
-  <div class="card">
-    <div class="row" onclick="openPicker('from')">
-      <div class="pin from"></div>
-      <div class="col">
-        <div class="label" data-ru="ОТКУДА" data-kz="ҚАЙДАН">ҚАЙДАН</div>
-        <div class="value placeholder" id="fromText"
-             data-ru="Текущее местоположение"
-             data-kz="Ағымдағы орналасу">Ағымдағы орналасу</div>
-      </div>
-      <button class="trailing"
-              onclick="event.stopPropagation();openPicker('from')">📍</button>
-    </div>
-
-    <div class="row" onclick="openPicker('to')">
-      <div class="pin to"></div>
-      <div class="col">
-        <div class="label" data-ru="КУДА" data-kz="ҚАЙДА">ҚАЙДА</div>
-        <div class="value placeholder" id="toText"
-             data-ru="Выберите пункт назначения"
-             data-kz="Мақсатты таңдаңыз">Мақсатты таңдаңыз</div>
-      </div>
-      <button class="trailing"
-              onclick="event.stopPropagation();openPicker('to')">📍</button>
-    </div>
-
-    <div class="row">
-      <div class="icon">💰</div>
-      <div class="col">
-        <div class="label" data-ru="СТОИМОСТЬ" data-kz="ҚҰНЫ">ҚҰНЫ</div>
-        <input id="price" class="input" type="number" min="2000" placeholder="2000">
-      </div>
-      <div style="font-weight:800;color:var(--ink-2);">₸</div>
-    </div>
-
-    <div class="row">
-      <div class="icon">⏰</div>
-      <div class="col">
-        <div class="label" data-ru="ВРЕМЯ ОТПРАВЛЕНИЯ" data-kz="ЖӨНЕЛУ УАҚЫТЫ">ЖӨНЕЛУ УАҚЫТЫ</div>
-        <input id="time" class="input" type="datetime-local">
+      <div class="controls">
+        <div class="chip off" id="chip">
+          <span class="dot"></span>
+          <span id="chipText">Желіде емес</span>
+        </div>
+        <div class="lang">
+          <button id="btn-ru" onclick="langClick(this, 'ru')">RU</button>
+          <button id="btn-kz" class="active" onclick="langClick(this, 'kz')">KZ</button>
+        </div>
       </div>
     </div>
 
-    <div class="row" style="align-items:flex-start">
-      <div class="icon">💬</div>
-      <div class="col">
-        <div class="label" data-ru="КОММЕНТАРИЙ" data-kz="ТҮСІНІКТЕМЕ">ТҮСІНІКТЕМЕ</div>
-        <textarea id="comment" class="textarea"
-                  data-ru="Дополнительная информация (размер груза, особые требования, контакты)"
-                  data-kz="Қосымша ақпарат (жүк өлшемі, ерекше талаптар, байланыс деректері)"
-                  placeholder="Қосымша ақпарат (жүк өлшемі, ерекше талаптар, байланыс деректері)"></textarea>
+    <!-- SCROLLABLE CONTENT -->
+    <div class="content-scroll" id="contentScroll">
+      <div class="card">
+        <div class="row" onclick="openPicker('from')">
+          <div class="pin from"></div>
+          <div class="col">
+            <div class="label" data-ru="ОТКУДА" data-kz="ҚАЙДАН">ҚАЙДАН</div>
+            <div class="value placeholder" id="fromText"
+                 data-ru="Текущее местоположение"
+                 data-kz="Ағымдағы орналасу">Ағымдағы орналасу</div>
+          </div>
+          <button class="trailing" onclick="event.stopPropagation();openPicker('from')">📍</button>
+        </div>
+
+        <div class="row" onclick="openPicker('to')">
+          <div class="pin to"></div>
+          <div class="col">
+            <div class="label" data-ru="КУДА" data-kz="ҚАЙДА">ҚАЙДА</div>
+            <div class="value placeholder" id="toText"
+                 data-ru="Выберите пункт назначения"
+                 data-kz="Мақсатты таңдаңыз">Мақсатты таңдаңыз</div>
+          </div>
+          <button class="trailing" onclick="event.stopPropagation();openPicker('to')">📍</button>
+        </div>
+
+        <div class="row">
+          <div class="icon">💰</div>
+          <div class="col">
+            <div class="label" data-ru="СТОИМОСТЬ" data-kz="ҚҰНЫ">ҚҰНЫ</div>
+            <input id="price" class="input" type="number" min="2000" placeholder="2000">
+          </div>
+          <div style="font-weight:800;color:var(--ink-2);">₸</div>
+        </div>
+
+        <div class="row">
+          <div class="icon">⏰</div>
+          <div class="col">
+            <div class="label" data-ru="ВРЕМЯ ОТПРАВЛЕНИЯ" data-kz="ЖӨНЕЛУ УАҚЫТЫ">ЖӨНЕЛУ УАҚЫТЫ</div>
+            <input id="time" class="input" type="datetime-local">
+          </div>
+        </div>
+
+        <div class="row" style="align-items:flex-start" id="commentRow">
+          <div class="icon">💬</div>
+          <div class="col">
+            <div class="label" data-ru="КОММЕНТАРИЙ" data-kz="ТҮСІНІКТЕМЕ">ТҮСІНІКТЕМЕ</div>
+            <textarea id="comment" class="textarea"
+                      data-ru="Дополнительная информация (размер груза, особые требования, контакты)"
+                      data-kz="Қосымша ақпарат (жүк өлшемі, ерекше талаптар, байланыс деректері)"
+                      placeholder="Қосымша ақпарат (жүк өлшемі, ерекше талаптар, байланыс деректері)"></textarea>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -555,15 +626,15 @@
     </button>
   </div>
 
-  <!-- BOTTOM NAV BAR (Профиль / Заказы / Сапар) -->
-  <nav class="bottom-nav">
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav" id="bottomNav">
     <button class="tab" onclick="openProfile()">
-      <div id="navAvatar" class="tab-icon tab-avatar">👤</div>
+      <div id="navAvatar" class="tab-icon">👤</div>
       <div class="tab-label" data-ru="Профиль" data-kz="Профиль">Профиль</div>
     </button>
     <button class="tab" onclick="openOrders()">
       <div class="tab-icon">📦</div>
-      <div class="tab-label" data-ru="Заказы" data-kz="Тапсырыстар">Заказы</div>
+      <div class="tab-label" data-ru="Заказы" data-kz="Тапсырыстар">Тапсырыстар</div>
     </button>
     <button class="tab active" onclick="openSapar()">
       <div class="tab-icon">🚚</div>
@@ -571,7 +642,7 @@
     </button>
   </nav>
 
-  <!-- FULLSCREEN PICKER (MAP) -->
+  <!-- FULLSCREEN PICKER -->
   <div class="modal" id="picker">
     <div class="m-head">
       <button class="back" onclick="closePicker()">←</button>
@@ -585,9 +656,13 @@
       </div>
     </div>
 
+    <div class="cities-chips" id="citiesChips"></div>
+
     <div class="map">
       <div id="map"></div>
-      <div class="center-pin"><div class="b">📍</div></div>
+      <div class="center-pin">
+        <div class="b">📍</div>
+      </div>
     </div>
 
     <div class="results" id="results">
@@ -610,53 +685,140 @@
 
   <script>
     // ===== STATE =====
-    let tg=null, currentLang='kz';
-    let fromCoord=null, toCoord=null, fromText='', toText='';
-    let map=null, userPos=null, markerMe=null, watcher=null;
-    let picking=null, debounceTimer=null;
-    let userId=null;
+    let tg = null, currentLang = 'kz';
+    let fromCoord = null, toCoord = null, fromText = '', toText = '';
+    let map = null, userPos = null, markerMe = null, watcher = null;
+    let picking = null, debounceTimer = null;
+    let userId = null;
+    let pickerMapLoaded = false;
+
+    // Kazakhstan major cities for fast search
+    const KZ_CITIES = [
+      {name: 'Алматы', nameRu: 'Алматы', lat: 43.238949, lon: 76.889709},
+      {name: 'Астана', nameRu: 'Астана', lat: 51.1694, lon: 71.4491},
+      {name: 'Шымкент', nameRu: 'Шымкент', lat: 42.3417, lon: 69.5901},
+      {name: 'Қарағанды', nameRu: 'Караганда', lat: 49.8047, lon: 73.1094},
+      {name: 'Ақтөбе', nameRu: 'Актобе', lat: 50.2839, lon: 57.1670},
+      {name: 'Тараз', nameRu: 'Тараз', lat: 42.9000, lon: 71.3667},
+      {name: 'Павлодар', nameRu: 'Павлодар', lat: 52.2873, lon: 76.9674},
+      {name: 'Семей', nameRu: 'Семей', lat: 50.4111, lon: 80.2275},
+      {name: 'Орал', nameRu: 'Уральск', lat: 51.2333, lon: 51.3667},
+      {name: 'Өскемен', nameRu: 'Усть-Каменогорск', lat: 49.9489, lon: 82.6286},
+      {name: 'Қостанай', nameRu: 'Костанай', lat: 53.2144, lon: 63.6246},
+      {name: 'Қызылорда', nameRu: 'Кызылорда', lat: 44.8479, lon: 65.5093},
+      {name: 'Атырау', nameRu: 'Атырау', lat: 47.1164, lon: 51.8839},
+      {name: 'Петропавл', nameRu: 'Петропавловск', lat: 54.8667, lon: 69.1500},
+      {name: 'Ақтау', nameRu: 'Актау', lat: 43.6500, lon: 51.2000},
+      {name: 'Талдықорған', nameRu: 'Талдыкорган', lat: 45.0150, lon: 78.3736},
+      {name: 'Көкшетау', nameRu: 'Кокшетау', lat: 53.2872, lon: 69.3772},
+      {name: 'Түркістан', nameRu: 'Туркестан', lat: 43.2978, lon: 68.2517}
+    ];
 
     const dict = {
-      ru:{
-        online:'В сети',
-        offline:'Не в сети',
-        create:'Создать поездку',
-        opening:'Открываю…',
-        err:'Ошибка',
-        fill:'Заполните все обязательные поля',
-        min:'Минимальная цена 2000 ₸',
-        hint:'Перетащите карту или используйте поиск',
-        searching:'Поиск…',
-        nothing:'Ничего не найдено'
+      ru: {
+        online: 'В сети',
+        offline: 'Не в сети',
+        create: 'Создать поездку',
+        opening: 'Открываю…',
+        err: 'Ошибка',
+        fill: 'Заполните все обязательные поля',
+        min: 'Минимальная цена 2000 ₸',
+        hint: 'Перетащите карту или используйте поиск',
+        searching: 'Поиск…',
+        nothing: 'Ничего не найдено',
       },
-      kz:{
-        online:'Желіде',
-        offline:'Желіде емес',
-        create:'Сапарға шығу',
-        opening:'Ашу…',
-        err:'Қате',
-        fill:'Барлық міндетті өрістерді толтырыңыз',
-        min:'Ең төмен бағасы 2000 ₸',
-        hint:'Картаны жылжытыңыз немесе іздеуді пайдаланыңыз',
-        searching:'Іздеу…',
-        nothing:'Ештеңе табылмады'
+      kz: {
+        online: 'Желіде',
+        offline: 'Желіде емес',
+        create: 'Сапарға шығу',
+        opening: 'Ашу…',
+        err: 'Қате',
+        fill: 'Барлық міндетті өрістерді толтырыңыз',
+        min: 'Ең төмен бағасы 2000 ₸',
+        hint: 'Картаны жылжытыңыз немесе іздеуді пайдаланыңыз',
+        searching: 'Іздеу…',
+        nothing: 'Ештеңе табылмады',
       }
     };
 
+    // ===== TELEGRAM FULLSCREEN / SAFE AREA / STABLE HEIGHT =====
+    function updateTelegramViewportVars(){
+      const root = document.documentElement;
+
+      // Fallbacks if Telegram not available
+      let stableH = window.innerHeight;
+      let safeTop = 0, safeBottom = 0, contentTop = 0, contentBottom = 0;
+
+      if (window.Telegram?.WebApp) {
+        const w = Telegram.WebApp;
+        // viewportStableHeight is the most important for iOS
+        stableH = w.viewportStableHeight || window.innerHeight;
+
+        safeTop = (w.safeAreaInset && w.safeAreaInset.top) ? w.safeAreaInset.top : 0;
+        safeBottom = (w.safeAreaInset && w.safeAreaInset.bottom) ? w.safeAreaInset.bottom : 0;
+
+        contentTop = (w.contentSafeAreaInset && w.contentSafeAreaInset.top) ? w.contentSafeAreaInset.top : 0;
+        contentBottom = (w.contentSafeAreaInset && w.contentSafeAreaInset.bottom) ? w.contentSafeAreaInset.bottom : 0;
+      } else if (window.visualViewport) {
+        stableH = window.visualViewport.height;
+      }
+
+      root.style.setProperty('--tg-viewport-stable-height', `${stableH}px`);
+      root.style.setProperty('--tg-safe-area-inset-top', `${safeTop}px`);
+      root.style.setProperty('--tg-safe-area-inset-bottom', `${safeBottom}px`);
+      root.style.setProperty('--tg-content-safe-area-inset-top', `${contentTop}px`);
+      root.style.setProperty('--tg-content-safe-area-inset-bottom', `${contentBottom}px`);
+
+      // measure bottom nav height dynamically
+      const nav = document.getElementById('bottomNav');
+      if (nav) {
+        const h = nav.getBoundingClientRect().height;
+        if (h > 0) root.style.setProperty('--bottom-nav-h', `${Math.round(h)}px`);
+      }
+    }
+
+    function bindKeyboardByVisualViewport(){
+      if (!window.visualViewport) return;
+
+      const vv = window.visualViewport;
+      const base = () => (Telegram?.WebApp?.viewportStableHeight || window.innerHeight);
+
+      const update = () => {
+        // When keyboard opens, visual viewport height drops a lot
+        const isOpen = vv.height < base() - 120;
+        document.body.classList.toggle('keyboard-active', isOpen);
+      };
+
+      vv.addEventListener('resize', update);
+      vv.addEventListener('scroll', update);
+      update();
+    }
+
     // ===== INIT =====
     document.addEventListener('DOMContentLoaded', () => {
-      if(window.Telegram?.WebApp){
+      if (window.Telegram?.WebApp) {
         tg = Telegram.WebApp;
         tg.ready();
         tg.expand();
         tg.disableVerticalSwipes?.();
+
+        // Important: keep stable viewport vars updated
+        updateTelegramViewportVars();
+        tg.onEvent?.('viewportChanged', updateTelegramViewportVars);
+
         const u = tg.initDataUnsafe?.user;
-        if(u){
+        if (u) {
           userId = u.id;
           setOnline(true);
         }
         applyTheme();
+      } else {
+        updateTelegramViewportVars();
       }
+
+      // Also keep updated on resize
+      window.addEventListener('resize', updateTelegramViewportVars);
+      bindKeyboardByVisualViewport();
 
       setLang('kz');
       setNow5min();
@@ -668,40 +830,64 @@
       document.getElementById('time').addEventListener('input', validate);
       document.getElementById('createTripBtn').addEventListener('click', createTrip);
 
+      // Keep your original focus/blur logic too (works even without visualViewport)
+      const commentField = document.getElementById('comment');
+      commentField.addEventListener('focus', handleKeyboardShow);
+      commentField.addEventListener('blur', handleKeyboardHide);
+
       loadNavAvatar();
+      updateCityChips();
     });
 
-    function applyTheme(){
-      const p=tg?.themeParams || {};
-      if(!p.bg_color) return;
-      if(isDark(p.bg_color)) document.documentElement.style.colorScheme='dark';
+    function applyTheme() {
+      const p = tg?.themeParams || {};
+      if (!p.bg_color) return;
+      if (isDark(p.bg_color)) document.documentElement.style.colorScheme = 'dark';
     }
-    function isDark(hex){
-      const h=hex.replace('#','');
-      const r=parseInt(h.slice(0,2),16),
-            g=parseInt(h.slice(2,4),16),
-            b=parseInt(h.slice(4,6),16);
-      const l=(0.299*r+0.587*g+0.114*b)/255;
-      return l<.5;
+
+    function isDark(hex) {
+      const h = String(hex).replace('#', '');
+      if (h.length < 6) return false;
+      const r = parseInt(h.slice(0, 2), 16);
+      const g = parseInt(h.slice(2, 4), 16);
+      const b = parseInt(h.slice(4, 6), 16);
+      const l = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      return l < 0.5;
+    }
+
+    // ===== KEYBOARD HANDLING (keep) =====
+    function handleKeyboardShow() {
+      document.body.classList.add('keyboard-active');
+      setTimeout(() => {
+        const commentRow = document.getElementById('commentRow');
+        if (commentRow) {
+          commentRow.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 80);
+    }
+    function handleKeyboardHide() {
+      setTimeout(() => document.body.classList.remove('keyboard-active'), 120);
     }
 
     // ===== LANGUAGE =====
-    function setLang(lang){
+    function langClick(btn, lang) { setLang(lang); }
+
+    function setLang(lang) {
       currentLang = lang;
-      document.getElementById('btn-ru').classList.toggle('active', lang==='ru');
-      document.getElementById('btn-kz').classList.toggle('active', lang==='kz');
+      document.getElementById('btn-ru').classList.toggle('active', lang === 'ru');
+      document.getElementById('btn-kz').classList.toggle('active', lang === 'kz');
 
       document.querySelectorAll('[data-ru]').forEach(el => {
-        const txt = el.getAttribute('data-'+lang);
-        if(el.tagName==='INPUT' || el.tagName==='TEXTAREA'){
-          if(txt) el.placeholder = txt;
-        }else if(txt){
+        const txt = el.getAttribute('data-' + lang);
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+          if (txt) el.placeholder = txt;
+        } else if (txt) {
           el.textContent = txt;
         }
       });
 
-      const chip=document.getElementById('chip');
-      const chipText=document.getElementById('chipText');
+      const chip = document.getElementById('chip');
+      const chipText = document.getElementById('chipText');
       chipText.textContent = chip.classList.contains('off')
         ? dict[lang].offline
         : dict[lang].online;
@@ -709,54 +895,67 @@
       document.getElementById('emptyHint').textContent = dict[lang].hint;
 
       const ctaLabel = document.querySelector('#createTripBtn span');
-      if(ctaLabel && ctaLabel.getAttribute('data-'+lang)){
-        ctaLabel.textContent = ctaLabel.getAttribute('data-'+lang);
+      if (ctaLabel && ctaLabel.getAttribute('data-' + lang)) {
+        ctaLabel.textContent = ctaLabel.getAttribute('data-' + lang);
       }
+
+      updateCityChips();
     }
 
-    function setOnline(on){
-      const chip=document.getElementById('chip');
-      const chipText=document.getElementById('chipText');
+    function updateCityChips() {
+      const container = document.getElementById('citiesChips');
+      const cities = ['Алматы', 'Астана', 'Шымкент', 'Қарағанды', 'Ақтөбе', 'Тараз'];
+      const citiesRu = ['Алматы', 'Астана', 'Шымкент', 'Караганда', 'Актобе', 'Тараз'];
+
+      container.innerHTML = cities.map((city, i) => {
+        const displayName = currentLang === 'ru' ? citiesRu[i] : city;
+        return `<button class="city-chip" onclick="searchCity('${city}')">${displayName}</button>`;
+      }).join('');
+    }
+
+    function setOnline(on) {
+      const chip = document.getElementById('chip');
+      const chipText = document.getElementById('chipText');
       chip.classList.toggle('off', !on);
       chipText.textContent = on ? dict[currentLang].online : dict[currentLang].offline;
     }
 
     // ===== FORM =====
-    function setNow5min(){
-      const n=new Date();
-      n.setMinutes(Math.ceil(n.getMinutes()/5)*5,0,0);
-      const pad=v=>String(v).padStart(2,'0');
+    function setNow5min() {
+      const n = new Date();
+      n.setMinutes(Math.ceil(n.getMinutes() / 5) * 5, 0, 0);
+      const pad = v => String(v).padStart(2, '0');
       document.getElementById('time').value =
-        `${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())}T${pad(n.getHours())}:${pad(n.getMinutes())}`;
+        `${n.getFullYear()}-${pad(n.getMonth() + 1)}-${pad(n.getDate())}T${pad(n.getHours())}:${pad(n.getMinutes())}`;
     }
 
-    function validate(){
+    function validate() {
       const p = document.getElementById('price').value;
       const tm = document.getElementById('time').value;
       const ok = fromCoord && toCoord && p && +p >= 2000 && tm;
 
       const btn = document.getElementById('createTripBtn');
-      if(btn){
+      if (btn) {
         btn.disabled = !ok;
         btn.classList.toggle('disabled', !ok);
       }
       return ok;
     }
 
-    async function createTrip(){
-      if(!validate()) return alertX(dict[currentLang].fill);
-      if(+document.getElementById('price').value < 2000)
+    async function createTrip() {
+      if (!validate()) return alertX(dict[currentLang].fill);
+      if (+document.getElementById('price').value < 2000)
         return alertX(dict[currentLang].min);
 
-      const btn=document.getElementById('createTripBtn');
-      const labelSpan=btn.querySelector('span');
-      const original=labelSpan.textContent;
-      btn.disabled=true;
+      const btn = document.getElementById('createTripBtn');
+      const labelSpan = btn.querySelector('span');
+      const original = labelSpan.textContent;
+      btn.disabled = true;
       btn.classList.add('disabled');
       labelSpan.textContent = dict[currentLang].opening;
 
-      try{
-        const fd=new FormData();
+      try {
+        const fd = new FormData();
         fd.append('from_address', fromText);
         fd.append('from_lat', fromCoord[0]);
         fd.append('from_lon', fromCoord[1]);
@@ -768,201 +967,208 @@
         fd.append('comment', document.getElementById('comment').value);
         fd.append('telegram_id', userId || '0');
 
-        const r = await fetch('/api/driver/start',{method:'POST',body:fd});
+        const r = await fetch('/api/driver/start', {method: 'POST', body: fd});
         const j = await r.json();
-        if(!j.success) throw new Error(j.message || 'Unknown');
+        if (!j.success) throw new Error(j.message || 'Unknown');
 
         tg?.HapticFeedback?.notificationOccurred('success');
-        setTimeout(()=>{
+        setTimeout(() => {
           window.location.href = './delivery-list';
         }, 700);
-      }catch(e){
+      } catch (e) {
         alertX(dict[currentLang].err + ': ' + e.message);
-      }finally{
+      } finally {
         labelSpan.textContent = original;
         btn.disabled = !validate();
         btn.classList.toggle('disabled', !validate());
       }
     }
 
-    async function checkStatus(){
-      try{
-        if(!userId) return;
+    async function checkStatus() {
+      try {
+        if (!userId) return;
         const r = await fetch(`/api/driver/status?telegram_id=${userId}`);
         const j = await r.json();
-        if(j.success) setOnline(!!j.is_online);
-      }catch(_){}
+        if (j.success) setOnline(!!j.is_online);
+      } catch (_) {}
     }
 
-    function alertX(msg){
-      if(tg) tg.showAlert(msg);
+    function alertX(msg) {
+      if (tg) tg.showAlert(msg);
       else alert(msg);
     }
 
     // ===== NAV AVATAR =====
-    async function loadNavAvatar(){
-      try{
-        if(!userId) return;
-        const resp = await fetch('/api/check/who',{
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({telegram_id:parseInt(userId)})
+    async function loadNavAvatar() {
+      try {
+        if (!userId) return;
+        const resp = await fetch('/api/check/who', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({telegram_id: parseInt(userId)})
         });
         const result = await resp.json();
         const box = document.getElementById('navAvatar');
-        if(!box) return;
+        if (!box) return;
 
-        if(result.success && result.data?.exists && result.data.user_type === 'driver'){
+        if (result.success && result.data?.exists && result.data.user_type === 'driver') {
           const d = result.data.driver_data;
-          if(d?.profile_photo?.trim()){
+          if (d?.profile_photo?.trim()) {
             const baseCandidates = [
               `./ava/${d.profile_photo}`,
               `/ava/${d.profile_photo}`,
               `/files/${d.profile_photo}`,
               `/static/ava/${d.profile_photo}`
             ];
-            (function tryNext(i){
-              if(i>=baseCandidates.length){ box.textContent='👤'; return; }
-              const img=new Image();
-              img.onload=()=>{
-                box.innerHTML=`<img src="${baseCandidates[i]}" alt="Avatar">`;
-              };
-              img.onerror=()=>tryNext(i+1);
-              img.src=baseCandidates[i];
+            (function tryNext(i) {
+              if (i >= baseCandidates.length) { box.textContent = '👤'; return; }
+              const img = new Image();
+              img.onload = () => { box.innerHTML = `<img src="${baseCandidates[i]}" alt="Avatar">`; };
+              img.onerror = () => tryNext(i + 1);
+              img.src = baseCandidates[i];
             })(0);
-          }else{
-            box.textContent='👤';
-          }
-        }else{
-          box.textContent='👤';
-        }
-      }catch(_){
-        const box=document.getElementById('navAvatar');
-        if(box) box.textContent='👤';
+          } else box.textContent = '👤';
+        } else box.textContent = '👤';
+      } catch (_) {
+        const box = document.getElementById('navAvatar');
+        if (box) box.textContent = '👤';
       }
     }
 
-    function openProfile(){
-      if(!userId) return;
-      window.location.href = `/driver-update?telegram_id=${userId}`;
-    }
-    function openOrders(){
-      if(!userId) return;
-      window.location.href = `/delivery-list?telegram_id=${userId}`;
-    }
-    function openSapar(){
-      if(!userId) return;
-      window.location.href = `/driver?telegram_id=${userId}`;
-    }
+    function openProfile() { if (!userId) return; window.location.href = `/driver-update?telegram_id=${userId}`; }
+    function openOrders() { if (!userId) return; window.location.href = `/delivery-list?telegram_id=${userId}`; }
+    function openSapar()  { if (!userId) return; window.location.href = `/driver?telegram_id=${userId}`; }
 
     // ===== PICKER / MAP =====
-    function openPicker(mode){
+    function openPicker(mode) {
       picking = mode;
       document.getElementById('picker').classList.add('show');
+      pickerMapLoaded = false;
+      updateTelegramViewportVars(); // ensure correct padding before map init
       setTimeout(initMap, 60);
     }
 
-    function closePicker(){
+    function closePicker() {
       document.getElementById('picker').classList.remove('show');
-      if(map){
+      pickerMapLoaded = false;
+      if (map) {
         map.off();
         map.remove();
-        map=null;
-        markerMe=null;
+        map = null;
+        markerMe = null;
       }
       clearSearch(true);
     }
 
-    function initMap(){
+    function initMap() {
       const center = userPos || [43.238949, 76.889709];
-      map = L.map('map',{
+      map = L.map('map', {
         center,
-        zoom:15,
-        zoomControl:false,
-        attributionControl:false,
-        dragging:true,
-        tap:true,
-        touchZoom:true,
-        scrollWheelZoom:true
+        zoom: 15,
+        zoomControl: false,
+        attributionControl: false,
+        dragging: true,
+        tap: true,
+        touchZoom: true,
+        scrollWheelZoom: true
       });
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
 
-      map.on('moveend', ()=>{ pulsePin(); });
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
 
-      if(userPos) drawMe();
+      map.on('moveend', () => { pulsePin(); });
+
+      if (userPos) drawMe();
+      pickerMapLoaded = true;
+
+      // Fix: Leaflet needs invalidateSize after modal show + tg resize
+      setTimeout(() => { try { map.invalidateSize(true); } catch (_) {} }, 120);
     }
 
-    function pulsePin(){
-      const el=document.querySelector('.center-pin .b');
-      if(!el) return;
-      el.style.transform='scale(1.1)';
-      setTimeout(()=>{ el.style.transform='scale(1)'; },150);
+    function pulsePin() {
+      const el = document.querySelector('.center-pin .b');
+      if (!el) return;
+      el.style.transform = 'scale(1.1)';
+      setTimeout(() => { el.style.transform = 'scale(1)'; }, 150);
     }
 
-    function drawMe(){
-      if(!map || !userPos) return;
+    function drawMe() {
+      if (!map || !userPos) return;
       const icon = L.divIcon({
-        html:'<div style="width:14px;height:14px;border-radius:50%;background:#1976d2;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.3)"></div>',
-        className:'',
-        iconSize:[14,14],
-        iconAnchor:[7,7]
+        html: '<div style="width:14px;height:14px;border-radius:50%;background:#1976d2;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.3)"></div>',
+        className: '',
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
       });
-      if(markerMe) markerMe.setLatLng(userPos);
-      else markerMe = L.marker(userPos,{icon}).addTo(map);
+      if (markerMe) markerMe.setLatLng(userPos);
+      else markerMe = L.marker(userPos, {icon}).addTo(map);
     }
 
-    function useMe(){
-      if(userPos && map){
-        map.setView(userPos,16);
+    function useMe() {
+      if (userPos && map) {
+        map.setView(userPos, 16);
         pulsePin();
       }
       tg?.HapticFeedback?.impactOccurred('light');
     }
 
-    async function confirmCenter(){
-      if(!map) return;
+    async function confirmCenter() {
+      if (!map || !pickerMapLoaded) {
+        if (userPos) {
+          const coords = userPos;
+          const text = await reverse(coords);
+
+          if (picking === 'from') {
+            fromCoord = coords; fromText = text;
+            const el = document.getElementById('fromText');
+            el.textContent = text; el.classList.remove('placeholder');
+          } else {
+            toCoord = coords; toText = text;
+            const el = document.getElementById('toText');
+            el.textContent = text; el.classList.remove('placeholder');
+          }
+          closePicker(); validate();
+          tg?.HapticFeedback?.notificationOccurred('success');
+        }
+        return;
+      }
+
       const c = map.getCenter();
       const coords = [c.lat, c.lng];
       const text = await reverse(coords);
 
-      if(picking === 'from'){
-        fromCoord = coords;
-        fromText  = text;
+      if (picking === 'from') {
+        fromCoord = coords; fromText = text;
         const el = document.getElementById('fromText');
-        el.textContent = text;
-        el.classList.remove('placeholder');
-      }else{
-        toCoord = coords;
-        toText  = text;
+        el.textContent = text; el.classList.remove('placeholder');
+      } else {
+        toCoord = coords; toText = text;
         const el = document.getElementById('toText');
-        el.textContent = text;
-        el.classList.remove('placeholder');
+        el.textContent = text; el.classList.remove('placeholder');
       }
-      closePicker();
-      validate();
+      closePicker(); validate();
       tg?.HapticFeedback?.notificationOccurred('success');
     }
 
     // ===== GPS =====
-    function startGPS(){
-      if(!navigator.geolocation) return;
+    function startGPS() {
+      if (!navigator.geolocation) return;
       watcher = navigator.geolocation.watchPosition(
         p => {
           userPos = [p.coords.latitude, p.coords.longitude];
-          if(!fromCoord && !fromText) setFromMe();
-          if(map) drawMe();
+          if (!fromCoord && !fromText) setFromMe();
+          if (map) drawMe();
         },
         _ => {},
-        {enableHighAccuracy:true,maximumAge:0,timeout:10000}
+        {enableHighAccuracy: true, maximumAge: 0, timeout: 10000}
       );
     }
 
-    function setFromMe(){
-      if(!userPos) return;
-      reverse(userPos).then(txt=>{
+    function setFromMe() {
+      if (!userPos) return;
+      reverse(userPos).then(txt => {
         fromCoord = userPos;
-        fromText  = txt;
-        const el=document.getElementById('fromText');
+        fromText = txt;
+        const el = document.getElementById('fromText');
         el.textContent = txt;
         el.classList.remove('placeholder');
         validate();
@@ -970,121 +1176,197 @@
     }
 
     // ===== SEARCH =====
-    function debouncedSearch(q){
-      const clear=document.getElementById('clear');
-      clear.classList.toggle('show', q.length>0);
+    function searchCity(cityName) {
+      const city = KZ_CITIES.find(c => c.name === cityName || c.nameRu === cityName);
+      if (!city) return;
+
+      if (map) { map.setView([city.lat, city.lon], 13); pulsePin(); }
+
+      document.getElementById('search').value = '';
+      document.getElementById('clear').classList.remove('show');
+      showHint();
+
+      tg?.HapticFeedback?.impactOccurred('light');
+    }
+
+    function debouncedSearch(q) {
+      const clear = document.getElementById('clear');
+      clear.classList.toggle('show', q.length > 0);
       clearTimeout(debounceTimer);
 
-      if(!q || q.trim().length<2){
+      if (!q || q.trim().length < 2) {
         showHint();
         return;
       }
+
       document.getElementById('results').innerHTML =
         `<div class="empty">${dict[currentLang].searching}</div>`;
-      debounceTimer = setTimeout(()=>searchOSM(q.trim()), 450);
+
+      const query = q.trim().toLowerCase();
+      const cityMatches = KZ_CITIES.filter(city => {
+        const name = currentLang === 'ru' ? city.nameRu.toLowerCase() : city.name.toLowerCase();
+        return name.includes(query);
+      });
+
+      if (cityMatches.length > 0 && query.length < 4) {
+        displayCityResults(cityMatches);
+        return;
+      }
+
+      debounceTimer = setTimeout(() => searchOSM(q.trim()), 400);
     }
 
-    function clearSearch(keepHint){
-      const s=document.getElementById('search');
-      s.value='';
+    function displayCityResults(cities) {
+      const html = cities.slice(0, 8).map(city => {
+        const displayName = currentLang === 'ru' ? city.nameRu : city.name;
+        return `
+          <div class="item" onclick="chooseCity(${city.lat}, ${city.lon}, '${escapeHtml(displayName)}')">
+            <div class="ind"></div>
+            <div>
+              <div class="t">${escapeHtml(displayName)}</div>
+              <div class="s">Қазақстан • Kazakhstan</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('results').innerHTML = html || `<div class="empty">${dict[currentLang].nothing}</div>`;
+    }
+
+    function chooseCity(lat, lon, name) {
+      if (map) map.setView([lat, lon], 13);
+
+      if (picking === 'from') {
+        fromCoord = [lat, lon];
+        fromText = name;
+        const el = document.getElementById('fromText');
+        el.textContent = name;
+        el.classList.remove('placeholder');
+      } else {
+        toCoord = [lat, lon];
+        toText = name;
+        const el = document.getElementById('toText');
+        el.textContent = name;
+        el.classList.remove('placeholder');
+      }
+
+      clearSearch();
+      validate();
+      tg?.HapticFeedback?.impactOccurred('light');
+    }
+
+    function clearSearch(keepHint) {
+      const s = document.getElementById('search');
+      s.value = '';
       document.getElementById('clear').classList.remove('show');
-      if(!keepHint) showHint();
+      if (!keepHint) showHint();
     }
 
-    function showHint(){
+    function showHint() {
       document.getElementById('results').innerHTML =
         `<div class="empty">${dict[currentLang].hint}</div>`;
     }
 
-    function viewbox(){
-      const c = map?.getCenter() || {lat:43.238949,lng:76.889709};
-      const d = 0.45;
-      return `${c.lng-d},${c.lat-d},${c.lng+d},${c.lat+d}`;
+    function viewbox() {
+      const c = map?.getCenter() || {lat: 43.238949, lng: 76.889709};
+      const d = 0.5;
+      return `${c.lng - d},${c.lat - d},${c.lng + d},${c.lat + d}`;
     }
 
-    function langHeader(){
-      return currentLang==='ru' ? 'ru-RU' : 'kk-KZ';
+    function langHeader() {
+      return currentLang === 'ru' ? 'ru-RU,ru' : 'kk-KZ,kk,ru-RU,ru';
     }
 
-    async function searchOSM(q){
-      try{
+    async function searchOSM(q) {
+      try {
         const vb = viewbox();
         const base = 'https://nominatim.openstreetmap.org';
-        const common = `format=json&limit=15&addressdetails=1&countrycodes=kz&accept-language=${encodeURIComponent(langHeader())}&viewbox=${vb}&bounded=1`;
-        const url1 = `${base}/search?${common}&q=${encodeURIComponent(q)}&extratags=1&namedetails=1`;
-        const r1 = await fetch(url1);
-        let results = await r1.json();
+        let results = [];
 
-        if(!results || results.length===0){
-          const url2 = `${base}/search?format=json&limit=15&addressdetails=1&q=${encodeURIComponent(q+', Kazakhstan')}&accept-language=${encodeURIComponent(langHeader())}`;
+        const url1 = `${base}/search?format=json&limit=20&addressdetails=1&countrycodes=kz&accept-language=${encodeURIComponent(langHeader())}&viewbox=${vb}&bounded=1&q=${encodeURIComponent(q)}`;
+        const r1 = await fetch(url1);
+        results = await r1.json();
+
+        if (!results || results.length === 0) {
+          const url2 = `${base}/search?format=json&limit=20&addressdetails=1&countrycodes=kz&accept-language=${encodeURIComponent(langHeader())}&q=${encodeURIComponent(q)}`;
           const r2 = await fetch(url2);
           results = await r2.json();
         }
 
-        const center = map?.getCenter() || {lat:43.238949,lng:76.889709};
-        const typeWeight = t => {
-          const order=['city','town','village','hamlet','suburb','neighbourhood','quarter','residential'];
-          const i=order.indexOf(t||'');
-          return i===-1?8:i;
-        };
-        const dist = (lat,lon)=>{
-          const dx=(lat-center.lat)*111;
-          const dy=(lon-center.lng)*85;
-          return Math.hypot(dx,dy);
-        };
-
-        const uniq=new Map();
-        for(const r of results){
-          const k=`${r.lat},${r.lon}`;
-          if(!uniq.has(k)) uniq.set(k,r);
+        if (!results || results.length === 0) {
+          const url3 = `${base}/search?format=json&limit=15&addressdetails=1&accept-language=${encodeURIComponent(langHeader())}&q=${encodeURIComponent(q + ', Kazakhstan')}`;
+          const r3 = await fetch(url3);
+          results = await r3.json();
         }
 
-        const arr=[...uniq.values()]
-          .map(r=>({
-            name:(r.display_name||'').split(',')[0],
-            full:r.display_name,
-            lat:+r.lat, lon:+r.lon,
-            type:r.type||r.class||'',
-            score:typeWeight(r.type||'')*10 + dist(+r.lat,+r.lon)
-          }))
-          .sort((a,b)=>a.score-b.score)
-          .slice(0,15);
+        const center = map?.getCenter() || {lat: 43.238949, lng: 76.889709};
 
-        if(arr.length===0){
+        const typeWeight = t => {
+          const order = ['city', 'town', 'village', 'suburb', 'neighbourhood', 'quarter', 'residential', 'hamlet'];
+          const i = order.indexOf(t || '');
+          return i === -1 ? 10 : i;
+        };
+
+        const dist = (lat, lon) => {
+          const dx = (lat - center.lat) * 111;
+          const dy = (lon - center.lng) * 85;
+          return Math.hypot(dx, dy);
+        };
+
+        const uniq = new Map();
+        for (const r of results) {
+          const k = `${r.lat},${r.lon}`;
+          if (!uniq.has(k)) uniq.set(k, r);
+        }
+
+        const arr = [...uniq.values()]
+          .map(r => ({
+            name: (r.display_name || '').split(',')[0],
+            full: r.display_name,
+            lat: +r.lat,
+            lon: +r.lon,
+            type: r.type || r.class || '',
+            score: typeWeight(r.type || '') * 10 + dist(+r.lat, +r.lon)
+          }))
+          .sort((a, b) => a.score - b.score)
+          .slice(0, 15);
+
+        if (arr.length === 0) {
           document.getElementById('results').innerHTML =
             `<div class="empty">${dict[currentLang].nothing}</div>`;
           return;
         }
 
-        document.getElementById('results').innerHTML = arr.map(a=>`
-          <div class="item" onclick="choose(${a.lat},${a.lon}, '${escapeHtml(a.name)}')">
+        document.getElementById('results').innerHTML = arr.map(a => `
+          <div class="item" onclick="choose(${a.lat}, ${a.lon}, '${escapeHtml(a.name)}')">
             <div class="ind"></div>
             <div>
               <div class="t">${escapeHtml(a.name)}</div>
-              <div class="s">${escapeHtml(a.full.split(',').slice(1,4).join(', ').trim())}</div>
+              <div class="s">${escapeHtml(a.full.split(',').slice(1, 4).join(', ').trim())}</div>
             </div>
           </div>
         `).join('');
-      }catch(e){
+      } catch (e) {
+        console.error('Search error:', e);
         document.getElementById('results').innerHTML =
           `<div class="empty">${dict[currentLang].err}</div>`;
       }
     }
 
-    function choose(lat,lon,name){
-      if(map) map.setView([lat,lon],16);
+    function choose(lat, lon, name) {
+      if (map) map.setView([lat, lon], 16);
 
-      if(picking === 'from'){
-        fromCoord=[lat,lon];
-        fromText=name;
-        const el=document.getElementById('fromText');
-        el.textContent=name;
+      if (picking === 'from') {
+        fromCoord = [lat, lon];
+        fromText = name;
+        const el = document.getElementById('fromText');
+        el.textContent = name;
         el.classList.remove('placeholder');
-      }else{
-        toCoord=[lat,lon];
-        toText=name;
-        const el=document.getElementById('toText');
-        el.textContent=name;
+      } else {
+        toCoord = [lat, lon];
+        toText = name;
+        const el = document.getElementById('toText');
+        el.textContent = name;
         el.classList.remove('placeholder');
       }
       closePicker();
@@ -1093,29 +1375,33 @@
     }
 
     // ===== REVERSE GEOCODE =====
-    async function reverse([lat,lon]){
-      try{
+    async function reverse([lat, lon]) {
+      try {
         const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=${encodeURIComponent(langHeader())}`;
         const r = await fetch(url);
         const j = await r.json();
-        if(j?.display_name)
-          return j.display_name.split(',').slice(0,4).join(', ');
+        if (j?.display_name)
+          return j.display_name.split(',').slice(0, 4).join(', ');
         return `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-      }catch(_){
+      } catch (_) {
         return `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
       }
     }
 
     // ===== HELPERS =====
-    function escapeHtml(s){
-      return String(s).replace(/[&<>"']/g, m=>({
-        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, m => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
       }[m]));
     }
 
     window.addEventListener('beforeunload', () => {
-      if(watcher) navigator.geolocation.clearWatch(watcher);
-      if(map) map.remove();
+      if (watcher) navigator.geolocation.clearWatch(watcher);
+      if (map) map.remove();
     });
   </script>
 </body>

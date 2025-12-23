@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alash-Go - Жүк тасымалдау қызметі</title>
+  <meta name="description" content="Қазақстан бойынша жылдам жүк тасымалдау">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #ffffff;
+      --bg-alt: #f8fafc;
+      --text: #0f172a;
+      --text-dim: #64748b;
+      --primary: #10b981;
+      --primary-dark: #059669;
+      --secondary: #3b82f6;
+      --shadow: rgba(16, 185, 129, 0.1);
+    }
+
+    [data-theme="dark"] {
+      --bg: #0f172a;
+      --bg-alt: #1e293b;
+      --text: #f1f5f9;
+      --text-dim: #94a3b8;
+      --shadow: rgba(0, 0, 0, 0.3);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .bg-animation {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      opacity: 0.05;
+      animation: spin 20s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    header {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: var(--bg);
+      box-shadow: 0 2px 20px var(--shadow);
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+
+    nav {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .logo img {
+      height: 50px;
+      width: auto;
+      filter: drop-shadow(0 2px 8px var(--shadow));
+    }
+
+    section {
+      padding: 6rem 2rem;
+    }
+
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding-top: 8rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    h1 {
+      font-size: 3.5rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: slideUp 0.8s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .lead {
+      font-size: 1.3rem;
+      color: var(--text-dim);
+      margin-bottom: 2rem;
+      animation: slideUp 0.8s ease 0.2s backwards;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      animation: slideUp 0.8s ease 0.4s backwards;
+    }
+
+    .btn {
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s;
+      box-shadow: 0 4px 20px var(--shadow);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-secondary {
+      background: var(--bg-alt);
+      color: var(--text);
+      border: 2px solid var(--primary);
+    }
+
+    .btn-secondary:hover {
+      background: var(--primary);
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    .animation-box {
+      position: relative;
+      height: 500px;
+      animation: fadeIn 1s ease 0.6s backwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .truck {
+      position: absolute;
+      font-size: 4rem;
+      animation: move 8s ease-in-out infinite;
+      filter: drop-shadow(0 4px 12px rgba(16, 185, 129, 0.2));
+    }
+
+    @keyframes move {
+      0%, 100% { left: -100px; top: 20%; }
+      25% { left: 30%; top: 40%; }
+      50% { left: 70%; top: 30%; }
+      75% { left: 50%; top: 60%; }
+    }
+
+    .marker {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      box-shadow: 0 8px 30px rgba(16, 185, 129, 0.3);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 8px 30px rgba(16, 185, 129, 0.3);
+      }
+      50% {
+        transform: scale(1.1);
+        box-shadow: 0 12px 40px rgba(16, 185, 129, 0.5);
+      }
+    }
+
+    .m1 { top: 15%; left: 20%; animation-delay: 0s; }
+    .m2 { top: 45%; left: 70%; animation-delay: 0.5s; }
+    .m3 { top: 70%; left: 30%; animation-delay: 1s; }
+
+    .line {
+      position: absolute;
+      height: 3px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      opacity: 0.3;
+      animation: grow 2s ease forwards;
+    }
+
+    @keyframes grow {
+      from { width: 0; opacity: 0; }
+      to { opacity: 0.3; }
+    }
+
+    .l1 {
+      top: 20%;
+      left: 24%;
+      width: 40%;
+      transform: rotate(15deg);
+      animation-delay: 0.5s;
+    }
+
+    .l2 {
+      top: 50%;
+      left: 35%;
+      width: 30%;
+      transform: rotate(-20deg);
+      animation-delay: 1s;
+    }
+
+    .alt-bg {
+      background: var(--bg-alt);
+    }
+
+    .title {
+      text-align: center;
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 3rem;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
+    .card {
+      background: var(--bg);
+      padding: 2.5rem;
+      border-radius: 20px;
+      box-shadow: 0 8px 30px var(--shadow);
+      transition: all 0.3s;
+      border: 1px solid rgba(16, 185, 129, 0.1);
+    }
+
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 40px var(--shadow);
+      border-color: var(--primary);
+    }
+
+    .icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      filter: drop-shadow(0 4px 12px rgba(16, 185, 129, 0.2));
+    }
+
+    .card h3 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+      color: var(--primary);
+    }
+
+    .card p {
+      color: var(--text-dim);
+      font-size: 1.05rem;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    .step {
+      text-align: center;
+    }
+
+    .number {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: 800;
+      color: white;
+      margin: 0 auto 1.5rem;
+      box-shadow: 0 8px 30px rgba(16, 185, 129, 0.3);
+    }
+
+    .step h3 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+      color: var(--primary);
+    }
+
+    .step p {
+      color: var(--text-dim);
+      font-size: 1.05rem;
+    }
+
+    .contact-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      margin-top: 3rem;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .contact-link {
+      background: var(--bg);
+      padding: 1.5rem;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      text-decoration: none;
+      color: var(--text);
+      font-size: 1.2rem;
+      font-weight: 600;
+      box-shadow: 0 4px 20px var(--shadow);
+      transition: all 0.3s;
+      border: 1px solid rgba(16, 185, 129, 0.1);
+    }
+
+    .contact-link:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px var(--shadow);
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .contact-icon {
+      font-size: 2rem;
+    }
+
+    footer {
+      background: var(--primary);
+      color: white;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    footer p {
+      opacity: 0.9;
+    }
+
+    @media (max-width: 968px) {
+      .grid {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+      }
+
+      .buttons {
+        justify-content: center;
+      }
+
+      .animation-box {
+        height: 350px;
+      }
+
+      nav {
+        padding: 1rem;
+      }
+
+      .logo img {
+        height: 40px;
+      }
+
+      .title {
+        font-size: 2rem;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      section {
+        padding: 4rem 1rem;
+      }
+
+      .hero {
+        padding-top: 6rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      .lead {
+        font-size: 1.1rem;
+      }
+
+      .btn {
+        padding: 0.8rem 1.5rem;
+        font-size: 1rem;
+      }
+
+      .animation-box {
+        height: 300px;
+      }
+
+      .truck {
+        font-size: 3rem;
+      }
+
+      .marker {
+        width: 40px;
+        height: 40px;
+        font-size: 1.5rem;
+      }
+
+      .logo img {
+        height: 35px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-animation"></div>
+
+  <header>
+    <nav>
+      <div class="logo">
+        <img src="/static/logo.jpg" alt="Alash-Go">
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <div class="grid">
+          <div>
+            <h1>Жылдам және сенімді жүк тасымалдау</h1>
+            <p class="lead">Қазақстан бойынша жүк тасымалдау қызметі. Тапсырыс беріңіз, біз жеткіземіз!</p>
+            <div class="buttons">
+              <a href="https://t.me/alashGo_bot/alash_go" class="btn btn-primary" target="_blank">
+                <span>🚀</span>
+                Қазір бастау
+              </a>
+              <a href="#contact" class="btn btn-secondary">
+                <span>📞</span>
+                Байланысу
+              </a>
+            </div>
+          </div>
+          <div class="animation-box">
+            <div class="truck">🚚</div>
+            <div class="marker m1">📍</div>
+            <div class="marker m2">🎯</div>
+            <div class="marker m3">📦</div>
+            <div class="line l1"></div>
+            <div class="line l2"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="alt-bg">
+      <div class="container">
+        <h2 class="title">Неге Alash-Go таңдау керек?</h2>
+        <div class="cards">
+          <div class="card">
+            <div class="icon">⚡</div>
+            <h3>Жылдам жеткізу</h3>
+            <p>Қалада 1 сағат ішінде, өңірлерге 24 сағат ішінде жеткіземіз</p>
+          </div>
+          <div class="card">
+            <div class="icon">💰</div>
+            <h3>Қолайлы бағалар</h3>
+            <p>Ең төменгі тарифтер және айқын баға белгілеу жүйесі</p>
+          </div>
+          <div class="card">
+            <div class="icon">📱</div>
+            <h3>Оңай пайдалану</h3>
+            <p>Telegram арқылы тапсырыс беру және қадағалау</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="container">
+        <h2 class="title">Қалай жұмыс істейді?</h2>
+        <div class="steps">
+          <div class="step">
+            <div class="number">1</div>
+            <h3>Тапсырыс беру</h3>
+            <p>Telegram ботында мекенжайларды және жүк туралы ақпаратты көрсетіңіз</p>
+          </div>
+          <div class="step">
+            <div class="number">2</div>
+            <h3>Жүргізушіні таңдау</h3>
+            <p>Сізге ең қолайлы жүргізушіні таңдаңыз</p>
+          </div>
+          <div class="step">
+            <div class="number">3</div>
+            <h3>Жеткізу</h3>
+            <p>Жүкті жеткізуді нақты уақытта қадағалаңыз</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="alt-bg" id="contact">
+      <div class="container">
+        <h2 class="title">Бізбен байланысу</h2>
+        <p style="text-align: center; font-size: 1.2rem; color: var(--text-dim); margin-bottom: 2rem;">
+          Сұрақтарыңыз бар ма? Бізге хабарласыңыз!
+        </p>
+        <div class="contact-grid">
+          <a href="https://t.me/alashGo_bot/alash_go" class="contact-link" target="_blank">
+            <span class="contact-icon">✈️</span>
+            Telegram Mini App
+          </a>
+          <a href="https://wa.me/77769001029" class="contact-link" target="_blank">
+            <span class="contact-icon">💬</span>
+            WhatsApp: +7 776 900 1029
+          </a>
+          <a href="tel:+77769001029" class="contact-link">
+            <span class="contact-icon">📞</span>
+            Телефон: +7 776 900 1029
+          </a>
+          <a href="mailto:alash.go2025@gmail.com" class="contact-link">
+            <span class="contact-icon">📧</span>
+            Email: alash.go2025@gmail.com
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Alash-Go. Барлық құқықтар қорғалған.</p>
+    <p style="margin-top: 0.5rem; font-size: 0.9rem;">Қазақстандағы жылдам жүк тасымалдау қызметі</p>
+  </footer>
+
+  <script>
+    function getTheme() {
+      const h = new Date().getHours();
+      return (h >= 20 || h < 6) ? 'dark' : 'light';
+    }
+
+    function setTheme(t) {
+      document.documentElement.setAttribute('data-theme', t);
+    }
+
+    let theme = getTheme();
+    setTheme(theme);
+
+    setInterval(() => {
+      const t = getTheme();
+      if (t !== theme) {
+        theme = t;
+        setTheme(t);
+      }
+    }, 30000);
+
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        document.querySelector(a.getAttribute('href')).scrollIntoView({
+          behavior: 'smooth'
+        });
+      });
+    });
+
+    if (window.Telegram?.WebApp) {
+      Telegram.WebApp.ready();
+      Telegram.WebApp.expand();
+    }
+  </script>
+</body>
+</html>

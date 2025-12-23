@@ -786,7 +786,7 @@
         class="search-box"
         id="searchBox"
         placeholder="Мекенжай іздеу..."
-        oninput="searchAddress(this.value)"
+        oninput="debouncedSearch(this.value)"
         onfocus="onSearchFocus()"
         onblur="hideSuggestionsDelayed()"
       />
@@ -823,7 +823,6 @@
 
     // Simple Kazakhstan bounding box check
     function isInKazakhstan(lat, lng){
-      // Approx Kazakhstan bounds: lat 40–56, lon 46–88
       return lat >= 40 && lat <= 56 && lng >= 46 && lng <= 88;
     }
 
@@ -858,9 +857,303 @@
     let map, pickerMap, userMarker, pickupMarker, dropoffMarker, placedPinMarker;
     let geolocationWatchId = null, mapUpdateInterval = null;
     let currentUserLocation = null, lastUserPosition = null;
-    let suggestionsTimeout = null;
+    let suggestionsTimeout = null, searchDebounceTimer = null;
 
-    function updateViewportHeight(){
+    // ============ OPTIMIZED GEOCODING CACHE ============
+    const geocodeCache = new Map();
+    const CACHE_EXPIRY = 30 * 60 * 1000; // 30 minutes
+    
+    function getCachedGeocode(key) {
+      const cached = geocodeCache.get(key);
+      if (cached && Date.now() - cached.timestamp < CACHE_EXPIRY) {
+        return cached.value;
+      }
+      geocodeCache.delete(key);
+      return null;
+    }
+
+    function setCachedGeocode(key, value) {
+      geocodeCache.set(key, { value, timestamp: Date.now() });
+      // Limit cache size
+      if (geocodeCache.size > 100) {
+        const firstKey = geocodeCache.keys().next().value;
+        geocodeCache.delete(firstKey);
+      }
+    }
+
+    // ============ OPTIMIZED REVERSE GEOCODE ============
+    async function reverseGeocode(lat, lng) {
+      const cacheKey = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+      const cached = getCachedGeocode(cacheKey);
+      if (cached) return cached;
+
+      try {
+        const url = `${NOMINATIM_BASE}/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=${encodeURIComponent(langHeader())}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        // Check if outside Kazakhstan
+        if (data?.address?.country_code && data.address.country_code.toLowerCase() !== 'kz') {
+          const fallback = formatFallbackAddress(lat, lng);
+          setCachedGeocode(cacheKey, fallback);
+          return fallback;
+        }
+
+        // Build human-readable address - ALWAYS text, NEVER coordinates
+        const addr = data.address || {};
+        let parts = [];
+
+        // Priority: house_number + road/street
+        if (addr.house_number && addr.road) {
+          parts.push(`${addr.road}, ${addr.house_number}`);
+        } else if (addr.road) {
+          parts.push(addr.road);
+        } else if (addr.neighbourhood) {
+          parts.push(addr.neighbourhood);
+        }
+
+        // Add city/town
+        const city = addr.city || addr.town || addr.village || addr.county;
+        if (city && !parts.some(p => p.includes(city))) {
+          parts.push(city);
+        }
+
+        // Add region if different from city
+        if (addr.state && addr.state !== city) {
+          parts.push(addr.state);
+        }
+
+        // If we have good parts, use them
+        if (parts.length > 0) {
+          const address = parts.join(', ');
+          setCachedGeocode(cacheKey, address);
+          return address;
+        }
+
+        // Fallback to display_name but clean it up
+        if (data.display_name) {
+          const cleaned = data.display_name
+            .split(',')
+            .filter(p => p.trim())
+            .slice(0, 4)
+            .join(', ')
+            .trim();
+          
+          if (cleaned) {
+            setCachedGeocode(cacheKey, cleaned);
+            return cleaned;
+          }
+        }
+
+        // Last resort: format as readable coordinates
+        const fallback = formatFallbackAddress(lat, lng);
+        setCachedGeocode(cacheKey, fallback);
+        return fallback;
+
+      } catch (error) {
+        console.error('Reverse geocode error:', error);
+        const fallback = formatFallbackAddress(lat, lng);
+        setCachedGeocode(cacheKey, fallback);
+        return fallback;
+      }
+    }
+
+    // Format coordinates as human-readable location
+    function formatFallbackAddress(lat, lng) {
+      return currentLang === 'ru' 
+        ? `Координаты: ${lat.toFixed(5)}°N, ${lng.toFixed(5)}°E`
+        : `Координаттар: ${lat.toFixed(5)}°N, ${lng.toFixed(5)}°E`;
+    }
+
+    // ============ OPTIMIZED SEARCH WITH DEBOUNCE ============
+    function debouncedSearch(query) {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        searchAddress(query);
+      }, 300); // 300ms debounce
+    }
+
+    async function searchAddress(query) {
+      const s = document.getElementById('suggestions');
+      
+      if (query.length < 2) {
+        s.classList.remove('active');
+        return;
+      }
+
+      state.isSearching = true;
+      s.innerHTML = `<div class="suggestion-item"><div class="suggestion-title">Іздеу…</div></div>`;
+      s.classList.add('active');
+
+      try {
+        // OPTIMIZED: Single smart query for Kazakhstan
+        const results = await performKazakhstanSearch(query);
+
+        if (results.length === 0) {
+          s.innerHTML = `<div class="suggestion-item"><div class="suggestion-title">Ештеңе табылмады</div></div>`;
+          return;
+        }
+
+        // Render suggestions
+        s.innerHTML = results.map(r => `
+          <div class="suggestion-item"
+               data-lat="${r.lat}"
+               data-lng="${r.lon}"
+               data-label="${escapeHtml(r.title)}"
+               onclick="selectSuggestionFromElement(this)">
+            <div class="suggestion-title">${escapeHtml(r.title)}</div>
+            <div class="suggestion-sub">${escapeHtml(r.subtitle)}</div>
+          </div>
+        `).join('');
+        
+        s.classList.add('active');
+
+      } catch (e) {
+        console.error('Search error:', e);
+        s.innerHTML = `<div class="suggestion-item"><div class="suggestion-title">Қате</div></div>`;
+      } finally {
+        state.isSearching = false;
+      }
+    }
+
+    // ============ OPTIMIZED KAZAKHSTAN SEARCH STRATEGY ============
+    async function performKazakhstanSearch(query) {
+      const center = pickerMap?.getCenter() || { lat: 43.238949, lng: 76.889709 };
+      
+      // Build optimized query with Kazakhstan focus
+      const params = new URLSearchParams({
+        format: 'json',
+        q: query,
+        countrycodes: 'kz',
+        limit: '20',
+        addressdetails: '1',
+        'accept-language': langHeader(),
+        dedupe: '1'
+      });
+
+      const url = `${NOMINATIM_BASE}/search?${params}`;
+      const res = await fetch(url);
+      let rawResults = await res.json();
+
+      if (!rawResults || rawResults.length === 0) {
+        return [];
+      }
+
+      // Process and rank results
+      const processed = rawResults.map(r => {
+        const addr = r.address || {};
+        
+        // Build clean title
+        let title = '';
+        if (addr.house_number && addr.road) {
+          title = `${addr.road}, ${addr.house_number}`;
+        } else if (addr.road) {
+          title = addr.road;
+        } else if (r.name) {
+          title = r.name;
+        } else {
+          title = r.display_name.split(',')[0];
+        }
+
+        // Build subtitle
+        const city = addr.city || addr.town || addr.village || '';
+        const state = addr.state || '';
+        let subtitle = '';
+        
+        if (city && state && city !== state) {
+          subtitle = `${city}, ${state}`;
+        } else if (city) {
+          subtitle = city;
+        } else if (state) {
+          subtitle = state;
+        }
+
+        // Calculate relevance score
+        const dist = calculateDistance(center.lat, center.lng, +r.lat, +r.lon);
+        const typeScore = getTypeScore(r.type, r.class);
+        
+        // Boost if query matches city name
+        const cityMatch = city && query.toLowerCase().includes(city.toLowerCase()) ? 0.5 : 1;
+        
+        const score = (dist * cityMatch) + (typeScore * 5);
+
+        return {
+          lat: +r.lat,
+          lon: +r.lon,
+          title,
+          subtitle,
+          score,
+          importance: r.importance || 0
+        };
+      });
+
+      // Sort by score (lower is better) and importance (higher is better)
+      processed.sort((a, b) => {
+        const scoreDiff = a.score - b.score;
+        if (Math.abs(scoreDiff) > 0.1) return scoreDiff;
+        return b.importance - a.importance;
+      });
+
+      // Return top 15 results
+      return processed.slice(0, 15);
+    }
+
+    function getTypeScore(type, classType) {
+      // Lower score = higher priority
+      const priorities = {
+        city: 1,
+        town: 2,
+        village: 3,
+        suburb: 4,
+        neighbourhood: 5,
+        residential: 6,
+        amenity: 7,
+        building: 8,
+        street: 9
+      };
+
+      return priorities[type] || priorities[classType] || 10;
+    }
+
+    function selectSuggestionFromElement(el) {
+      const lat = parseFloat(el.dataset.lat);
+      const lng = parseFloat(el.dataset.lng);
+
+      if (!isInKazakhstan(lat, lng)) {
+        showToast('outside_kz');
+        return;
+      }
+
+      const label = el.dataset.label;
+      
+      if (pickerMap) {
+        pickerMap.setView([lat, lng], 17, { animate: true });
+        setTimeout(() => placePinAtCoordinates({ lat, lng }, label), 200);
+      }
+      
+      const s = document.getElementById('suggestions');
+      s.classList.remove('active');
+      document.getElementById('searchBox').value = label;
+      state.isSearching = false;
+      updatePickerInstructions();
+    }
+
+    function hideSuggestionsDelayed() {
+      clearTimeout(suggestionsTimeout);
+      suggestionsTimeout = setTimeout(() => {
+        document.getElementById('suggestions').classList.remove('active');
+        state.isSearching = false;
+        updatePickerInstructions();
+      }, 200);
+    }
+
+    function onSearchFocus() {
+      state.isSearching = true;
+      document.getElementById('pickerInstructions').classList.add('hidden');
+    }
+
+    // ============ MAP INITIALIZATION ============
+    function updateViewportHeight() {
       const vh = window.Telegram?.WebApp?.viewportStableHeight || window.innerHeight;
       const safeTop = window.Telegram?.WebApp?.safeAreaInset?.top || 0;
       const safeBottom = window.Telegram?.WebApp?.safeAreaInset?.bottom || 0;
@@ -871,7 +1164,7 @@
       if (state.pickup && state.dropoff) queueFitAB();
     }
 
-    function createDivMarker(html, className, size = [20,20]){
+    function createDivMarker(html, className, size = [20, 20]) {
       const el = document.createElement('div');
       el.className = className;
       el.style.width = size[0] + 'px';
@@ -880,8 +1173,8 @@
       return el;
     }
 
-    function initMap(){
-      const defaultCenter = [43.238949,76.889709];
+    function initMap() {
+      const defaultCenter = [43.238949, 76.889709];
 
       map = L.map('map', {
         center: defaultCenter,
@@ -890,16 +1183,16 @@
         attributionControl: false
       });
 
-      /* Carto Voyager: светлая Uber-стилистика */
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         maxZoom: 19
       }).addTo(map);
 
-      if (navigator.geolocation){
+      if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-          (pos)=>{
+          (pos) => {
             currentUserLocation = [pos.coords.latitude, pos.coords.longitude];
-            if (!isInKazakhstan(currentUserLocation[0], currentUserLocation[1])){
+            
+            if (!isInKazakhstan(currentUserLocation[0], currentUserLocation[1])) {
               addUserLocationMarker(defaultCenter);
               showToast('outside_kz');
               return;
@@ -910,133 +1203,143 @@
               lng: pos.coords.longitude,
               accuracy: pos.coords.accuracy
             };
+            
             map.setView(currentUserLocation, 15);
             addUserLocationMarker(currentUserLocation);
             setUserLocationAsPickup();
             startRealtimeTracking();
           },
-          ()=>{
+          () => {
             addUserLocationMarker(defaultCenter);
           },
-          { enableHighAccuracy:true, timeout:10000, maximumAge:0 }
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
       } else {
         addUserLocationMarker(defaultCenter);
       }
     }
 
-    async function setUserLocationAsPickup(){
+    async function setUserLocationAsPickup() {
       if (!currentUserLocation) return;
-      if (!isInKazakhstan(currentUserLocation[0], currentUserLocation[1])){
+      if (!isInKazakhstan(currentUserLocation[0], currentUserLocation[1])) {
         showToast('outside_kz');
         return;
       }
+      
       const addr = await reverseGeocode(currentUserLocation[0], currentUserLocation[1]);
       state.pickup = {
         lat: currentUserLocation[0],
         lng: currentUserLocation[1],
         address: addr
       };
+      
       document.getElementById('pickupAddr').textContent = addr;
       document.querySelectorAll('.address-card')[0].classList.add('filled');
       await addMarker('pickup', currentUserLocation[0], currentUserLocation[1]);
       validateStep1();
     }
 
-    function startRealtimeTracking(){
-      if(!navigator.geolocation) return;
+    function startRealtimeTracking() {
+      if (!navigator.geolocation) return;
 
+      // Use watch position with 1-second updates
       geolocationWatchId = navigator.geolocation.watchPosition(
-        (pos)=>{
+        (pos) => {
           const c = [pos.coords.latitude, pos.coords.longitude];
-          if (pos.coords.accuracy <= 200){
+          // Remove strict accuracy filter - accept any reasonably accurate position
+          if (pos.coords.accuracy <= 500) {
             currentUserLocation = c;
-            state.userLoc = { lat:c[0], lng:c[1], accuracy:pos.coords.accuracy };
+            state.userLoc = { lat: c[0], lng: c[1], accuracy: pos.coords.accuracy };
             updateUserMarker(c[0], c[1]);
           }
         },
         null,
-        { enableHighAccuracy:true, timeout:3000, maximumAge:0 }
+        { enableHighAccuracy: true, timeout: 2000, maximumAge: 0 }
       );
 
-      mapUpdateInterval = setInterval(()=>{
+      // Interval polling every 1 second
+      mapUpdateInterval = setInterval(() => {
         navigator.geolocation.getCurrentPosition(
-          (pos)=>{
+          (pos) => {
             const c = [pos.coords.latitude, pos.coords.longitude];
-            if (pos.coords.accuracy <= 200){
+            if (pos.coords.accuracy <= 500) {
               currentUserLocation = c;
-              state.userLoc = { lat:c[0], lng:c[1], accuracy:pos.coords.accuracy };
+              state.userLoc = { lat: c[0], lng: c[1], accuracy: pos.coords.accuracy };
               updateUserMarker(c[0], c[1]);
             }
           },
           null,
-          { enableHighAccuracy:true, timeout:2000, maximumAge:0 }
+          { enableHighAccuracy: true, timeout: 1500, maximumAge: 0 }
         );
-      }, 1000);
+      }, 1000); // 1 second updates
     }
 
-    function addUserLocationMarker(coords){
+    function addUserLocationMarker(coords) {
       if (!map) return;
-      const el = createDivMarker('', 'user-marker', [16,16]);
-      const icon = L.divIcon({ className:'', html:el, iconSize:[16,16] });
-      userMarker = L.marker(coords, { icon, interactive:false }).addTo(map);
+      const el = createDivMarker('', 'user-marker', [16, 16]);
+      const icon = L.divIcon({ className: '', html: el, iconSize: [16, 16] });
+      userMarker = L.marker(coords, { icon, interactive: false }).addTo(map);
     }
 
-    function updateUserMarker(lat, lng){
+    function updateUserMarker(lat, lng) {
       if (lastUserPosition &&
           Math.abs(lastUserPosition[0] - lat) < 0.00001 &&
           Math.abs(lastUserPosition[1] - lng) < 0.00001) return;
-      lastUserPosition = [lat,lng];
+      
+      lastUserPosition = [lat, lng];
 
-      if (!userMarker && map){
-        addUserLocationMarker([lat,lng]);
+      if (!userMarker && map) {
+        addUserLocationMarker([lat, lng]);
         return;
       }
+      
       if (!userMarker || !map) return;
-      userMarker.setLatLng([lat,lng]);
+      userMarker.setLatLng([lat, lng]);
     }
 
-    function centerOnUserLocation(){
+    function centerOnUserLocation() {
       if (!currentUserLocation || !map) return;
-      map.setView(currentUserLocation, 16, { animate:true });
+      map.setView(currentUserLocation, 16, { animate: true });
     }
 
-    async function addMarker(type, lat, lng){
+    async function addMarker(type, lat, lng) {
       if (!map) return;
+      
       const className = `custom-marker ${type === 'pickup' ? 'pickup' : 'dropoff'}`;
       const label = type === 'pickup' ? 'A' : 'B';
-      const el = createDivMarker(label, className, [40,40]);
-      const icon = L.divIcon({ className:'', html:el, iconSize:[40,40], iconAnchor:[20,20] });
+      const el = createDivMarker(label, className, [40, 40]);
+      const icon = L.divIcon({ className: '', html: el, iconSize: [40, 40], iconAnchor: [20, 20] });
 
-      const marker = L.marker([lat, lng], { icon, draggable:true }).addTo(map);
+      const marker = L.marker([lat, lng], { icon, draggable: true }).addTo(map);
 
-      marker.on('dragend', async (e)=>{
+      marker.on('dragend', async (e) => {
         const ll = e.target.getLatLng();
 
-        if (!isInKazakhstan(ll.lat, ll.lng)){
+        if (!isInKazakhstan(ll.lat, ll.lng)) {
           showToast('outside_kz');
-          // Вернём маркер обратно на старое место
-          if (type === 'pickup' && state.pickup){
+          if (type === 'pickup' && state.pickup) {
             marker.setLatLng([state.pickup.lat, state.pickup.lng]);
-          } else if (type === 'dropoff' && state.dropoff){
+          } else if (type === 'dropoff' && state.dropoff) {
             marker.setLatLng([state.dropoff.lat, state.dropoff.lng]);
           }
           return;
         }
 
         const addr = await reverseGeocode(ll.lat, ll.lng);
-        if (type === 'pickup'){
-          state.pickup = { lat:ll.lat, lng:ll.lng, address:addr };
+        
+        if (type === 'pickup') {
+          state.pickup = { lat: ll.lat, lng: ll.lng, address: addr };
           document.getElementById('pickupAddr').textContent = addr;
         } else {
-          state.dropoff = { lat:ll.lat, lng:ll.lng, address:addr };
+          state.dropoff = { lat: ll.lat, lng: ll.lng, address: addr };
           document.getElementById('dropoffAddr').textContent = addr;
         }
+        
         validateStep1();
         queueFitAB();
       });
 
-      if (type === 'pickup'){
+      if (type === 'pickup') {
         if (pickupMarker) map.removeLayer(pickupMarker);
         pickupMarker = marker;
       } else {
@@ -1044,12 +1347,12 @@
         dropoffMarker = marker;
       }
 
-      if (pickupMarker && dropoffMarker){
-        setTimeout(()=>autoZoomToBothPoints(true), 300);
+      if (pickupMarker && dropoffMarker) {
+        setTimeout(() => autoZoomToBothPoints(true), 300);
       }
     }
 
-    function showDistance(){
+    function showDistance() {
       if (!state.pickup || !state.dropoff) return;
       const d = calculateDistance(
         state.pickup.lat, state.pickup.lng,
@@ -1059,195 +1362,48 @@
       document.getElementById('distanceBadge').classList.add('active');
     }
 
-    function calculateDistance(lat1,lng1,lat2,lng2){
+    function calculateDistance(lat1, lng1, lat2, lng2) {
       const R = 6371;
-      const dLat = (lat2-lat1)*Math.PI/180;
-      const dLng = (lng2-lng1)*Math.PI/180;
-      const a = Math.sin(dLat/2)**2 +
-                Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
-                Math.sin(dLng/2)**2;
-      return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    /* === REVERSE === */
-    async function reverseGeocode(lat,lng){
-      try{
-        const url = `${NOMINATIM_BASE}/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=${encodeURIComponent(langHeader())}`;
-        const res = await fetch(url);
-        const data = await res.json();
-
-        // доп.проверка по страна-коду, если есть
-        if (data?.address?.country_code && data.address.country_code.toLowerCase() !== 'kz'){
-          showToast('outside_kz');
-          return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-        }
-
-        if (data?.display_name){
-          return data.display_name.split(',').slice(0,4).join(', ').trim();
-        }
-        return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-      }catch{
-        return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-      }
-    }
-
-    function viewboxForPicker(){
-      const c = pickerMap?.getCenter() || {lat:43.238949,lng:76.889709};
-      const d = 0.45;
-      return `${c.lng-d},${c.lat-d},${c.lng+d},${c.lat+d}`;
-    }
-
-    /* === SEARCH === */
-    async function searchAddress(query){
-      const s = document.getElementById('suggestions');
-      if (query.length < 2){
-        s.classList.remove('active');
-        return;
-      }
-      state.isSearching = true;
-      s.innerHTML = `<div class="suggestion-item"><div class="suggestion-title">Іздеу…</div></div>`;
-      s.classList.add('active');
-
-      try{
-        const vb = viewboxForPicker();
-        const common = `format=json&limit=15&addressdetails=1&countrycodes=kz&accept-language=${encodeURIComponent(langHeader())}&viewbox=${vb}&bounded=1`;
-        const base = NOMINATIM_BASE;
-
-        const url1 = `${base}/search?${common}&q=${encodeURIComponent(query)}&extratags=1&namedetails=1`;
-        const r1 = await fetch(url1);
-        let results = await r1.json();
-
-        if (!results || results.length === 0){
-          const url2 = `${base}/search?format=json&limit=15&addressdetails=1&q=${encodeURIComponent(query+', Kazakhstan')}&accept-language=${encodeURIComponent(langHeader())}`;
-          const r2 = await fetch(url2);
-          results = await r2.json();
-        }
-
-        const center = pickerMap?.getCenter() || {lat:43.238949,lng:76.889709};
-        const typeWeight = t => {
-          const order=['city','town','village','hamlet','suburb','neighbourhood','quarter','residential'];
-          const i=order.indexOf(t||'');
-          return i===-1?8:i;
-        };
-        const dist = (lat,lon)=>{
-          const dx=(lat-center.lat)*111;
-          const dy=(lon-center.lng)*85;
-          return Math.hypot(dx,dy);
-        };
-
-        const uniq = new Map();
-        for(const r of results){
-          const k = `${r.lat},${r.lon}`;
-          if(!uniq.has(k)) uniq.set(k,r);
-        }
-
-        const arr = [...uniq.values()]
-          .map(r=>{
-            const display = r.display_name || '';
-            const parts = display.split(',');
-            const short = parts.slice(0,4).join(', ').trim();
-            const sub   = parts.slice(4,7).join(', ').trim();
-            return {
-              full: display,
-              short,
-              sub,
-              lat: +r.lat,
-              lon: +r.lon,
-              type: r.type||r.class||'',
-              score: typeWeight(r.type||'')*10 + dist(+r.lat,+r.lon)
-            };
-          })
-          .sort((a,b)=>a.score-b.score)
-          .slice(0,15);
-
-        if (arr.length === 0){
-          s.innerHTML = `<div class="suggestion-item"><div class="suggestion-title">Ештеңе табылмады</div></div>`;
-          return;
-        }
-
-        s.innerHTML = arr.map(a=>`
-          <div class="suggestion-item"
-               data-lat="${a.lat}"
-               data-lng="${a.lon}"
-               data-label="${escapeHtml(a.short)}"
-               onclick="selectSuggestionFromElement(this)">
-            <div class="suggestion-title">${escapeHtml(a.short)}</div>
-            <div class="suggestion-sub">${escapeHtml(a.sub)}</div>
-          </div>
-        `).join('');
-        s.classList.add('active');
-      }catch(e){
-        s.innerHTML = `<div class="suggestion-item"><div class="suggestion-title">Қате</div></div>`;
-      }finally{
-        state.isSearching = false;
-      }
-    }
-
-    function selectSuggestionFromElement(el){
-      const lat = parseFloat(el.dataset.lat);
-      const lng = parseFloat(el.dataset.lng);
-
-      if (!isInKazakhstan(lat, lng)){
-        showToast('outside_kz');
-        return;
-      }
-
-      const label = el.dataset.label;
-      if (pickerMap){
-        pickerMap.setView([lat,lng], 17, { animate:true });
-        setTimeout(()=>placePinAtCoordinates({lat,lng}), 200);
-      }
-      const s = document.getElementById('suggestions');
-      s.classList.remove('active');
-      document.getElementById('searchBox').value = label;
-      state.isSearching = false;
-      updatePickerInstructions();
-    }
-
-    function hideSuggestionsDelayed(){
-      clearTimeout(suggestionsTimeout);
-      suggestionsTimeout = setTimeout(()=>{
-        document.getElementById('suggestions').classList.remove('active');
-        state.isSearching = false;
-        updatePickerInstructions();
-      }, 200);
-    }
-
-    function onSearchFocus(){
-      state.isSearching = true;
-      document.getElementById('pickerInstructions').classList.add('hidden');
-    }
-
-    async function openPicker(type){
+    // ============ PICKER FUNCTIONALITY ============
+    async function openPicker(type) {
       state.pickingFor = type;
       state.isSearching = false;
       document.getElementById('pickerModal').classList.add('active');
 
       let center;
-      if (type === 'pickup' && state.pickup){
+      if (type === 'pickup' && state.pickup) {
         center = [state.pickup.lat, state.pickup.lng];
-      } else if (type === 'dropoff' && state.dropoff){
+      } else if (type === 'dropoff' && state.dropoff) {
         center = [state.dropoff.lat, state.dropoff.lng];
-      } else if (currentUserLocation){
+      } else if (currentUserLocation) {
         center = currentUserLocation;
       } else {
-        center = [43.238949,76.889709];
+        center = [43.238949, 76.889709];
       }
 
-      await new Promise(r=>setTimeout(r,100));
+      await new Promise(r => setTimeout(r, 100));
       await buildPickerMap(center);
     }
 
-    function closePicker(){
+    function closePicker() {
       document.getElementById('pickerModal').classList.remove('active');
       document.getElementById('suggestions').classList.remove('active');
       document.getElementById('searchBox').value = '';
       document.getElementById('pickerAddress').textContent = '';
       document.getElementById('pickerAddress').classList.remove('active');
 
-      if (pickerMap){
+      if (pickerMap) {
         pickerMap.remove();
       }
+      
       pickerMap = null;
       placedPinMarker = null;
       state.manuallyPlacedPin = null;
@@ -1255,7 +1411,7 @@
       state.isSearching = false;
     }
 
-    async function buildPickerMap(center){
+    async function buildPickerMap(center) {
       const el = document.getElementById('pickerMap');
       if (!el) return;
       el.innerHTML = '';
@@ -1263,163 +1419,183 @@
       pickerMap = L.map('pickerMap', {
         center: center,
         zoom: 16,
-        zoomControl:false,
-        attributionControl:false
+        zoomControl: false,
+        attributionControl: false
       });
 
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         maxZoom: 19
       }).addTo(pickerMap);
 
-      pickerMap.on('click', (e)=>{
+      pickerMap.on('click', (e) => {
         placePinAtCoordinates(e.latlng);
       });
+      
       updatePickerInstructions();
     }
 
-    async function placePinAtCoordinates(latlng){
+    async function placePinAtCoordinates(latlng, preloadedAddress = null) {
       if (!pickerMap) return;
 
       const lat = latlng.lat;
       const lng = latlng.lng;
 
-      if (!isInKazakhstan(lat, lng)){
+      if (!isInKazakhstan(lat, lng)) {
         showToast('outside_kz');
         return;
       }
 
-      if (placedPinMarker){
+      if (placedPinMarker) {
         pickerMap.removeLayer(placedPinMarker);
       }
 
-      const pinEl = createDivMarker('', 'placed-pin', [28,28]);
+      const pinEl = createDivMarker('', 'placed-pin', [28, 28]);
       const icon = L.divIcon({
-        className:'',
+        className: '',
         html: pinEl,
-        iconSize:[28,28],
-        iconAnchor:[14,14]
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
       });
 
-      placedPinMarker = L.marker([lat,lng], { icon, draggable:true }).addTo(pickerMap);
+      placedPinMarker = L.marker([lat, lng], { icon, draggable: true }).addTo(pickerMap);
 
-      placedPinMarker.on('dragend', async (e)=>{
+      placedPinMarker.on('dragend', async (e) => {
         const ll = e.target.getLatLng();
 
-        if (!isInKazakhstan(ll.lat, ll.lng)){
+        if (!isInKazakhstan(ll.lat, ll.lng)) {
           showToast('outside_kz');
           const c = pickerMap.getCenter();
           placedPinMarker.setLatLng(c);
-          state.manuallyPlacedPin = { lat:c.lat, lng:c.lng };
+          state.manuallyPlacedPin = { lat: c.lat, lng: c.lng };
           await updatePickerAddress(c.lat, c.lng);
           return;
         }
 
-        state.manuallyPlacedPin = { lat:ll.lat, lng:ll.lng };
+        state.manuallyPlacedPin = { lat: ll.lat, lng: ll.lng };
         await updatePickerAddress(ll.lat, ll.lng);
       });
 
-      state.manuallyPlacedPin = { lat, lng };
+      state.manuallyPlacedPin = { lat, lng, address: preloadedAddress };
       document.getElementById('pickerInstructions').textContent = '✅ Нүкте таңдалды';
       document.getElementById('pickerInstructions').classList.remove('hidden');
-      await updatePickerAddress(lat,lng);
+      
+      if (preloadedAddress) {
+        // Use preloaded address from search
+        const el = document.getElementById('pickerAddress');
+        if (el) {
+          el.textContent = preloadedAddress;
+          el.classList.add('active');
+        }
+      } else {
+        await updatePickerAddress(lat, lng);
+      }
     }
 
-    async function updatePickerAddress(lat,lng){
-      try{
-        const addr = await reverseGeocode(lat,lng);
+    async function updatePickerAddress(lat, lng) {
+      try {
+        const addr = await reverseGeocode(lat, lng);
         const el = document.getElementById('pickerAddress');
-        if (el){
+        if (el) {
           el.textContent = addr;
           el.classList.add('active');
         }
-      }catch(e){
+        
+        // Update state with address
+        if (state.manuallyPlacedPin) {
+          state.manuallyPlacedPin.address = addr;
+        }
+      } catch (e) {
         console.error('updatePickerAddress error', e);
       }
     }
 
-    function updatePickerInstructions(){
+    function updatePickerInstructions() {
       const inst = document.getElementById('pickerInstructions');
-      if (inst && !state.isSearching){
+      if (inst && !state.isSearching) {
         inst.textContent = '📍 Картаны басыңыз';
         inst.classList.remove('hidden');
       }
     }
 
-    async function confirmPicker(){
+    async function confirmPicker() {
       if (!state.pickingFor) return;
 
-      if (!state.manuallyPlacedPin){
-        if (pickerMap){
+      if (!state.manuallyPlacedPin) {
+        if (pickerMap) {
           const c = pickerMap.getCenter();
-          state.manuallyPlacedPin = { lat:c.lat, lng:c.lng };
-        } else if (currentUserLocation){
-          state.manuallyPlacedPin = { lat:currentUserLocation[0], lng:currentUserLocation[1] };
+          state.manuallyPlacedPin = { lat: c.lat, lng: c.lng };
+        } else if (currentUserLocation) {
+          state.manuallyPlacedPin = { lat: currentUserLocation[0], lng: currentUserLocation[1] };
         } else {
           showToast('outside_kz');
           return;
         }
       }
 
-      try{
+      try {
         const { lat, lng } = state.manuallyPlacedPin;
 
-        if (!isInKazakhstan(lat, lng)){
+        if (!isInKazakhstan(lat, lng)) {
           showToast('outside_kz');
           return;
         }
 
-        const addr = await reverseGeocode(lat,lng);
+        // Use cached address if available, otherwise fetch
+        const addr = state.manuallyPlacedPin.address || await reverseGeocode(lat, lng);
 
-        if (state.pickingFor === 'pickup'){
-          state.pickup = { lat, lng, address:addr };
+        if (state.pickingFor === 'pickup') {
+          state.pickup = { lat, lng, address: addr };
           document.getElementById('pickupAddr').textContent = addr;
           document.querySelectorAll('.address-card')[0].classList.add('filled');
           await addMarker('pickup', lat, lng);
         } else {
-          state.dropoff = { lat, lng, address:addr };
+          state.dropoff = { lat, lng, address: addr };
           document.getElementById('dropoffAddr').textContent = addr;
           document.querySelectorAll('.address-card')[1].classList.add('filled');
           await addMarker('dropoff', lat, lng);
         }
+        
         closePicker();
         validateStep1();
-      }catch(e){
+      } catch (e) {
         console.error('Confirm picker failed:', e);
       }
     }
 
-    function goToStep(step){
-      document.querySelectorAll('.form-step').forEach(s=>s.classList.remove('active'));
-      document.querySelectorAll('.step-bar').forEach(s=>s.classList.remove('active'));
+    // ============ FORM STEPS ============
+    function goToStep(step) {
+      document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.step-bar').forEach(s => s.classList.remove('active'));
       document.getElementById(`step${step}`).classList.add('active');
 
-      for (let i = 1; i <= step; i++){
+      for (let i = 1; i <= step; i++) {
         document.getElementById(`stepBar${i}`).classList.add('active');
       }
 
       state.currentStep = step;
-      if (step === 1)      validateStep1();
+      
+      if (step === 1) validateStep1();
       else if (step === 2) validateStep2();
-      else                 validateStep3();
+      else validateStep3();
 
       if (state.pickup && state.dropoff) queueFitAB();
     }
 
-    function validateStep1(){
+    function validateStep1() {
       const valid = state.pickup && state.dropoff;
       document.getElementById('nextBtn1').disabled = !valid;
       if (valid) queueFitAB();
     }
 
-    function validateStep2(){
+    function validateStep2() {
       const price = Number(document.getElementById('price').value);
-      const date  = document.getElementById('date').value;
-      const time  = document.getElementById('time').value;
+      const date = document.getElementById('date').value;
+      const time = document.getElementById('time').value;
       const truckValid = !!state.selectedTruck;
 
       const priceValid = price >= 2000;
-      const dateValid  = !!date;
-      const timeValid  = !!time;
+      const dateValid = !!date;
+      const timeValid = !!time;
 
       document.getElementById('priceError').classList.toggle('show', !priceValid && price > 0);
       document.getElementById('dateError').classList.toggle('show', !dateValid);
@@ -1437,11 +1613,11 @@
       document.getElementById('nextBtn2').disabled = !valid;
     }
 
-    function validateStep3(){
-      const phone   = document.getElementById('phone').value;
+    function validateStep3() {
+      const phone = document.getElementById('phone').value;
       const comment = document.getElementById('comment').value;
 
-      const phoneValid   = phone.length >= 18;
+      const phoneValid = phone.length >= 18;
       const commentValid = comment.trim().length >= 5;
 
       document.getElementById('phoneError').classList.toggle('show', !phoneValid && phone.length > 0);
@@ -1453,69 +1629,71 @@
       document.getElementById('submitBtn').disabled = !(phoneValid && commentValid);
     }
 
-    function selectTruck(evt, type){
+    function selectTruck(evt, type) {
       evt.preventDefault();
-      document.querySelectorAll('.truck-card').forEach(c=>c.classList.remove('selected'));
+      document.querySelectorAll('.truck-card').forEach(c => c.classList.remove('selected'));
       document.querySelector(`[data-truck="${type}"]`).classList.add('selected');
       state.selectedTruck = type;
       validateStep2();
     }
 
-    function formatPhone(input){
-      let val = input.value.replace(/\D/g,'');
-      if (!val){
+    function formatPhone(input) {
+      let val = input.value.replace(/\D/g, '');
+      if (!val) {
         input.value = '';
         return;
       }
       if (val[0] !== '7') val = '7' + val;
+      
       let fmt = '+7';
-      if (val.length > 1)  fmt += ` (${val.slice(1,4)}`;
+      if (val.length > 1) fmt += ` (${val.slice(1, 4)}`;
       if (val.length >= 4) fmt += ')';
-      if (val.length > 4)  fmt += ` ${val.slice(4,7)}`;
-      if (val.length > 7)  fmt += `-${val.slice(7,9)}`;
-      if (val.length > 9)  fmt += `-${val.slice(9,11)}`;
+      if (val.length > 4) fmt += ` ${val.slice(4, 7)}`;
+      if (val.length > 7) fmt += `-${val.slice(7, 9)}`;
+      if (val.length > 9) fmt += `-${val.slice(9, 11)}`;
+      
       input.value = fmt;
     }
 
-    /* Фото */
+    /* Photo handling */
     const cargoPhotoInput = document.getElementById('cargoPhoto');
     const photoThumb = document.getElementById('photoThumb');
     let currentPhotoFile = null;
 
-    function openSystemPicker(){
+    function openSystemPicker() {
       cargoPhotoInput.click();
     }
 
-    cargoPhotoInput.addEventListener('change', (e)=>{
+    cargoPhotoInput.addEventListener('change', (e) => {
       const file = e.target.files && e.target.files[0];
       handleChosenFile(file);
     });
 
-    function handleChosenFile(file){
+    function handleChosenFile(file) {
       currentPhotoFile = file || null;
 
-      if (!file){
+      if (!file) {
         photoThumb.innerHTML = '<span style="font-size:22px">🖼️</span>';
         document.getElementById('photoError').classList.remove('show');
         validateStep2();
         return;
       }
 
-      if (file.size > 20 * 1024 * 1024){
+      if (file.size > 20 * 1024 * 1024) {
         document.getElementById('photoError').classList.add('show');
       } else {
         document.getElementById('photoError').classList.remove('show');
       }
 
       const reader = new FileReader();
-      reader.onload = ()=>{
+      reader.onload = () => {
         photoThumb.innerHTML = `<img alt="preview" src="${reader.result}">`;
       };
       reader.readAsDataURL(file);
       validateStep2();
     }
 
-    function clearCargoPhoto(){
+    function clearCargoPhoto() {
       cargoPhotoInput.value = '';
       currentPhotoFile = null;
       photoThumb.innerHTML = '<span style="font-size:22px">🖼️</span>';
@@ -1523,11 +1701,12 @@
       validateStep2();
     }
 
-    async function submitOrder(){
+    async function submitOrder() {
       const btn = document.getElementById('submitBtn');
       btn.disabled = true;
       btn.textContent = '...';
-      try{
+      
+      try {
         const formData = new FormData();
         formData.append('from_address', state.pickup.address);
         formData.append('from_lat', state.pickup.lat);
@@ -1543,7 +1722,7 @@
         formData.append('comment', document.getElementById('comment').value);
 
         const tg = window.Telegram?.WebApp;
-        if (tg?.initDataUnsafe?.user){
+        if (tg?.initDataUnsafe?.user) {
           formData.append('telegram_id', tg.initDataUnsafe.user.id);
           formData.append('telegram_username', tg.initDataUnsafe.user.username || '');
           formData.append('telegram_first_name', tg.initDataUnsafe.user.first_name || '');
@@ -1558,17 +1737,18 @@
           )
         );
 
-        if (currentPhotoFile){
+        if (currentPhotoFile) {
           formData.append('cargo_photo', currentPhotoFile);
         }
 
         const res = await fetch('/api/delivery-request', {
-          method:'POST',
+          method: 'POST',
           body: formData
         });
-        const json = await res.json().catch(()=>({success:false}));
+        
+        const json = await res.json().catch(() => ({ success: false }));
 
-        if (json?.success){
+        if (json?.success) {
           state.orderData = {
             pickup: state.pickup,
             dropoff: state.dropoff,
@@ -1583,42 +1763,42 @@
         } else {
           throw new Error(json?.message || 'Қате орын алды');
         }
-      }catch(e){
+      } catch (e) {
         alert(`Қате: ${e.message}`);
-      }finally{
+      } finally {
         btn.disabled = false;
         btn.textContent = 'Жіберу';
       }
     }
 
-    function showSuccess(){
+    function showSuccess() {
       document.getElementById('successScreen').classList.add('active');
-      setTimeout(()=>goToDriverList(), 3000);
+      setTimeout(() => goToDriverList(), 3000);
     }
 
-    function goToDriverList(){
+    function goToDriverList() {
       const data = encodeURIComponent(JSON.stringify(state.orderData));
       window.location.href = `/driver-list?order=${data}&lang=${currentLang}`;
     }
 
-    function stopTracking(){
+    function stopTracking() {
       if (geolocationWatchId) navigator.geolocation.clearWatch(geolocationWatchId);
       if (mapUpdateInterval) clearInterval(mapUpdateInterval);
     }
 
-    /* ==== fit A/B ==== */
+    /* Fit A/B markers in view */
     let fitABScheduled = false;
 
-    function queueFitAB(){
+    function queueFitAB() {
       if (fitABScheduled) return;
       fitABScheduled = true;
-      requestAnimationFrame(()=>{
+      requestAnimationFrame(() => {
         autoZoomToBothPoints(true);
         fitABScheduled = false;
       });
     }
 
-    function getSafeInsets(){
+    function getSafeInsets() {
       const safeTop = parseFloat(
         getComputedStyle(document.documentElement)
           .getPropertyValue('--tg-safe-area-inset-top')
@@ -1630,12 +1810,12 @@
       return { safeTop, safeBottom };
     }
 
-    function getBottomSheetHeight(){
+    function getBottomSheetHeight() {
       const sheet = document.getElementById('bottomSheet');
       return sheet ? sheet.offsetHeight : 0;
     }
 
-    function autoZoomToBothPoints(withUIOffset = false){
+    function autoZoomToBothPoints(withUIOffset = false) {
       if (!map || !state.pickup || !state.dropoff) return;
 
       const bounds = L.latLngBounds(
@@ -1643,8 +1823,8 @@
         [state.dropoff.lat, state.dropoff.lng]
       );
 
-      if (!withUIOffset){
-        map.fitBounds(bounds, { padding:[40,40] });
+      if (!withUIOffset) {
+        map.fitBounds(bounds, { padding: [40, 40] });
         showDistance();
         return;
       }
@@ -1658,27 +1838,28 @@
       map.fitBounds(bounds, {
         paddingTopLeft: [40, topPad],
         paddingBottomRight: [40, bottomPad],
-        animate:true
+        animate: true
       });
 
       setTimeout(showDistance, 350);
     }
 
-    function escapeHtml(s){
-      return String(s).replace(/[&<>"']/g, m=>({
-        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
       }[m]));
     }
 
-    document.addEventListener('DOMContentLoaded', ()=>{
+    // ============ INITIALIZATION ============
+    document.addEventListener('DOMContentLoaded', () => {
       updateViewportHeight();
       initMap();
 
       const now = new Date();
       document.getElementById('date').valueAsDate = now;
-      document.getElementById('time').value = now.toTimeString().slice(0,5);
+      document.getElementById('time').value = now.toTimeString().slice(0, 5);
 
-      if (window.Telegram?.WebApp){
+      if (window.Telegram?.WebApp) {
         const tg = Telegram.WebApp;
         tg.ready();
         tg.expand();
@@ -1691,11 +1872,11 @@
     window.addEventListener('resize', updateViewportHeight);
     window.addEventListener('beforeunload', stopTracking);
 
-    // экспорт в window
+    // Global exports
     window.openPicker = openPicker;
     window.closePicker = closePicker;
     window.confirmPicker = confirmPicker;
-    window.searchAddress = searchAddress;
+    window.debouncedSearch = debouncedSearch;
     window.selectSuggestionFromElement = selectSuggestionFromElement;
     window.goToStep = goToStep;
     window.selectTruck = selectTruck;

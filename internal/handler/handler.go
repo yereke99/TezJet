@@ -1357,6 +1357,13 @@ func (h *Handler) welcomeHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, path)
 }
 
+func (h *Handler) landingHandler(w http.ResponseWriter, r *http.Request) {
+	path := "./static/landing.html"
+	w.Header().Set("Content-Type", "text/html")
+	h.logger.Info("Serving welcome page", zap.String("user_agent", r.Header.Get("User-Agent")))
+	http.ServeFile(w, r, path)
+}
+
 // adminHandler serves the admin panel page (only for admin telegram_id)
 func (h *Handler) adminHandler(w http.ResponseWriter, r *http.Request) {
 	path := "./static/admin-panel.html"
@@ -1410,7 +1417,8 @@ func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 	r.PathPrefix("/delivery-photo/").Handler(http.StripPrefix("/delivery-photo/", http.FileServer(http.Dir("./delivery-photo/"))))
 
 	// Main pages
-	r.HandleFunc("/", h.welcomeHandler).Methods("GET") // NEW - Welcome as default
+	r.HandleFunc("/", h.landingHandler).Methods("GET") // NEW - Welcome as default
+	r.HandleFunc("/welcome", h.welcomeHandler)
 	r.HandleFunc("/delivery", h.deliveryHandler).Methods("GET")
 	r.HandleFunc("/register", h.registerDriverHandler).Methods("GET")
 	r.HandleFunc("/driver-update", h.driverUpdateHandler).Methods("GET")
@@ -1427,7 +1435,7 @@ func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 	r.HandleFunc("/api/driver/trips", h.handleDriverTrips).Methods("GET", "POST", "OPTIONS")
 
 	// API routes
-	r.HandleFunc("/api/delivery-request", h.handleDelivery(ctx, b)).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/delivery-request", h.HandleDelivery(ctx, b)).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/driver/register", h.handleDriverRegister(b)).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/driver/update", h.handleDriverUpdate(b)).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/check/who", h.handleCheckWho).Methods("GET", "POST", "OPTIONS")
@@ -1446,7 +1454,7 @@ func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 	// Driver matching routes
 	r.HandleFunc("/driver-list", h.handleDriverList).Methods("GET")
 	r.HandleFunc("/api/user/history", h.handleUserHistory).Methods("GET", "POST", "OPTIONS")
-	r.HandleFunc("/api/driver-list", h.handleDriverListAPI).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/driver-list", h.HandleDriverListAPI).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/driver-request", h.handleDriverRequest).Methods("POST", "OPTIONS")
 	// Add this line after the user history route
 	r.HandleFunc("/api/user/cancel-order", h.handleUserCancelOrder).Methods("POST", "OPTIONS")
