@@ -132,6 +132,16 @@ func (h *Handler) handleDriverRegister(b *bot.Bot) http.HandlerFunc {
 			h.sendErrorResponse(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+		taken, err := h.isTruckNumberTaken(driver.TruckNumber)
+		if err != nil {
+			h.logger.Error("Failed to check truck number uniqueness", zap.Error(err))
+			h.sendErrorResponse(w, "Ошибка проверки номера машины", http.StatusInternalServerError)
+			return
+		}
+		if taken {
+			h.sendErrorResponse(w, "Этот номер машины уже зарегистрирован", http.StatusBadRequest)
+			return
+		}
 		profilePhotoPath, err := h.saveFile(r, "profilePhoto", "./ava", driver.TelegramID, "profile")
 		if err != nil {
 			h.logger.Error("Failed to save profile photo", zap.Error(err))
@@ -173,7 +183,7 @@ func (h *Handler) handleDriverRegister(b *bot.Bot) http.HandlerFunc {
 		}
 
 		driver.ID = driverID
-		driver.Status = "approved"
+		driver.Status = "pending"
 		driver.CreatedAt = time.Now()
 
 		h.logger.Info("Driver registration saved successfully", zap.String("driver_id", driverID))
@@ -184,6 +194,56 @@ func (h *Handler) handleDriverRegister(b *bot.Bot) http.HandlerFunc {
 		h.sendSuccessResponse(w, "Регистрация успешно отправлена", map[string]interface{}{
 			"driver_id": driverID,
 			"status":    "pending",
+		})
+	}
+}
+
+func (h *Handler) handleCheckTruckNumber() http.HandlerFunc {
+	type req struct {
+		TruckNumber string `json:"truck_number"`
+	}
+	type resp struct {
+		Success   bool   `json:"success"`
+		Available bool   `json:"available"`
+		Message   string `json:"message,omitempty"`
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		if r.Method != http.MethodPatch {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			_ = json.NewEncoder(w).Encode(resp{Success: false, Message: "Method not allowed"})
+			return
+		}
+
+		var body req
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(resp{Success: false, Message: "Invalid JSON"})
+			return
+		}
+
+		tn := strings.TrimSpace(body.TruckNumber)
+		tn = strings.ToUpper(strings.ReplaceAll(tn, " ", ""))
+
+		if len(tn) < 5 || len(tn) > 15 {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(resp{Success: true, Available: false, Message: "Неверный формат номера"})
+			return
+		}
+
+		taken, err := h.isTruckNumberTaken(tn)
+		if err != nil {
+			h.logger.Error("truck number check failed", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(resp{Success: false, Message: "Server error"})
+			return
+		}
+
+		_ = json.NewEncoder(w).Encode(resp{
+			Success:   true,
+			Available: !taken,
 		})
 	}
 }
@@ -659,6 +719,19 @@ func (h *Handler) getDriverTrips(telegramID int64) ([]DriverTrip, error) {
 	return trips, nil
 }
 
+func (h *Handler) isTruckNumberTaken(truckNumber string) (bool, error) {
+	q := `SELECT 1 FROM drivers WHERE lower(truck_number) = lower(?) AND truck_number <> '' LIMIT 1`
+	var x int
+	err := h.db.QueryRow(q, truckNumber).Scan(&x)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // parseDriverRegistration parses the driver registration form data
 func (h *Handler) parseDriverRegistration(r *http.Request) (*DriverRegistration, error) {
 	driver := &DriverRegistration{}
@@ -668,12 +741,20 @@ func (h *Handler) parseDriverRegistration(r *http.Request) (*DriverRegistration,
 		return strings.TrimSpace(r.FormValue(key))
 	}
 
+	tn := strings.TrimSpace(r.FormValue("truckNumber"))
+	tn = strings.ToUpper(strings.ReplaceAll(tn, " ", ""))
+
 	// Required fields
 	driver.FirstName = getValue("firstName")
 	driver.LastName = getValue("lastName")
 	driver.Birthday = getValue("birthday")
 	driver.ContactNumber = getValue("contactNumber")
 	driver.StartCity = getValue("startCity")
+	driver.TruckNumber = tn
+
+	if len(driver.TruckNumber) < 5 || len(driver.TruckNumber) > 15 {
+		return nil, fmt.Errorf("Неверный номер машины")
+	}
 
 	// Validate required fields
 	if driver.FirstName == "" {
@@ -878,19 +959,20 @@ func (h *Handler) saveDriverRegistration(driver *DriverRegistration) (string, er
 	driverID := uuid.New().String()
 
 	query := `
-		INSERT INTO drivers (
-			id, telegram_id, first_name, last_name, birthday, contact_number,
-			start_city, latitude, longitude, profile_photo, license_front,
-			license_back, truck_type, status, created_at
-		) VALUES (
-			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP
-		)`
+	INSERT INTO drivers (
+		id, telegram_id, first_name, last_name, birthday, contact_number,
+		start_city, latitude, longitude, profile_photo, license_front,
+		license_back, truck_number, truck_type, status, created_at
+	) VALUES (
+		?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP
+	)`
 
 	_, err := h.db.Exec(
 		query,
 		driverID, driver.TelegramID, driver.FirstName, driver.LastName, driver.Birthday,
 		driver.ContactNumber, driver.StartCity, driver.Latitude, driver.Longitude,
-		driver.ProfilePhoto, driver.LicenseFront, driver.LicenseBack, driver.TruckType,
+		driver.ProfilePhoto, driver.LicenseFront, driver.LicenseBack,
+		driver.TruckNumber, driver.TruckType,
 	)
 
 	if err != nil {
@@ -965,25 +1047,48 @@ func (h *Handler) sendDriverConfirmationMessage(b *bot.Bot, driver *DriverRegist
 	}
 }
 
-// CheckDriverExist checks if driver exists in database
 func (h *Handler) CheckDriverExist(telegramID int64) (*DriverRegistration, error) {
 	query := `
-        SELECT id, telegram_id, first_name, last_name, birthday, contact_number,
-               start_city, latitude, longitude, 
-               truck_type,  -- ADD THIS
-               profile_photo, license_front, license_back, 
-               status, created_at
-        FROM drivers 
+        SELECT 
+			id,
+			telegram_id,
+			first_name,
+			last_name,
+			birthday,
+			contact_number,
+			start_city,
+			latitude,
+			longitude,
+			profile_photo,
+			license_front,
+			license_back,
+			truck_type,
+			truck_number,
+			is_verified,
+			status,
+			created_at
+        FROM drivers
         WHERE telegram_id = ?`
 
-	var driver DriverRegistration
+	var d DriverRegistration
 	err := h.db.QueryRow(query, telegramID).Scan(
-		&driver.ID, &driver.TelegramID, &driver.FirstName, &driver.LastName,
-		&driver.Birthday, &driver.ContactNumber, &driver.StartCity,
-		&driver.Latitude, &driver.Longitude,
-		&driver.TruckType, // ADD THIS
-		&driver.ProfilePhoto, &driver.LicenseFront, &driver.LicenseBack,
-		&driver.Status, &driver.CreatedAt,
+		&d.ID,
+		&d.TelegramID,
+		&d.FirstName,
+		&d.LastName,
+		&d.Birthday,
+		&d.ContactNumber,
+		&d.StartCity,
+		&d.Latitude,
+		&d.Longitude,
+		&d.ProfilePhoto,
+		&d.LicenseFront,
+		&d.LicenseBack,
+		&d.TruckType,
+		&d.TruckNumber,
+		&d.IsVerified,
+		&d.Status,
+		&d.CreatedAt,
 	)
 
 	if err != nil {
@@ -992,8 +1097,7 @@ func (h *Handler) CheckDriverExist(telegramID int64) (*DriverRegistration, error
 		}
 		return nil, err
 	}
-
-	return &driver, nil
+	return &d, nil
 }
 
 // handleCheckWho handles the /api/check/who endpoint
@@ -1058,6 +1162,7 @@ func (h *Handler) handleCheckWho(w http.ResponseWriter, r *http.Request) {
 			"latitude":       driver.Latitude,
 			"longitude":      driver.Longitude,
 			"truck_type":     driver.TruckType,
+			"truck_number":   driver.TruckNumber,
 			"profile_photo":  driver.ProfilePhoto,
 			"license_front":  driver.LicenseFront,
 			"license_back":   driver.LicenseBack,
@@ -1176,88 +1281,99 @@ func (h *Handler) handleDriverUpdate(b *bot.Bot) http.HandlerFunc {
 	}
 }
 
-// parseDriverUpdateData parses update form data
-func (h *Handler) parseDriverUpdateData(r *http.Request, existing *DriverRegistration) *DriverRegistration {
-	getValue := func(key string) string {
-		value := strings.TrimSpace(r.FormValue(key))
-		if value == "" {
-			switch key {
-			case "firstName":
-				return existing.FirstName
-			case "lastName":
-				return existing.LastName
-			case "birthday":
-				return existing.Birthday
-			case "contactNumber":
-				return existing.ContactNumber
-			case "startCity":
-				return existing.StartCity
-			case "truckType": // ADD THIS
-				return existing.TruckType
-			}
-		}
-		return value
+func parseFloatForm(r *http.Request, key string, fallback float64) float64 {
+	raw := strings.TrimSpace(r.FormValue(key))
+	if raw == "" {
+		return fallback
 	}
 
-	updated := &DriverRegistration{
+	// если вдруг пришло "43,2381" -> "43.2381"
+	raw = strings.ReplaceAll(raw, ",", ".")
+
+	v, err := strconv.ParseFloat(raw, 64)
+	if err != nil {
+		return fallback
+	}
+	return v
+}
+
+// parseDriverUpdateData parses update form data
+// parseDriverUpdateData parses update data from request and merges with existing driver
+func (h *Handler) parseDriverUpdateData(r *http.Request, existing *DriverRegistration) *DriverRegistration {
+	first := strings.TrimSpace(r.FormValue("firstName"))
+	last := strings.TrimSpace(r.FormValue("lastName"))
+	phone := strings.TrimSpace(r.FormValue("contactNumber"))
+	city := strings.TrimSpace(r.FormValue("startCity"))
+	truckType := strings.TrimSpace(r.FormValue("truckType"))
+
+	truckNumber := strings.TrimSpace(r.FormValue("truckNumber"))
+	truckNumber = strings.ToUpper(strings.ReplaceAll(truckNumber, " ", ""))
+
+	lat := parseFloatForm(r, "latitude", existing.Latitude)
+	lon := parseFloatForm(r, "longitude", existing.Longitude)
+
+	d := &DriverRegistration{
 		ID:            existing.ID,
 		TelegramID:    existing.TelegramID,
-		FirstName:     getValue("firstName"),
-		LastName:      getValue("lastName"),
-		Birthday:      getValue("birthday"),
-		ContactNumber: getValue("contactNumber"),
-		StartCity:     getValue("startCity"),
-		TruckType:     getValue("truckType"), // ADD THIS LINE
+		FirstName:     first,
+		LastName:      last,
+		Birthday:      existing.Birthday, // не меняем
+		ContactNumber: phone,
+		StartCity:     city,
+		Latitude:      lat,
+		Longitude:     lon,
 		ProfilePhoto:  existing.ProfilePhoto,
 		LicenseFront:  existing.LicenseFront,
 		LicenseBack:   existing.LicenseBack,
+		TruckType:     truckType,
+		TruckNumber:   truckNumber,
+		IsVerified:    existing.IsVerified,
 		Status:        existing.Status,
 		CreatedAt:     existing.CreatedAt,
 	}
 
-	// Parse coordinates
-	if latStr := getValue("latitude"); latStr != "" {
-		if lat, err := strconv.ParseFloat(latStr, 64); err == nil {
-			updated.Latitude = lat
-		} else {
-			updated.Latitude = existing.Latitude
-		}
-	} else {
-		updated.Latitude = existing.Latitude
+	// если пусто — оставляем старое значение
+	if d.FirstName == "" {
+		d.FirstName = existing.FirstName
+	}
+	if d.LastName == "" {
+		d.LastName = existing.LastName
+	}
+	if d.ContactNumber == "" {
+		d.ContactNumber = existing.ContactNumber
+	}
+	if d.StartCity == "" {
+		d.StartCity = existing.StartCity
+	}
+	if d.TruckType == "" {
+		d.TruckType = existing.TruckType
+	}
+	if d.TruckNumber == "" {
+		d.TruckNumber = existing.TruckNumber
 	}
 
-	if lonStr := getValue("longitude"); lonStr != "" {
-		if lon, err := strconv.ParseFloat(lonStr, 64); err == nil {
-			updated.Longitude = lon
-		} else {
-			updated.Longitude = existing.Longitude
-		}
-	} else {
-		updated.Longitude = existing.Longitude
-	}
-
-	return updated
+	// lat/lon уже с fallback — сравнения со строками НЕ нужны ✅
+	return d
 }
 
 // updateDriverInDatabase updates driver data in database
 func (h *Handler) updateDriverInDatabase(driver *DriverRegistration) error {
 	query := `
-        UPDATE drivers SET
-            first_name = ?, last_name = ?, birthday = ?, contact_number = ?,
-            start_city = ?, latitude = ?, longitude = ?, 
-            truck_type = ?,  -- ADD THIS
-            profile_photo = ?, license_front = ?, license_back = ?
-        WHERE id = ?`
+		UPDATE drivers SET
+			first_name = ?, last_name = ?, contact_number = ?,
+			start_city = ?, latitude = ?, longitude = ?,
+			truck_type = ?, truck_number = ?,
+			profile_photo = ?, license_front = ?, license_back = ?
+		WHERE id = ?`
 
 	_, err := h.db.Exec(
 		query,
-		driver.FirstName, driver.LastName, driver.Birthday, driver.ContactNumber,
+		driver.FirstName, driver.LastName, driver.ContactNumber,
 		driver.StartCity, driver.Latitude, driver.Longitude,
-		driver.TruckType, // ADD THIS
+		driver.TruckType, driver.TruckNumber,
 		driver.ProfilePhoto, driver.LicenseFront, driver.LicenseBack,
 		driver.ID,
 	)
-
 	return err
 }
 
@@ -1438,6 +1554,7 @@ func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 	r.HandleFunc("/api/delivery-request", h.HandleDelivery(ctx, b)).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/driver/register", h.handleDriverRegister(b)).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/driver/update", h.handleDriverUpdate(b)).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/driver/truck-number/check", h.handleCheckTruckNumber())
 	r.HandleFunc("/api/check/who", h.handleCheckWho).Methods("GET", "POST", "OPTIONS")
 
 	// ADMIN API

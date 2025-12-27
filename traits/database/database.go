@@ -123,6 +123,7 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 		license_front TEXT NOT NULL,
 		license_back TEXT NOT NULL,
 		truck_type TEXT DEFAULT '',
+		truck_number TEXT DEFAULT '',
 		is_verified BOOLEAN DEFAULT FALSE,
 		status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'suspended')),
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -173,6 +174,7 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 		"ALTER TABLE delivery_requests ADD COLUMN matched_driver_id TEXT NULL;",
 		"ALTER TABLE delivery_requests ADD COLUMN item_photo_path TEXT DEFAULT '';",
 		"ALTER TABLE delivery_requests ADD COLUMN completed_at DATETIME NULL;",
+		"ALTER TABLE drivers ADD COLUMN truck_number TEXT DEFAULT '';",
 	}
 	for _, q := range addCols {
 		if _, err := db.Exec(q); err != nil {
@@ -201,6 +203,7 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 		"CREATE INDEX IF NOT EXISTS idx_drivers_created_at ON drivers(created_at);",
 		"CREATE INDEX IF NOT EXISTS idx_drivers_location ON drivers(latitude, longitude);",
 		"CREATE INDEX IF NOT EXISTS idx_drivers_city ON drivers(start_city);",
+		"CREATE UNIQUE INDEX IF NOT EXISTS ux_drivers_truck_number ON drivers(truck_number) WHERE truck_number <> '';",
 
 		// driver_trips
 		"CREATE INDEX IF NOT EXISTS idx_dt_driver_id ON driver_trips(driver_id);",

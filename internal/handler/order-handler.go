@@ -128,6 +128,7 @@ type DriverRegistration struct {
 	LicenseFront  string    `json:"license_front"`
 	LicenseBack   string    `json:"license_back"`
 	TruckType     string    `json:"truck_type"`
+	TruckNumber   string    `json:"truck_number"`
 	IsVerified    bool      `json:"is_verified"`
 	Status        string    `json:"status"`
 	CreatedAt     time.Time `json:"created_at"`

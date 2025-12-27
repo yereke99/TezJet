@@ -24,6 +24,11 @@
       --shadow:0 1px 3px rgba(0,0,0,.08);
       --shadow-lg:0 10px 25px rgba(0,0,0,.12);
 
+      /* Validation colors */
+      --success:#10b981;
+      --error:#ef4444;
+      --warning:#f59e0b;
+
       --tg-viewport-stable-height:100vh;
       --tg-safe-area-inset-top:0px;
       --tg-safe-area-inset-bottom:0px;
@@ -47,6 +52,10 @@
       --input-bg:#050608;
       --shadow:0 1px 3px rgba(0,0,0,.4);
       --shadow-lg:0 10px 25px rgba(0,0,0,.7);
+
+      --success:#34d399;
+      --error:#f87171;
+      --warning:#fbbf24;
     }
 
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -203,6 +212,50 @@
       background:var(--card);
     }
     .field-input:disabled{opacity:.7;cursor:not-allowed}
+
+    /* Validation states for truck number input */
+    .field-input.valid{
+      border-color:var(--success);
+    }
+    .field-input.invalid{
+      border-color:var(--error);
+    }
+    .field-input.checking{
+      border-color:var(--warning);
+    }
+
+    .truck-number-wrapper{
+      position:relative;
+    }
+    .validation-icon{
+      position:absolute;
+      right:14px;
+      top:50%;
+      transform:translateY(-50%);
+      font-size:18px;
+      display:none;
+    }
+    .validation-icon.show{
+      display:block;
+    }
+    .validation-message{
+      font-size:12px;
+      font-weight:600;
+      margin-top:6px;
+      display:none;
+    }
+    .validation-message.show{
+      display:block;
+    }
+    .validation-message.success{
+      color:var(--success);
+    }
+    .validation-message.error{
+      color:var(--error);
+    }
+    .validation-message.checking{
+      color:var(--warning);
+    }
 
     .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 
@@ -553,18 +606,38 @@
       </div>
 
       <div class="section">
-        <div class="section-title">🚚 Көлік түрі</div>
-        <div class="truck-grid">
-          <div class="truck-card" data-type="small"><div class="truck-icon">🚐</div><div class="truck-label">Кіші</div></div>
-          <div class="truck-card" data-type="medium"><div class="truck-icon">🚚</div><div class="truck-label">Орта</div></div>
-          <div class="truck-card" data-type="large"><div class="truck-icon">🚛</div><div class="truck-label">Үлкен</div></div>
-          <div class="truck-card" data-type="refrigerator"><div class="truck-icon">❄️</div><div class="truck-label">Реф-тор</div></div>
-          <div class="truck-card" data-type="tow"><div class="truck-icon">🚗</div><div class="truck-label">Эвакуатор</div></div>
+        <div class="section-title">🚚 Көлік ақпараты</div>
+        
+        <!-- Truck Number Field with Validation -->
+        <div class="field">
+          <label class="field-label">Көлік нөмірі</label>
+          <div class="truck-number-wrapper">
+            <input class="field-input" id="truckNumber" name="truckNumber" type="text" 
+                   placeholder="123ABC01" maxlength="15" required 
+                   style="padding-right:42px" />
+            <span class="validation-icon" id="validationIcon"></span>
+          </div>
+          <div class="validation-message" id="validationMessage"></div>
+          <small style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px">
+            Ағымдағы: <span id="currentTruckNumber">---</span>
+          </small>
         </div>
-        <input type="hidden" id="truckType" name="truckType" required />
-        <small style="font-size:11px;color:var(--text-muted);display:block;margin-top:8px">
-          Ағымдағы: <span id="currentTruckType">---</span>
-        </small>
+
+        <!-- Truck Type -->
+        <div class="field">
+          <label class="field-label">Көлік түрі</label>
+          <div class="truck-grid">
+            <div class="truck-card" data-type="small"><div class="truck-icon">🚐</div><div class="truck-label">Кіші</div></div>
+            <div class="truck-card" data-type="medium"><div class="truck-icon">🚚</div><div class="truck-label">Орта</div></div>
+            <div class="truck-card" data-type="large"><div class="truck-icon">🚛</div><div class="truck-label">Үлкен</div></div>
+            <div class="truck-card" data-type="refrigerator"><div class="truck-icon">❄️</div><div class="truck-label">Реф-тор</div></div>
+            <div class="truck-card" data-type="tow"><div class="truck-icon">🚗</div><div class="truck-label">Эвакуатор</div></div>
+          </div>
+          <input type="hidden" id="truckType" name="truckType" required />
+          <small style="font-size:11px;color:var(--text-muted);display:block;margin-top:8px">
+            Ағымдағы: <span id="currentTruckType">---</span>
+          </small>
+        </div>
       </div>
 
       <div class="section">
@@ -646,17 +719,26 @@
       loading:'Жүктелуде...', success:'Сәтті', error:'Қате',
       updateSuccess:'Профиль сәтті жаңартылды', updateError:'Жаңартуда қате',
       locationSuccess:'Орналасқан жер анықталды', locationError:'Орынды анықтауда қате',
-      fileTooBig:'Файл тым үлкен (макс. 5МБ)', fillRequired:'Барлық өрістерді толтырыңыз'
+      fileTooBig:'Файл тым үлкен (макс. 5МБ)', fillRequired:'Барлық өрістерді толтырыңыз',
+      truckNumberAvailable:'Нөмір қолжетімді ✅',
+      truckNumberTaken:'Нөмір тіркелген ❌',
+      truckNumberChecking:'Тексерілуде...',
+      truckNumberInvalid:'Қате формат (5-15 символ)',
+      truckNumberRequired:'Көлік нөмірі міндетті'
     };
 
     let currentLocation=null, originalData={};
     let userId=null;
+    let originalTruckNumber='';
+    let isTruckNumberValid=false;
+    let truckNumberCheckTimeout=null;
 
     document.addEventListener('DOMContentLoaded', () => {
       initTelegram();
       setupTruckTypes();
       setupFileUploads();
       setupInputs();
+      setupTruckNumberValidation();
       setTimeout(loadDriverProfile, 50);
     });
 
@@ -724,7 +806,6 @@
       const headerH = header?.getBoundingClientRect().height || 40;
 
       if (prof) {
-        // профиль под заголовком
         prof.style.marginTop = headerH + 'px';
       }
 
@@ -733,14 +814,12 @@
       const safeTop = parseFloat(rootStyles.getPropertyValue('--tg-safe-area-inset-top')) || 0;
       const topOffset = parseFloat(rootStyles.getPropertyValue('--top-offset')) || 0;
 
-      // Контент начинается ниже header + profile
       const contentTop = safeTop + topOffset + headerH + profileH + 8;
       document.documentElement.style.setProperty('--content-top', contentTop + 'px');
 
       const bottomBarH = bottomBar?.getBoundingClientRect().height || 76;
       const bottomNavH = bottomNav?.getBoundingClientRect().height || 64;
 
-      // Учитываем и кнопку обновления, и нижнюю навигацию
       const contentBottom = bottomBarH + bottomNavH + 12;
       document.documentElement.style.setProperty('--content-bottom-pad', contentBottom + 'px');
     }
@@ -846,6 +925,131 @@
       }
     }
 
+    // ===== TRUCK NUMBER VALIDATION =====
+    function setupTruckNumberValidation(){
+      const input = document.getElementById('truckNumber');
+      if(!input) return;
+
+      input.addEventListener('input', (e)=>{
+        // Format: uppercase, remove spaces
+        let val = e.target.value.toUpperCase().replace(/\s/g, '');
+        e.target.value = val;
+
+        // Clear previous timeout
+        if(truckNumberCheckTimeout){
+          clearTimeout(truckNumberCheckTimeout);
+        }
+
+        // Reset validation state
+        resetValidationUI();
+
+        // Validate format
+        if(val.length === 0){
+          return;
+        }
+
+        if(val.length < 5 || val.length > 15){
+          setValidationState('invalid', translations.truckNumberInvalid);
+          isTruckNumberValid = false;
+          return;
+        }
+
+        // If same as original, mark valid immediately
+        if(val === originalTruckNumber){
+          setValidationState('valid', translations.truckNumberAvailable);
+          isTruckNumberValid = true;
+          return;
+        }
+
+        // Show checking state
+        setValidationState('checking', translations.truckNumberChecking);
+
+        // Debounce backend check (800ms)
+        truckNumberCheckTimeout = setTimeout(()=>{
+          checkTruckNumber(val);
+        }, 800);
+      });
+    }
+
+    async function checkTruckNumber(number){
+      try{
+        const resp = await fetch('/api/driver/truck-number/check', {
+          method: 'PATCH',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({truck_number: number})
+        });
+
+        if(!resp.ok){
+          throw new Error('HTTP: ' + resp.status);
+        }
+
+        const data = await resp.json();
+
+        if(data.success){
+          if(data.available){
+            setValidationState('valid', translations.truckNumberAvailable);
+            isTruckNumberValid = true;
+            window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('success');
+          }else{
+            setValidationState('invalid', translations.truckNumberTaken);
+            isTruckNumberValid = false;
+            window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('error');
+          }
+        }else{
+          setValidationState('invalid', data.message || translations.truckNumberInvalid);
+          isTruckNumberValid = false;
+        }
+      }catch(e){
+        console.error('Truck number check error:', e);
+        setValidationState('invalid', translations.error);
+        isTruckNumberValid = false;
+      }
+    }
+
+    function setValidationState(state, message){
+      const input = document.getElementById('truckNumber');
+      const icon = document.getElementById('validationIcon');
+      const msg = document.getElementById('validationMessage');
+
+      if(!input || !icon || !msg) return;
+
+      // Reset classes
+      input.classList.remove('valid', 'invalid', 'checking');
+      icon.classList.remove('show');
+      msg.classList.remove('show', 'success', 'error', 'checking');
+
+      // Apply new state
+      if(state === 'valid'){
+        input.classList.add('valid');
+        icon.textContent = '✅';
+        icon.classList.add('show');
+        msg.textContent = message;
+        msg.classList.add('show', 'success');
+      }else if(state === 'invalid'){
+        input.classList.add('invalid');
+        icon.textContent = '❌';
+        icon.classList.add('show');
+        msg.textContent = message;
+        msg.classList.add('show', 'error');
+      }else if(state === 'checking'){
+        input.classList.add('checking');
+        icon.textContent = '⏳';
+        icon.classList.add('show');
+        msg.textContent = message;
+        msg.classList.add('show', 'checking');
+      }
+    }
+
+    function resetValidationUI(){
+      const input = document.getElementById('truckNumber');
+      const icon = document.getElementById('validationIcon');
+      const msg = document.getElementById('validationMessage');
+
+      if(input) input.classList.remove('valid', 'invalid', 'checking');
+      if(icon) icon.classList.remove('show');
+      if(msg) msg.classList.remove('show', 'success', 'error', 'checking');
+    }
+
     function getCurrentLocation(){
       const btn=document.getElementById('gpsButton');
       const input=document.getElementById('startCity');
@@ -919,6 +1123,14 @@
       if(d.contact_number) document.getElementById('contactNumber').value=d.contact_number;
       if(d.start_city) document.getElementById('startCity').value=d.start_city;
 
+      // Truck number
+      if(d.truck_number){
+        originalTruckNumber = d.truck_number;
+        document.getElementById('truckNumber').value = d.truck_number;
+        document.getElementById('currentTruckNumber').textContent = d.truck_number;
+        isTruckNumberValid = true; // Original value is valid
+      }
+
       if(d.truck_type){
         const truckType = document.getElementById('truckType');
         if (truckType) truckType.value=d.truck_type;
@@ -980,12 +1192,22 @@
       const contactNumber=document.getElementById('contactNumber').value.trim();
       const startCity=document.getElementById('startCity').value.trim();
       const truckType=document.getElementById('truckType').value;
+      const truckNumber=document.getElementById('truckNumber').value.trim();
 
-      if(!firstName||!lastName||!contactNumber||!startCity||!truckType){
+      if(!firstName||!lastName||!contactNumber||!startCity||!truckType||!truckNumber){
         showToast('error',translations.fillRequired);
         window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('error');
         return;
       }
+
+      // Validate truck number
+      if(!isTruckNumberValid){
+        showToast('error',translations.truckNumberRequired);
+        window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('error');
+        document.getElementById('truckNumber').focus();
+        return;
+      }
+
       btn.classList.add('btn-loading'); btn.disabled=true;
       try{
         const fd=new FormData(document.getElementById('updateForm'));
