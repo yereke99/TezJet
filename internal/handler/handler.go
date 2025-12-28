@@ -1510,6 +1510,69 @@ func (h *Handler) userHistoryHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, path)
 }
 
+func (h *Handler) handleOffertaDoc(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	role := strings.TrimSpace(r.URL.Query().Get("role"))
+	if role == "" {
+		role = "driver"
+	}
+	if role != "driver" && role != "client" {
+		http.Error(w, "invalid role", http.StatusBadRequest)
+		return
+	}
+
+	var path string
+	if role == "driver" {
+		path = "./offerta/driver-privicy.docx"
+	} else {
+		path = "./offerta/client-privicy.docx"
+	}
+
+	f, err := os.Open(path)
+	if err != nil {
+		h.logger.Error("doc not found", zap.String("path", path), zap.Error(err))
+		http.Error(w, "doc not found", http.StatusNotFound)
+		return
+	}
+	defer f.Close()
+
+	st, _ := f.Stat()
+	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+	w.Header().Set("Content-Disposition", `inline; filename="offerta_`+role+`.docx"`)
+	w.Header().Set("Content-Length", strconv.FormatInt(st.Size(), 10))
+	w.Header().Set("Cache-Control", "no-store")
+	_, _ = io.Copy(w, f)
+}
+
+func (h *Handler) serveOffertaClient(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "./static/offerta-client.html")
+}
+
+func (h *Handler) serveOffertaDriver(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "./static/offerta-driver.html")
+}
+
+func (h *Handler) serveOffertaView(w http.ResponseWriter, r *http.Request) {
+	role := r.URL.Query().Get("role")
+	if role == "" {
+		role = "client"
+	}
+
+	var file string
+	switch role {
+	case "driver":
+		file = "./static/offerta-view-driver.html"
+	default:
+		file = "./static/offerta-view-client.html"
+	}
+
+	http.ServeFile(w, r, file)
+}
+
 func (h *Handler) SetBot(b *bot.Bot) {
 	h.bot = b
 }
@@ -1525,12 +1588,22 @@ func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 
 	// Serve static files
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
+	r.PathPrefix("/offerta/").Handler(http.StripPrefix("/offerta/", http.FileServer(http.Dir("./offerta/"))))
 
 	// Serve uploaded files
 	r.PathPrefix("/ava/").Handler(http.StripPrefix("/ava/", http.FileServer(http.Dir("./ava/"))))
 	r.PathPrefix("/documents/").Handler(http.StripPrefix("/documents/", http.FileServer(http.Dir("./documents/"))))
 	r.PathPrefix("/files/").Handler(http.StripPrefix("/files/", http.FileServer(http.Dir("./files/"))))
 	r.PathPrefix("/delivery-photo/").Handler(http.StripPrefix("/delivery-photo/", http.FileServer(http.Dir("./delivery-photo/"))))
+
+	// ✅ ADD: Offerta APIs
+	r.HandleFunc("/api/offerta/status", h.handleOffertaStatus).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/offerta/approve", h.handleOffertaApprove).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/offerta/doc", h.handleOffertaDoc).Methods("GET")
+
+	r.HandleFunc("/offerta/client", h.serveOffertaClient).Methods("GET")
+	r.HandleFunc("/offerta/driver", h.serveOffertaDriver).Methods("GET")
+	r.HandleFunc("/offerta/view", h.serveOffertaView).Methods("GET")
 
 	// Main pages
 	r.HandleFunc("/", h.landingHandler).Methods("GET") // NEW - Welcome as default
@@ -2741,6 +2814,29 @@ func (h *Handler) DefaultHandler(ctx context.Context, b *bot.Bot, update *models
 		return
 	}
 
+	var userID int64
+	if update.Message != nil {
+		userID = update.Message.From.ID
+	} else {
+		userID = update.CallbackQuery.From.ID
+	}
+
+	// Insert user if not exists
+	ok, err := h.userRepo.ExistsJust(ctx, userID)
+	if err != nil {
+		h.logger.Error("Failed to check user", zap.Error(err))
+	} else if !ok {
+		timeNow := time.Now().Format("2006-01-02 15:04:05")
+		h.logger.Info("New user", zap.String("user_id", strconv.FormatInt(userID, 10)), zap.String("date", timeNow))
+		if errIn := h.userRepo.InsertJust(ctx, domain.JustEntry{
+			UserId:         userID,
+			UserName:       update.Message.From.FirstName,
+			DateRegistered: timeNow,
+		}); errIn != nil {
+			h.logger.Error("Failed to insert user", zap.Error(err))
+		}
+	}
+
 	var keyboard interface{}
 	if update.Message.From.ID == h.cfg.AdminTelegramID {
 		keyboard = &models.InlineKeyboardMarkup{
@@ -2748,7 +2844,7 @@ func (h *Handler) DefaultHandler(ctx context.Context, b *bot.Bot, update *models
 				{
 					{
 						Text:   "🚀 Ашу | Открыть QazLine",
-						WebApp: &models.WebAppInfo{URL: h.cfg.BaseURL + "/"},
+						WebApp: &models.WebAppInfo{URL: h.cfg.BaseURL + "/welcome"},
 					},
 					{
 						Text:   "👤 Admin",
@@ -2763,8 +2859,8 @@ func (h *Handler) DefaultHandler(ctx context.Context, b *bot.Bot, update *models
 			InlineKeyboard: [][]models.InlineKeyboardButton{
 				{
 					{
-						Text:   "🚀 Ашу | Открыть QazLine",
-						WebApp: &models.WebAppInfo{URL: h.cfg.BaseURL + "/"},
+						Text:   "🚀 Ашу | Открыть Alash-Go",
+						WebApp: &models.WebAppInfo{URL: h.cfg.BaseURL + "/welcome"},
 					},
 				},
 			},
@@ -2778,7 +2874,7 @@ func (h *Handler) DefaultHandler(ctx context.Context, b *bot.Bot, update *models
 Біздің мақсат — сервисті жеңіл, жылдам жəне қолжетімді ету.
 AlashGo — ұлттық стильдегі жаңа буын сервисі 🇰🇿✨`
 
-	_, err := b.SendMessage(ctx, &bot.SendMessageParams{
+	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:      update.Message.From.ID,
 		Text:        message,
 		ReplyMarkup: keyboard,

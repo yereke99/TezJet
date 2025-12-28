@@ -60,6 +60,29 @@ func GenerateUUID() string {
 
 // CreateTables creates core tables
 func CreateTables(db *sql.DB, logger *zap.Logger) error {
+	// privicy police
+	offertaTable := `
+	CREATE TABLE IF NOT EXISTS offerta (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		id_user BIGINT NOT NULL UNIQUE,
+		role TEXT DEFAULT '', -- driver or client
+		approve BOOLEAN NOT NULL DEFAULT FALSE,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+	`
+
+	// just users
+	justTable := `
+	CREATE TABLE IF NOT EXISTS just (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		id_user BIGINT NOT NULL UNIQUE,
+		userName VARCHAR(255) NOT NULL,
+		dataRegistred VARCHAR(50) NOT NULL,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+	`
 	// Users table (нужна репозиторию)
 	usersTable := `
 	CREATE TABLE IF NOT EXISTS users (
@@ -161,7 +184,7 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 	);`
 
 	// Create tables
-	for _, sql := range []string{usersTable, driversTable, driverTripsTable, deliveryRequestsTable} {
+	for _, sql := range []string{offertaTable, justTable, usersTable, driversTable, driverTripsTable, deliveryRequestsTable} {
 		if _, err := db.Exec(sql); err != nil {
 			logger.Error("Failed to create table", zap.Error(err))
 			return err

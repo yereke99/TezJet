@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"tezjet/internal/domain"
@@ -20,6 +21,26 @@ func NewUserRepository(db *sql.DB, logger *zap.Logger) *UserRepository {
 		db:     db,
 		logger: logger,
 	}
+}
+
+// ExistsJust проверяет, есть ли запись в just по id_user
+func (r *UserRepository) ExistsJust(ctx context.Context, userId int64) (bool, error) {
+	const q = `SELECT COUNT(1) FROM just WHERE id_user=?;`
+	var cnt int
+	if err := r.db.QueryRowContext(ctx, q, userId).Scan(&cnt); err != nil {
+		return false, err
+	}
+	return cnt > 0, nil
+}
+
+// InsertJust вставляет запись в таблицу just с учетом новых полей (SQLite version)
+func (r *UserRepository) InsertJust(ctx context.Context, e domain.JustEntry) error {
+	const q = `
+		INSERT OR REPLACE INTO just (id_user, userName, dataRegistred, updated_at)
+		VALUES (?, ?, ?, datetime('now'));
+	`
+	_, err := r.db.ExecContext(ctx, q, e.UserId, e.UserName, e.DateRegistered)
+	return err
 }
 
 // CreateUser creates a new user in the database

@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="kz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover,interactive-widget=resizes-visual" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Alash-Go • Оферта (Клиент)</title>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
+
+  <style>
+    :root{
+      --primary:#4C6FFF; --primary-dark:#3D5ACC; --primary-light:rgba(76,111,255,.14);
+      --success:#00D395; --success-light:rgba(0,211,149,.14);
+      --danger:#FF5C5C; --danger-light:rgba(255,92,92,.12);
+      --dark:#0f172a; --grey:#64748b; --border:rgba(15,23,42,.10);
+      --bg:#F7F8FA; --surface:#fff; --surface-2:#F1F5F9;
+      --radius:16px; --radius-lg:24px; --shadow:0 10px 34px rgba(0,0,0,.10);
+      --tg-safe-top: env(safe-area-inset-top, 0px);
+      --tg-safe-bottom: env(safe-area-inset-bottom, 0px);
+      --tg-viewport-stable-height: 100vh;
+    }
+    html[data-theme="dark"]{
+      --bg:#0B1220; --surface:#121A2B; --surface-2:#0F172A;
+      --dark:#E5E7EB; --grey:#94A3B8; --border:rgba(148,163,184,.18);
+      --shadow:0 14px 60px rgba(0,0,0,.45);
+    }
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%;width:100%;overflow:hidden;position:fixed;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--dark)}
+    body{
+      height:var(--tg-viewport-stable-height,100vh);
+      padding-top:calc(var(--tg-safe-top) + 12px);
+      padding-bottom:var(--tg-safe-bottom);
+      overflow-y:auto;-webkit-overflow-scrolling:touch;
+    }
+    .container{max-width:720px;margin:0 auto;padding:0 16px 140px;min-height:100%}
+    .header{text-align:center;padding:14px 0 12px}
+    .pill{display:inline-flex;gap:8px;align-items:center;padding:8px 12px;border-radius:999px;background:var(--primary-light);border:1px solid rgba(76,111,255,.25);font-weight:800;font-size:12px;margin-bottom:10px}
+    .title{font-size:clamp(22px,5.5vw,30px);font-weight:900;letter-spacing:-.4px;margin-bottom:6px}
+    .subtitle{font-size:13px;color:var(--grey);line-height:1.5;font-weight:600;max-width:560px;margin:0 auto}
+    .card{margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden}
+    .card-top{padding:14px;border-bottom:1px solid var(--border);background:linear-gradient(180deg, rgba(76,111,255,.08), transparent);display:flex;gap:10px;align-items:flex-start}
+    .icon{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--primary-light);font-size:18px;flex-shrink:0}
+    .card-top h3{font-size:15px;font-weight:900;margin:2px 0 4px}
+    .card-top p{font-size:12px;color:var(--grey);line-height:1.5;font-weight:600}
+    .doc-wrap{padding:14px}
+    .doc{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;max-height:52vh;overflow:auto;-webkit-overflow-scrolling:touch}
+    .doc h1,.doc h2,.doc h3{margin:10px 0 8px;line-height:1.25}
+    .doc p{margin:8px 0;line-height:1.6;font-weight:500}
+    .doc ul,.doc ol{padding-left:18px;margin:8px 0}
+    .doc li{margin:6px 0;line-height:1.55}
+    .doc table{width:100%;border-collapse:collapse;margin:10px 0}
+    .doc td,.doc th{border:1px solid var(--border);padding:8px;font-size:12px}
+    .actions{padding:14px;border-top:1px solid var(--border);background:var(--surface)}
+    .agree-row{display:flex;gap:10px;align-items:flex-start;padding:12px;border-radius:var(--radius);background:var(--success-light);border:1px solid rgba(0,211,149,.25);margin-bottom:12px}
+    .agree-row input{margin-top:2px;width:18px;height:18px}
+    .agree-text{font-size:12px;color:var(--grey);line-height:1.55;font-weight:650}
+    .agree-text b{color:var(--dark)}
+    .btn{width:100%;border:none;border-radius:16px;padding:14px 16px;font-size:15px;font-weight:900;cursor:pointer;transition:transform .12s ease,opacity .2s ease}
+    .btn:active{transform:scale(.98)}
+    .btn.primary{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;opacity:.45;pointer-events:none}
+    .btn.primary.enabled{opacity:1;pointer-events:auto;box-shadow:0 10px 28px rgba(76,111,255,.35)}
+    .small-links{margin-top:10px;display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap}
+    .link{font-size:12px;font-weight:800;color:var(--primary);text-decoration:none;padding:8px 10px;border-radius:12px;background:var(--primary-light);border:1px solid rgba(76,111,255,.22)}
+    .toast{position:fixed;left:16px;right:16px;bottom:calc(var(--tg-safe-bottom) + 18px);background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:12px;display:none;gap:10px;align-items:flex-start;z-index:9999}
+    .toast.show{display:flex}
+    .toast .t-ic{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--danger-light);color:var(--danger);font-weight:900;flex-shrink:0}
+    .toast .t-txt{font-size:12px;color:var(--grey);font-weight:700;line-height:1.5}
+    .loading{position:fixed;inset:0;background:rgba(11,18,32,.9);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:99999}
+    .loading.on{display:flex}
+    .spinner{width:52px;height:52px;border-radius:50%;border:4px solid rgba(255,255,255,.16);border-top-color:var(--primary);animation:spin .9s linear infinite;margin-bottom:14px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loading .txt{color:#fff;font-weight:800;font-size:14px}
+  </style>
+</head>
+<body>
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="txt" id="loadingTxt">Жүктелуде...</div>
+  </div>
+
+  <div class="toast" id="toast">
+    <div class="t-ic">!</div>
+    <div class="t-txt" id="toastTxt"></div>
+  </div>
+
+  <div class="container">
+    <div class="header">
+      <div class="pill">📄 Alash-Go • Клиент офертасы</div>
+      <div class="title" id="pageTitle">Оферта келісімі</div>
+      <div class="subtitle" id="pageSub">Жалғастыру үшін төмендегі құжатпен танысып, келісім беріңіз.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <div class="icon">🛡️</div>
+        <div>
+          <h3 id="docTitle">Құпиялылық саясаты (Клиент)</h3>
+          <p id="docHint">Құжат төменде көрсетіледі. Жүктеу батырмасы жоқ — құжат тек оқу үшін.</p>
+        </div>
+      </div>
+
+      <div class="doc-wrap">
+        <div class="doc" id="doc">Құжат жүктелуде...</div>
+      </div>
+
+      <div class="actions">
+        <div class="agree-row">
+          <input type="checkbox" id="agreeChk" />
+          <div class="agree-text" id="agreeText">
+            <b>Оқыдым және келісемін.</b> Осы келісімсіз клиент ретінде қолдану мүмкін емес.
+          </div>
+        </div>
+
+        <button class="btn primary" id="okBtn">OK • Келісемін</button>
+
+        <div class="small-links">
+          <a class="link" id="backLink" href="javascript:void(0)">← Артқа</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  let currentLang = 'kz';
+  const el = (id)=>document.getElementById(id);
+
+  const showLoading = (t)=>{ el('loadingTxt').textContent=t||''; el('loading').classList.add('on'); };
+  const hideLoading = ()=>{ el('loading').classList.remove('on'); };
+  const toast = (m)=>{
+    el('toastTxt').textContent = m;
+    el('toast').classList.add('show');
+    setTimeout(()=>el('toast').classList.remove('show'), 3200);
+  };
+
+  // ✅ ВАРИАНТ 1 (как у тебя): напрямую статик файл
+  const DOCX_URL = '/offerta/client-privicy.docx';
+
+  // ✅ ВАРИАНТ 2 (если хочешь через API, тогда поставь так и в renderDocx fetch() будет работать):
+  // const DOCX_URL = '/api/offerta/doc?role=client';
+
+  const i18n = {
+    kz:{
+      title:"Оферта келісімі",
+      sub:"Жалғастыру үшін төмендегі құжатпен танысып, келісім беріңіз.",
+      docTitle:"Құпиялылық саясаты (Клиент)",
+      docHint:"Құжат төменде көрсетіледі. Құжат тек оқу үшін, жүктеу өшірулі.",
+      agreeText:"<b>Оқыдым және келісемін.</b> Осы келісімсіз клиент ретінде қолдану мүмкін емес.",
+      ok:"OK • Келісемін",
+      loadDoc:"Құжат жүктелуде...",
+      load:"Жүктелуде...",
+      saving:"Сақталуда...",
+      needAgree:"Алдымен чекбоксты белгілеңіз.",
+      noTg:"Telegram ID алынбады.",
+      back:"← Артқа",
+      cantLoadTitle:"Құжатты жүктеу мүмкін емес",
+      cantLoadHint:"Техникалық ақау. Кейінірек қайталап көріңіз."
+    },
+    ru:{
+      title:"Согласие с офертой",
+      sub:"Чтобы продолжить, прочитайте документ ниже и подтвердите согласие.",
+      docTitle:"Политика конфиденциальности (Клиент)",
+      docHint:"Документ отображается ниже. Только для чтения, скачивание отключено.",
+      agreeText:"<b>Прочитал и согласен.</b> Без согласия использование как клиента невозможно.",
+      ok:"OK • Согласен",
+      loadDoc:"Загрузка документа...",
+      load:"Загрузка...",
+      saving:"Сохранение...",
+      needAgree:"Сначала поставьте галочку.",
+      noTg:"Не удалось получить Telegram ID.",
+      back:"← Назад",
+      cantLoadTitle:"Не удалось загрузить документ",
+      cantLoadHint:"Техническая ошибка. Попробуйте позже."
+    }
+  };
+
+  function setLang(){
+    const lang = new URLSearchParams(location.search).get('lang');
+    if(lang==='ru'||lang==='kz') currentLang=lang;
+
+    el('pageTitle').textContent = i18n[currentLang].title;
+    el('pageSub').textContent = i18n[currentLang].sub;
+    el('docTitle').textContent = i18n[currentLang].docTitle;
+    el('docHint').textContent = i18n[currentLang].docHint;
+    el('agreeText').innerHTML = i18n[currentLang].agreeText;
+    el('okBtn').textContent = i18n[currentLang].ok;
+    el('doc').textContent = i18n[currentLang].loadDoc;
+    el('backLink').textContent = i18n[currentLang].back;
+  }
+
+  function applyTheme(isDark){ document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light'); }
+
+  function initTelegram(){
+    if(!window.Telegram?.WebApp) return null;
+    const tg = Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+    tg.enableClosingConfirmation();
+    tg.disableVerticalSwipes();
+
+    const updateHeight = () => {
+      const vh = tg.viewportStableHeight || window.innerHeight;
+      document.documentElement.style.setProperty('--tg-viewport-stable-height', vh + 'px');
+      document.documentElement.style.setProperty('--tg-safe-top', (tg.safeAreaInset?.top || 0) + 'px');
+      document.documentElement.style.setProperty('--tg-safe-bottom', (tg.safeAreaInset?.bottom || 0) + 'px');
+    };
+    updateHeight();
+    tg.onEvent('viewportChanged', updateHeight);
+
+    applyTheme(tg.colorScheme === 'dark');
+    tg.onEvent('themeChanged', () => applyTheme(tg.colorScheme === 'dark'));
+    return tg;
+  }
+
+  async function renderDocx(){
+    try{
+      const res = await fetch(DOCX_URL, { cache:'no-store' });
+      if(!res.ok) throw new Error('docx load failed');
+
+      const arrayBuffer = await res.arrayBuffer();
+      const result = await mammoth.convertToHtml({ arrayBuffer });
+
+      const html = (result && result.value) ? result.value : '';
+      el('doc').innerHTML = html || (currentLang==='kz' ? 'Құжат бос.' : 'Документ пуст.');
+
+      el('doc').querySelectorAll('a').forEach(a=>{
+        a.setAttribute('href','javascript:void(0)');
+        a.style.pointerEvents = 'none';
+        a.style.opacity = '0.8';
+      });
+    }catch(e){
+      el('doc').innerHTML = `
+        <div style="padding:12px;border-radius:14px;border:1px solid rgba(255,92,92,.25);background:rgba(255,92,92,.10);">
+          <div style="font-weight:900;margin-bottom:6px;">${i18n[currentLang].cantLoadTitle}</div>
+          <div style="font-size:12px;color:var(--grey);font-weight:700;line-height:1.5;">
+            ${i18n[currentLang].cantLoadHint}
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  function getTelegramIdNumber(tg){
+    const user = tg?.initDataUnsafe?.user;
+    return (user?.id) ? Number(user.id) : 0;
+  }
+
+  async function approveOfferta(tgIdNumber){
+    const res = await fetch('/api/offerta/approve', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ telegram_id: tgIdNumber, role: 'client' })
+    });
+
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok || data.success !== true) throw new Error(data.message || 'approve failed');
+    return true;
+  }
+
+  // ✅ Куда вести клиента после согласия
+  function goNext(){
+    location.replace('/delivery?lang=' + encodeURIComponent(currentLang));
+    // или если у тебя клиентская главная другая:
+    // location.replace('/main-client?lang=' + encodeURIComponent(currentLang));
+  }
+
+  document.addEventListener('DOMContentLoaded', async ()=>{
+    setLang();
+    const tg = initTelegram();
+
+    el('backLink').addEventListener('click', ()=>{
+      if(tg) tg.close();
+      else history.back();
+    });
+
+    el('agreeChk').addEventListener('change', ()=>{
+      el('okBtn').classList.toggle('enabled', el('agreeChk').checked);
+    });
+
+    showLoading(i18n[currentLang].load);
+    await renderDocx();
+    hideLoading();
+
+    // Если уже approved — пропускаем страницу
+    try{
+      const tgId = getTelegramIdNumber(tg);
+      if(tgId){
+        const st = await fetch(`/api/offerta/status?telegram_id=${encodeURIComponent(tgId)}&role=client`, {cache:'no-store'});
+        const d = await st.json().catch(()=>({}));
+        if(st.ok && d.success===true && d.approved===true){
+          goNext();
+          return;
+        }
+      }
+    }catch(_){}
+
+    el('okBtn').addEventListener('click', async ()=>{
+      if(!el('agreeChk').checked){
+        toast(i18n[currentLang].needAgree);
+        return;
+      }
+      const tgId = getTelegramIdNumber(tg);
+      if(!tgId){
+        toast(i18n[currentLang].noTg);
+        return;
+      }
+      showLoading(i18n[currentLang].saving);
+      try{
+        await approveOfferta(tgId);
+        hideLoading();
+        goNext();
+      }catch(e){
+        hideLoading();
+        toast((currentLang==='kz' ? 'Қате: ' : 'Ошибка: ') + (e.message || ''));
+      }
+    });
+  });
+</script>
+</body>
+</html>

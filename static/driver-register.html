@@ -1,3 +1,4 @@
+<!-- driver-regester.html (FULL) -->
 <!DOCTYPE html>
 <html lang="kz">
 <head>
@@ -6,31 +7,28 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Alash-Go - Жүргізуші тіркелуі</title>
-
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
-    /* =========================
-       Figma Transportation Design System (LIGHT)
-    ========================= */
     :root {
       --primary: #4C6FFF;
       --primary-dark: #3D5ACC;
+      --primary-light: rgba(76, 111, 255, 0.15);
       --secondary: #00D9B9;
       --success: #00D395;
+      --success-light: rgba(0, 211, 149, 0.15);
       --warning: #FFB800;
+      --warning-light: rgba(255, 184, 0, 0.12);
       --danger: #FF5C5C;
+      --danger-light: rgba(255, 92, 92, 0.12);
 
       --dark: #1A1D29;
       --dark-light: #2A2F3F;
-
       --grey: #6B7280;
       --grey-light: #E5E7EB;
-
       --white: #FFFFFF;
       --bg: #F7F8FA;
 
-      /* Theme utility tokens */
       --surface: var(--white);
       --surface-2: #F1F5F9;
       --border: rgba(15, 23, 42, 0.08);
@@ -38,39 +36,35 @@
       --input-text: var(--dark);
       --placeholder: #9CA3AF;
 
+      --radius-sm: 12px;
       --radius: 16px;
       --radius-lg: 24px;
+      --radius-xl: 28px;
       --shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
       --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.12);
+      --shadow-btn: 0 4px 16px rgba(76, 111, 255, 0.35);
 
       --tg-safe-top: env(safe-area-inset-top, 0px);
       --tg-safe-bottom: env(safe-area-inset-bottom, 0px);
       --tg-viewport-stable-height: 100vh;
     }
 
-    /* =========================
-       DARK THEME OVERRIDES
-    ========================= */
     html[data-theme="dark"] {
       --bg: #0B1220;
       --white: #121A2B;
       --surface: #121A2B;
       --surface-2: #0F172A;
-
       --dark: #E5E7EB;
       --dark-light: #94A3B8;
-
       --grey: #9CA3AF;
       --grey-light: #1F2937;
-
       --border: rgba(148, 163, 184, 0.18);
-
       --input-bg: #0F172A;
       --input-text: #E5E7EB;
       --placeholder: #64748B;
-
       --shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
       --shadow-lg: 0 12px 50px rgba(0, 0, 0, 0.45);
+      --shadow-btn: 0 4px 20px rgba(76, 111, 255, 0.4);
     }
 
     * {
@@ -85,267 +79,141 @@
       overflow: hidden;
       position: fixed;
       width: 100%;
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
       background: var(--bg);
       color: var(--dark);
     }
 
     body {
       height: var(--tg-viewport-stable-height, 100vh);
-      padding-top: calc(var(--tg-safe-top, 0px) + 15px);
+      padding-top: calc(var(--tg-safe-top, 0px) + 12px);
       padding-bottom: var(--tg-safe-bottom, 0px);
-      background: var(--bg);
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
 
+    body.modal-open { overflow: hidden !important; }
+
     .container {
-      max-width: 480px;
+      max-width: 560px;
       margin: 0 auto;
-      padding: 0 20px 160px;
+      padding: 0 16px 140px;
       min-height: 100%;
     }
 
-    /* Header */
-    .header {
-      text-align: center;
-      padding: 20px 0 24px;
-    }
+    .header { text-align: center; padding: 16px 0 20px; }
 
-    /* Telegram Header Profile */
-    .tg-avatar-wrap {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 10px;
-    }
+    .tg-avatar-wrap { display: flex; justify-content: center; margin-bottom: 12px; }
 
     .tg-avatar {
-      width: 88px;
-      height: 88px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 80px; height: 80px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      display: flex; align-items: center; justify-content: center;
       box-shadow: var(--shadow-lg);
       overflow: hidden;
-      border: 2px solid rgba(255,255,255,0.15);
+      border: 3px solid rgba(255,255,255,0.2);
+      font-size: 32px; color: #fff; font-weight: 800;
     }
+    .tg-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-    .tg-avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: none;
-    }
-
-    .tg-avatar.fallback {
-      font-size: 36px;
-      color: #fff;
-      font-weight: 900;
-    }
-
-    .tg-username {
-      text-align: center;
-      font-size: 14px;
-      font-weight: 800;
-      color: var(--grey);
-      margin-bottom: 8px;
-    }
+    .tg-username { font-size: 13px; font-weight: 700; color: var(--grey); margin-bottom: 8px; }
 
     .title {
-      font-size: 28px;
-      font-weight: 700;
+      font-size: clamp(24px, 6vw, 30px);
+      font-weight: 800;
       color: var(--dark);
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       letter-spacing: -0.5px;
     }
-
     .subtitle {
-      font-size: 15px;
+      font-size: clamp(13px, 3.5vw, 15px);
       color: var(--grey);
       font-weight: 500;
+      line-height: 1.4;
+      padding: 0 10px;
     }
 
-    /* Global warning banner */
     .notice {
-      margin: 16px 0 8px;
-      padding: 14px 14px;
+      margin: 16px 0;
+      padding: 14px;
       border-radius: var(--radius);
-      border: 1px solid var(--border);
-      background: linear-gradient(180deg, rgba(255,184,0,0.12), rgba(255,184,0,0.06));
+      border: 1px solid rgba(255,184,0,0.25);
+      background: var(--warning-light);
       display: flex;
-      gap: 10px;
+      gap: 12px;
       align-items: flex-start;
-      text-align: left;
     }
-
-    .notice .notice-ic {
-      width: 28px; height: 28px;
-      border-radius: 10px;
+    .notice-icon {
+      width: 32px; height: 32px; border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
-      background: rgba(255,184,0,0.18);
-      border: 1px solid rgba(255,184,0,0.22);
-      font-size: 16px;
-      flex: 0 0 auto;
-      margin-top: 1px;
+      background: rgba(255,184,0,0.2);
+      font-size: 16px; flex-shrink: 0;
     }
-
-    .notice .notice-title {
-      font-weight: 800;
-      font-size: 13px;
-      color: var(--dark);
-      margin-bottom: 3px;
-      letter-spacing: 0.2px;
-      text-transform: uppercase;
+    .notice-title {
+      font-weight: 800; font-size: 12px; color: var(--dark);
+      margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;
     }
+    .notice-text { font-size: 13px; color: var(--grey); line-height: 1.5; font-weight: 500; }
 
-    .notice .notice-text {
-      font-size: 13px;
-      color: var(--grey);
-      line-height: 1.45;
-      font-weight: 600;
-    }
-
-    /* Progress Indicator */
-    .progress-container {
-      margin: 18px 0 22px;
-    }
-
-    .progress-bar {
-      height: 4px;
-      background: var(--grey-light);
-      border-radius: 2px;
-      overflow: hidden;
-      position: relative;
-    }
-
+    .progress-container { margin: 16px 0 24px; }
+    .progress-bar { height: 6px; background: var(--grey-light); border-radius: 3px; overflow: hidden; }
     .progress-fill {
       height: 100%;
       background: linear-gradient(90deg, var(--primary), var(--secondary));
-      border-radius: 2px;
+      border-radius: 3px;
       width: 0%;
-      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
+    .progress-text { margin-top: 8px; font-size: 13px; color: var(--grey); text-align: center; font-weight: 700; }
 
-    .progress-text {
-      margin-top: 8px;
-      font-size: 13px;
-      color: var(--grey);
-      text-align: center;
-      font-weight: 700;
-    }
-
-    /* Form Sections */
-    .form-section {
-      margin-bottom: 28px;
-    }
-
-    .section-title {
-      font-size: 17px;
-      font-weight: 800;
-      color: var(--dark);
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
+    .form-section { margin-bottom: 28px; }
+    .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
     .section-icon {
-      font-size: 20px;
+      width: 36px; height: 36px; border-radius: var(--radius-sm);
+      background: var(--primary-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
     }
+    .section-title { font-size: 17px; font-weight: 800; color: var(--dark); }
 
-    /* section hint */
     .section-hint {
-      margin-top: -2px;
-      margin-bottom: 14px;
-      padding: 10px 12px;
-      border-radius: 14px;
+      margin-bottom: 16px;
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      background: var(--surface-2);
       border: 1px solid var(--border);
-      background: rgba(76, 111, 255, 0.06);
-      color: var(--grey);
-      font-size: 12px;
-      line-height: 1.45;
-      font-weight: 600;
       display: flex;
-      gap: 8px;
+      gap: 10px;
       align-items: flex-start;
     }
-    .section-hint .hint-dot {
-      width: 18px; height: 18px;
-      border-radius: 7px;
-      background: rgba(76, 111, 255, 0.14);
-      border: 1px solid rgba(76, 111, 255, 0.18);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 12px;
-      flex: 0 0 auto;
-      margin-top: 1px;
-    }
+    .hint-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+    .hint-text { font-size: 12px; color: var(--grey); line-height: 1.5; font-weight: 500; }
 
-    /* Profile Photo */
-    .photo-upload {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
+    .photo-upload { text-align: center; margin-bottom: 16px; }
     .photo-preview {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      background: var(--grey-light);
+      width: 110px; height: 110px; border-radius: 50%;
+      background: var(--surface-2);
       margin: 0 auto 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 48px;
-      color: var(--grey);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 44px; color: var(--grey);
       cursor: pointer;
       transition: all 0.3s ease;
       position: relative;
       overflow: hidden;
-      border: 3px solid transparent;
-      user-select: none;
+      border: 3px dashed var(--grey-light);
     }
+    .photo-preview:active { transform: scale(0.96); }
+    .photo-preview.has-photo { border: 3px solid var(--success); }
+    .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .photo-label { font-size: 13px; color: var(--grey); font-weight: 600; }
+    .photo-input, .file-input { display: none; }
 
-    .photo-preview:active {
-      transform: scale(0.95);
-    }
-
-    .photo-preview.has-photo {
-      border-color: var(--success);
-    }
-
-    .photo-preview img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .photo-label {
-      font-size: 14px;
-      color: var(--grey);
-      font-weight: 600;
-    }
-
-    .photo-input {
-      display: none;
-    }
-
-    /* Form Fields */
-    .form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-
-    .form-field {
-      margin-bottom: 16px;
-    }
+    .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .form-field { margin-bottom: 16px; }
 
     .field-label {
       display: block;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       color: var(--grey);
       margin-bottom: 8px;
@@ -355,80 +223,41 @@
 
     .field-input {
       width: 100%;
-      padding: 16px;
+      padding: 14px 16px;
       background: var(--input-bg);
-      border: 2px solid transparent;
+      border: 2px solid var(--border);
       border-radius: var(--radius);
       font-size: 16px;
       font-weight: 600;
       color: var(--input-text);
-      transition: all 0.3s ease;
+      transition: all 0.25s ease;
       font-family: inherit;
-
       -webkit-text-fill-color: var(--input-text);
       caret-color: var(--primary);
     }
-
     .field-input:focus {
       outline: none;
       border-color: var(--primary);
-      box-shadow: 0 0 0 4px rgba(76, 111, 255, 0.18);
+      box-shadow: 0 0 0 4px var(--primary-light);
     }
+    .field-input::placeholder { color: var(--placeholder); font-weight: 500; -webkit-text-fill-color: var(--placeholder); }
 
-    .field-input::placeholder {
-      color: var(--placeholder);
-      font-weight: 500;
-      -webkit-text-fill-color: var(--placeholder);
-    }
+    .field-input.error { border-color: var(--danger); background: var(--danger-light); }
+    .field-input.success { border-color: var(--success); }
+    .field-input.pending { border-color: var(--warning); background: var(--warning-light); }
 
-    .field-input.error {
-      border-color: var(--danger);
-      background: rgba(255, 92, 92, 0.10);
-    }
+    .field-note { margin-top: 8px; display: flex; gap: 8px; align-items: flex-start; }
+    .note-icon { font-size: 12px; flex-shrink: 0; margin-top: 1px; }
+    .note-text { font-size: 11px; color: var(--grey); line-height: 1.4; font-weight: 500; }
 
-    .field-input.success {
-      border-color: var(--success);
-    }
+    .field-message { font-size: 12px; margin-top: 6px; font-weight: 700; display: none; }
+    .field-message.error { color: var(--danger); display: block; }
+    .field-message.success { color: var(--success); display: block; }
+    .field-message.pending { color: var(--warning); display: block; }
 
-    .field-input.pending {
-      border-color: var(--warning);
-      background: rgba(255, 184, 0, 0.10);
-    }
-
-    /* per-field warning text */
-    .field-note {
-      margin-top: 8px;
-      font-size: 12px;
-      line-height: 1.45;
-      color: var(--grey);
-      font-weight: 600;
-      display: flex;
-      gap: 8px;
-      align-items: flex-start;
-      opacity: 0.95;
-    }
-
-    .field-note .note-ic {
-      width: 18px; height: 18px;
-      border-radius: 7px;
-      display: flex; align-items: center; justify-content: center;
-      border: 1px solid var(--border);
-      background: var(--surface-2);
-      color: var(--dark);
-      font-size: 12px;
-      flex: 0 0 auto;
-      margin-top: 1px;
-    }
-
-    .field-note.warning .note-ic{
-      background: rgba(255,184,0,0.12);
-      border-color: rgba(255,184,0,0.25);
-    }
-
-    /* File Upload */
     .file-field {
       position: relative;
-      padding: 20px;
+      padding: 18px;
       background: var(--surface);
       border: 2px dashed var(--grey-light);
       border-radius: var(--radius);
@@ -436,307 +265,434 @@
       cursor: pointer;
       transition: all 0.3s ease;
     }
+    .file-field:active { transform: scale(0.98); }
+    .file-field:hover { border-color: var(--primary); background: var(--primary-light); }
+    .file-field.has-file { border-color: var(--success); border-style: solid; background: var(--success-light); }
+    .file-icon { font-size: 28px; margin-bottom: 6px; }
+    .file-text { font-size: 13px; color: var(--grey); font-weight: 600; word-break: break-word; }
 
-    .file-field:hover {
-      border-color: var(--primary);
-      background: rgba(76, 111, 255, 0.04);
-    }
-
-    .file-field.has-file {
-      border-color: var(--success);
-      border-style: solid;
-      background: rgba(0, 211, 149, 0.10);
-    }
-
-    .file-icon {
-      font-size: 32px;
-      margin-bottom: 8px;
-    }
-
-    .file-text {
-      font-size: 14px;
-      color: var(--grey);
-      font-weight: 600;
-      word-break: break-word;
-    }
-
-    .file-input {
-      display: none;
-    }
-
-    /* Truck Type Selection */
-    .truck-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-top: 12px;
-    }
-
+    .truck-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
     .truck-card {
-      padding: 16px 12px;
+      padding: 14px 8px;
       background: var(--surface);
-      border: 2px solid transparent;
+      border: 2px solid var(--border);
       border-radius: var(--radius);
       text-align: center;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.25s ease;
       position: relative;
-      user-select: none;
     }
-
-    .truck-card:active {
-      transform: scale(0.95);
-    }
-
+    .truck-card:active { transform: scale(0.95); }
     .truck-card.selected {
-      background: rgba(76, 111, 255, 0.16);
+      background: var(--primary-light);
       border-color: var(--primary);
-      box-shadow: 0 4px 16px rgba(76, 111, 255, 0.22);
+      box-shadow: var(--shadow-btn);
     }
-
     .truck-card.selected::after {
       content: '✓';
       position: absolute;
-      top: 8px;
-      right: 8px;
-      width: 20px;
-      height: 20px;
+      top: 6px; right: 6px;
+      width: 18px; height: 18px;
       background: var(--primary);
       color: #fff;
       border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px;
       font-weight: 800;
     }
+    .truck-icon { font-size: 26px; margin-bottom: 6px; }
+    .truck-name { font-size: 12px; font-weight: 800; color: var(--dark); margin-bottom: 2px; }
+    .truck-desc { font-size: 10px; color: var(--grey); font-weight: 600; }
 
-    .truck-icon {
-      font-size: 28px;
-      margin-bottom: 8px;
-    }
-
-    .truck-name {
-      font-size: 13px;
-      font-weight: 800;
-      color: var(--dark);
-      margin-bottom: 2px;
-    }
-
-    .truck-desc {
-      font-size: 11px;
-      color: var(--grey);
-      font-weight: 700;
-    }
-
-    /* Location Input */
-    .location-group {
-      position: relative;
-    }
-
-    .location-input {
-      padding-right: 60px;
-    }
-
+    .location-group { position: relative; }
+    .location-input { padding-right: 56px; }
     .gps-btn {
       position: absolute;
-      right: 8px;
-      top: 50%;
+      right: 6px; top: 50%;
       transform: translateY(-50%);
-      width: 44px;
-      height: 44px;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border: none;
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
       cursor: pointer;
       transition: all 0.3s ease;
       font-size: 18px;
-      color: var(--dark);
-      user-select: none;
-    }
-
-    .gps-btn:active {
-      transform: translateY(-50%) scale(0.9);
-    }
-
-    .gps-btn.loading {
-      background: var(--warning);
       color: #fff;
-      animation: pulse 1.5s infinite;
-      border-color: transparent;
+      box-shadow: var(--shadow-btn);
     }
-
-    .gps-btn.success {
-      background: var(--success);
-      color: #fff;
-      border-color: transparent;
-    }
+    .gps-btn:active { transform: translateY(-50%) scale(0.92); }
+    .gps-btn.loading { background: linear-gradient(135deg, var(--warning), #E5A600); animation: pulse 1.2s infinite; }
+    .gps-btn.success { background: linear-gradient(135deg, var(--success), #00B080); }
 
     @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
+      0%, 100% { opacity: 1; transform: translateY(-50%) scale(1); }
+      50% { opacity: 0.7; transform: translateY(-50%) scale(0.96); }
     }
 
-    /* Error/Success Messages */
-    .field-message {
-      font-size: 12px;
-      margin-top: 6px;
+    .offerta-card {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .offerta-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+    .offerta-title { display: flex; align-items: center; gap: 10px; font-weight: 900; letter-spacing: -0.2px; }
+    .offerta-title .ic {
+      width: 36px; height: 36px; border-radius: var(--radius-sm);
+      background: var(--primary-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .offerta-title .tx { font-size: 15px; color: var(--dark); }
+
+    .offerta-open {
+      border: none; cursor: pointer;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
       font-weight: 800;
-      display: none;
+      box-shadow: var(--shadow-btn);
+      font-size: 12px;
+      transition: transform 0.2s ease;
+      white-space: nowrap;
+    }
+    .offerta-open:active { transform: scale(0.97); }
+    .offerta-text { font-size: 12px; color: var(--grey); line-height: 1.55; font-weight: 600; margin-bottom: 12px; }
+
+    .agree-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 12px;
+      border-radius: var(--radius);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
     }
 
-    .field-message.error { color: var(--danger); display: block; }
-    .field-message.success { color: var(--success); display: block; }
-    .field-message.pending { color: var(--warning); display: block; }
+    .agree-check {
+      width: 22px; height: 22px;
+      border-radius: 7px;
+      border: 2px solid var(--border);
+      background: var(--input-bg);
+      display: inline-flex;
+      align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      position: relative;
+    }
+    .agree-check input { display: none; }
+    .agree-check[data-checked="true"] { border-color: var(--success); background: var(--success-light); }
+    .agree-check[data-checked="true"]::after {
+      content: "✓";
+      font-weight: 1000;
+      color: var(--success);
+      font-size: 14px;
+      transform: translateY(-0.5px);
+    }
 
-    /* Submit Info */
+    .agree-content { flex: 1; }
+    .agree-title {
+      font-size: 12px;
+      font-weight: 900;
+      color: var(--dark);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+    .agree-sub { font-size: 12px; color: var(--grey); font-weight: 600; line-height: 1.45; }
+    .agree-status { margin-top: 10px; font-size: 12px; font-weight: 900; display: none; }
+    .agree-status.ok { color: var(--success); display: block; }
+    .agree-status.bad { color: var(--danger); display: block; }
+    .agree-status.pending { color: var(--warning); display: block; }
+
+    .offerta-actions { display: flex; gap: 10px; margin-top: 12px; }
+    .btn-soft {
+      flex: 1;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--dark);
+      padding: 12px 12px;
+      border-radius: 14px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+      font-size: 12px;
+    }
+    .btn-soft:active { transform: scale(0.98); }
+
+    .btn-primary {
+      flex: 1;
+      border: none;
+      background: linear-gradient(135deg, var(--success), #00B080);
+      color: #fff;
+      padding: 12px 12px;
+      border-radius: 14px;
+      font-weight: 1000;
+      cursor: pointer;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+      font-size: 12px;
+      box-shadow: 0 8px 24px rgba(0, 211, 149, 0.28);
+    }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-primary[disabled] { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      background: rgba(11, 18, 32, 0.55);
+      backdrop-filter: blur(10px);
+      padding: 14px 12px calc(12px + var(--tg-safe-bottom, 0px));
+    }
+    .modal.active { display: flex; }
+
+    .sheet {
+      width: 100%;
+      max-width: 560px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      transform: translateY(6px);
+      animation: sheetIn 0.18s ease-out forwards;
+    }
+    @keyframes sheetIn {
+      from { transform: translateY(14px); opacity: 0.6; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .sheet-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px 14px 10px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(76,111,255,0.10), transparent);
+    }
+    .sheet-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 1000;
+      color: var(--dark);
+      letter-spacing: -0.2px;
+    }
+    .sheet-title .ic {
+      width: 36px; height: 36px; border-radius: 12px;
+      background: var(--primary-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .sheet-title .tx { font-size: 15px; }
+
+    .sheet-close {
+      border: none;
+      background: var(--surface-2);
+      color: var(--dark);
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-weight: 1000;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .sheet-close:active { transform: scale(0.98); }
+
+    .sheet-body { position: relative; padding: 12px; }
+
+    .sheet-loading {
+      position: absolute;
+      inset: 12px;
+      border-radius: 16px;
+      background: rgba(11, 18, 32, 0.08);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--dark);
+      font-weight: 900;
+    }
+    .sheet-loading.active { display: flex; }
+    .mini-spinner {
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 3px solid rgba(76,111,255,0.25);
+      border-top-color: var(--primary);
+      animation: spin 0.7s linear infinite;
+    }
+
+    .offerta-frame {
+      width: 100%;
+      height: min(68vh, 520px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface-2);
+      overflow: hidden;
+    }
+    .offerta-frame iframe {
+      width: 100%; height: 100%;
+      border: none;
+      border-radius: 16px;
+      background: var(--surface);
+    }
+
+    .sheet-foot {
+      padding: 12px 14px 14px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      background: var(--surface);
+    }
+    .sheet-foot .btn-soft,
+    .sheet-foot .btn-primary { margin-top: 0; }
+
     .submit-info {
       text-align: center;
-      padding: 18px;
-      background: rgba(76, 111, 255, 0.08);
-      border-radius: var(--radius);
+      padding: 20px;
+      background: var(--primary-light);
+      border-radius: var(--radius-lg);
       margin-top: 24px;
       border: 1px solid var(--border);
     }
+    .submit-info-icon { font-size: 36px; margin-bottom: 10px; }
+    .submit-info-text { font-size: 14px; color: var(--grey); line-height: 1.6; font-weight: 500; }
 
-    .submit-info-text {
-      font-size: 14px;
-      color: var(--grey);
-      line-height: 1.6;
-      font-weight: 650;
-    }
-
-    .submit-info-icon {
-      font-size: 32px;
-      margin-bottom: 8px;
-    }
-
-    /* Final GPS access note (user asked) */
     .gps-final-note {
-      margin-top: 14px;
-      padding: 14px 14px;
+      margin-top: 16px;
+      padding: 14px;
       border-radius: var(--radius);
-      border: 1px solid var(--border);
-      background: linear-gradient(180deg, rgba(0,217,185,0.10), rgba(0,217,185,0.05));
+      border: 1px solid rgba(0,217,185,0.25);
+      background: var(--success-light);
       display: flex;
-      gap: 10px;
+      gap: 12px;
       align-items: flex-start;
       text-align: left;
     }
     .gps-final-note .ic {
-      width: 28px; height: 28px;
-      border-radius: 10px;
+      width: 28px; height: 28px; border-radius: 8px;
+      background: rgba(0,217,185,0.2);
       display: flex; align-items: center; justify-content: center;
-      background: rgba(0,217,185,0.18);
-      border: 1px solid rgba(0,217,185,0.22);
-      font-size: 16px;
-      flex: 0 0 auto;
-      margin-top: 1px;
+      font-size: 14px;
+      flex-shrink: 0;
     }
     .gps-final-note .t1 {
-      font-weight: 900;
-      font-size: 13px;
+      font-weight: 800;
+      font-size: 11px;
       color: var(--dark);
-      margin-bottom: 3px;
-      letter-spacing: 0.2px;
+      margin-bottom: 4px;
       text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
-    .gps-final-note .t2 {
-      font-size: 13px;
-      color: var(--grey);
-      line-height: 1.45;
-      font-weight: 650;
-    }
+    .gps-final-note .t2 { font-size: 12px; color: var(--grey); line-height: 1.5; font-weight: 500; }
 
-    /* Loading Overlay */
     .loading-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(26, 29, 41, 0.8);
-      backdrop-filter: blur(10px);
+      inset: 0;
+      background: rgba(11, 18, 32, 0.9);
+      backdrop-filter: blur(12px);
       z-index: 9999;
       display: none;
       align-items: center;
       justify-content: center;
       flex-direction: column;
     }
-
-    .loading-overlay.active {
-      display: flex;
-    }
-
+    .loading-overlay.active { display: flex; }
     .loading-spinner {
-      width: 56px;
-      height: 56px;
-      border: 4px solid rgba(255, 255, 255, 0.2);
-      border-top-color: #fff;
+      width: 52px; height: 52px;
+      border: 4px solid rgba(255, 255, 255, 0.15);
+      border-top-color: var(--primary);
       border-radius: 50%;
-      animation: spin 1s linear infinite;
+      animation: spin 0.9s linear infinite;
       margin-bottom: 16px;
     }
+    .loading-text { color: #fff; font-size: 15px; font-weight: 700; }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    @media (min-width: 600px) {
+      .container { padding: 0 24px 140px; }
+      .form-grid { gap: 16px; }
+      .truck-grid { gap: 14px; }
     }
-
-    .loading-text {
-      color: #fff;
-      font-size: 16px;
-      font-weight: 900;
-    }
-
-    /* Responsive */
-    @media (max-width: 400px) {
+    @media (max-width: 380px) {
       .truck-grid { grid-template-columns: repeat(2, 1fr); }
       .form-grid { grid-template-columns: 1fr; }
-      .container { padding-bottom: 180px; }
+      .container { padding: 0 12px 160px; }
+      .photo-preview { width: 100px; height: 100px; font-size: 38px; }
+      .tg-avatar { width: 70px; height: 70px; font-size: 28px; }
+    }
+    @media (max-width: 340px) {
+      .title { font-size: 22px; }
+      .section-title { font-size: 15px; }
+      .truck-card { padding: 12px 6px; }
+      .truck-icon { font-size: 22px; }
     }
   </style>
 </head>
 
 <body>
-  <!-- Loading Overlay -->
   <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-spinner"></div>
     <div class="loading-text" id="loadingText" data-kz="Жүктелуде..." data-ru="Загрузка...">Жүктелуде...</div>
   </div>
 
-  <div class="container">
-    <!-- Header -->
-    <div class="header">
-      <div class="tg-avatar-wrap">
-        <div class="tg-avatar fallback" id="tgAvatar">👤
-          <img id="tgAvatarImg" alt="avatar" />
+  <!-- Offerta Modal (inside mini app) -->
+  <div class="modal" id="offertaModal" aria-hidden="true">
+    <div class="sheet" role="dialog" aria-modal="true">
+      <div class="sheet-head">
+        <div class="sheet-title">
+          <div class="ic">🧾</div>
+          <div class="tx" id="offertaModalTitle" data-kz="Оферта (ішінде)" data-ru="Оферта (внутри)">Оферта (ішінде)</div>
+        </div>
+        <button type="button" class="sheet-close" id="closeOffertaModalBtn" data-kz="Жабу" data-ru="Закрыть">Жабу</button>
+      </div>
+
+      <div class="sheet-body">
+        <div class="sheet-loading" id="offertaModalLoading">
+          <div class="mini-spinner"></div>
+          <div id="offertaModalLoadingText" data-kz="Жүктелуде..." data-ru="Загрузка...">Жүктелуде...</div>
+        </div>
+
+        <div class="offerta-frame">
+          <iframe id="offertaIframe" title="offerta"></iframe>
         </div>
       </div>
 
-      <div class="tg-username" id="tgUsername">@user</div>
+      <div class="sheet-foot">
+        <button type="button" class="btn-soft" id="offertaModalScrollTopBtn" data-kz="Жоғарыға" data-ru="Вверх">Жоғарыға</button>
+        <button type="button" class="btn-primary" id="offertaModalAcceptBtn" data-kz="Оқып, қабылдаймын" data-ru="Прочитал(а), принимаю">Оқып, қабылдаймын</button>
+      </div>
+    </div>
+  </div>
 
+  <div class="container">
+    <div class="header">
+      <div class="tg-avatar-wrap">
+        <div class="tg-avatar" id="tgAvatar">👤
+          <img id="tgAvatarImg" alt="avatar" style="display:none" />
+        </div>
+      </div>
+      <div class="tg-username" id="tgUsername">@user</div>
       <h1 class="title" data-kz="Жүргізуші тіркелуі" data-ru="Регистрация водителя">Жүргізуші тіркелуі</h1>
-      <p class="subtitle" data-kz="Alash-Go жүйесіне қосылу үшін деректерді толтырыңыз" data-ru="Заполните данные, чтобы подключиться к Alash-Go">
-        Alash-Go жүйесіне қосылу үшін деректерді толтырыңыз
-      </p>
+      <p class="subtitle" data-kz="Alash-Go жүйесіне қосылу үшін деректерді толтырыңыз" data-ru="Заполните данные, чтобы подключиться к Alash-Go">Alash-Go жүйесіне қосылу үшін деректерді толтырыңыз</p>
 
       <div class="notice">
-        <div class="notice-ic">⚠️</div>
+        <div class="notice-icon">⚠️</div>
         <div>
           <div class="notice-title" data-kz="ЕСКЕРТУ" data-ru="ВНИМАНИЕ">ЕСКЕРТУ</div>
-          <div class="notice-text"
-               data-kz="Әкімші барлық деректерді тексереді. Тек шынайы ақпарат жазыңыз және нақты құжаттарды жүктеңіз. Жалған/қате мәлімет тіркеуден бас тартуға әкелуі мүмкін."
-               data-ru="Администратор проверяет все данные. Указывайте только достоверную информацию и загружайте реальные документы. Ложные/ошибочные данные могут привести к отказу в регистрации.">
-            Әкімші барлық деректерді тексереді. Тек шынайы ақпарат жазыңыз және нақты құжаттарды жүктеңіз. Жалған/қате мәлімет тіркеуден бас тартуға әкелуі мүмкін.
-          </div>
+          <div class="notice-text" data-kz="Әкімші барлық деректерді тексереді. Тек шынайы ақпарат жазыңыз және нақты құжаттарды жүктеңіз." data-ru="Администратор проверяет все данные. Указывайте только достоверную информацию.">Әкімші барлық деректерді тексереді. Тек шынайы ақпарат жазыңыз және нақты құжаттарды жүктеңіз.</div>
         </div>
       </div>
     </div>
 
-    <!-- Progress -->
     <div class="progress-container">
       <div class="progress-bar">
         <div class="progress-fill" id="progressFill"></div>
@@ -744,21 +700,17 @@
       <div class="progress-text" id="progressText">0%</div>
     </div>
 
-    <!-- Form -->
     <form id="driverForm" enctype="multipart/form-data">
       <!-- Profile Photo -->
       <div class="form-section">
-        <div class="section-title">
-          <span class="section-icon">📸</span>
-          <span data-kz="Профиль фотосы" data-ru="Фото профиля">Профиль фотосы</span>
+        <div class="section-header">
+          <div class="section-icon">📸</div>
+          <div class="section-title" data-kz="Профиль фотосы" data-ru="Фото профиля">Профиль фотосы</div>
         </div>
 
         <div class="section-hint">
-          <div class="hint-dot">ℹ️</div>
-          <div data-kz="Фото анық болуы керек: бетіңіз көрінсін, фильтрсіз. Әкімші тексеру үшін қажет."
-               data-ru="Фото должно быть четким: лицо видно, без фильтров. Нужно для проверки администратором.">
-            Фото анық болуы керек: бетіңіз көрінсін, фильтрсіз. Әкімші тексеру үшін қажет.
-          </div>
+          <span class="hint-icon">ℹ️</span>
+          <span class="hint-text" data-kz="Фото анық болуы керек: бетіңіз көрінсін, фильтрсіз." data-ru="Фото должно быть четким: лицо видно, без фильтров.">Фото анық болуы керек: бетіңіз көрінсін, фильтрсіз.</span>
         </div>
 
         <div class="photo-upload">
@@ -766,59 +718,31 @@
           <div class="photo-label" data-kz="Суретті жүктеу (макс. 10MB)" data-ru="Загрузить фото (макс. 10MB)">Суретті жүктеу (макс. 10MB)</div>
           <input type="file" id="profilePhoto" name="profilePhoto" class="photo-input" accept="image/*" capture="environment" required>
           <div class="field-message error" id="profilePhotoError"></div>
-
-          <div class="field-note warning">
-            <div class="note-ic">⚠️</div>
-            <div data-kz="Басқа адамның фотосын жүктемеңіз. Жалған мәлімет — тіркеуден бас тарту."
-                 data-ru="Не загружайте фото другого человека. Неверные данные — отказ в регистрации.">
-              Басқа адамның фотосын жүктемеңіз. Жалған мәлімет — тіркеуден бас тарту.
-            </div>
-          </div>
         </div>
       </div>
 
       <!-- Personal Info -->
       <div class="form-section">
-        <div class="section-title">
-          <span class="section-icon">👤</span>
-          <span data-kz="Жеке мәліметтер" data-ru="Личные данные">Жеке мәліметтер</span>
+        <div class="section-header">
+          <div class="section-icon">👤</div>
+          <div class="section-title" data-kz="Жеке мәліметтер" data-ru="Личные данные">Жеке мәліметтер</div>
         </div>
 
         <div class="section-hint">
-          <div class="hint-dot">✅</div>
-          <div data-kz="Аты-жөніңіз құжаттардағыдай болуы керек. Қателік болса, әкімші түзетуге қайта жібереді."
-               data-ru="ФИО должно совпадать с документами. При ошибке администратор отправит на исправление.">
-            Аты-жөніңіз құжаттардағыдай болуы керек. Қателік болса, әкімші түзетуге қайта жібереді.
-          </div>
+          <span class="hint-icon">✅</span>
+          <span class="hint-text" data-kz="Аты-жөніңіз құжаттардағыдай болуы керек." data-ru="ФИО должно совпадать с документами.">Аты-жөніңіз құжаттардағыдай болуы керек.</span>
         </div>
 
         <div class="form-grid">
           <div class="form-field">
             <label class="field-label" data-kz="Аты" data-ru="Имя">Аты</label>
-            <input type="text" class="field-input" id="firstName" name="firstName" required
-                   data-placeholder-kz="Атыңызды енгізіңіз" data-placeholder-ru="Введите имя">
+            <input type="text" class="field-input" id="firstName" name="firstName" required data-placeholder-kz="Атыңыз" data-placeholder-ru="Имя">
             <div class="field-message error" id="firstNameError"></div>
-            <div class="field-note">
-              <div class="note-ic">ℹ️</div>
-              <div data-kz="Құжаттағыдай енгізіңіз (латын/кирилл қалай тұр — солай)."
-                   data-ru="Введите как в документе (латиница/кириллица — как указано).">
-                Құжаттағыдай енгізіңіз (латын/кирилл қалай тұр — солай).
-              </div>
-            </div>
           </div>
-
           <div class="form-field">
             <label class="field-label" data-kz="Тегі" data-ru="Фамилия">Тегі</label>
-            <input type="text" class="field-input" id="lastName" name="lastName" required
-                   data-placeholder-kz="Тегіңізді енгізіңіз" data-placeholder-ru="Введите фамилию">
+            <input type="text" class="field-input" id="lastName" name="lastName" required data-placeholder-kz="Тегіңіз" data-placeholder-ru="Фамилия">
             <div class="field-message error" id="lastNameError"></div>
-            <div class="field-note">
-              <div class="note-ic">ℹ️</div>
-              <div data-kz="Қысқартусыз, толық жазыңыз."
-                   data-ru="Пишите полностью, без сокращений.">
-                Қысқартусыз, толық жазыңыз.
-              </div>
-            </div>
           </div>
         </div>
 
@@ -826,62 +750,32 @@
           <label class="field-label" data-kz="Туған күні" data-ru="Дата рождения">Туған күні</label>
           <input type="date" class="field-input" id="birthday" name="birthday" required max="2006-01-01">
           <div class="field-message error" id="birthdayError"></div>
-          <div class="field-note warning">
-            <div class="note-ic">⚠️</div>
-            <div data-kz="Жасыңыз бен құжатыңыз сәйкес болуы керек. Жалған дата — тіркеу тоқтатылады."
-                 data-ru="Дата рождения должна совпадать с документами. Ложная дата — регистрация будет отклонена.">
-              Жасыңыз бен құжатыңыз сәйкес болуы керек. Жалған дата — тіркеу тоқтатылады.
-            </div>
-          </div>
         </div>
 
         <div class="form-field">
           <label class="field-label" data-kz="Телефон нөмірі" data-ru="Номер телефона">Телефон нөмірі</label>
-          <input type="tel" class="field-input" id="contactNumber" name="contactNumber" required
-                 placeholder="+7 (___) ___-__-__" autocomplete="tel" inputmode="tel">
+          <input type="tel" class="field-input" id="contactNumber" name="contactNumber" required placeholder="+7 (___) ___-__-__" autocomplete="tel" inputmode="tel">
           <div class="field-message error" id="contactNumberError"></div>
           <div class="field-note">
-            <div class="note-ic">📲</div>
-            <div data-kz="Осы нөмірге оператор/әкімші хабарласуы мүмкін. Қолжетімді нөмір жазыңыз."
-                 data-ru="На этот номер могут позвонить/написать администратор или оператор. Указывайте доступный номер.">
-              Осы нөмірге оператор/әкімші хабарласуы мүмкін. Қолжетімді нөмір жазыңыз.
-            </div>
+            <span class="note-icon">📲</span>
+            <span class="note-text" data-kz="Осы нөмірге оператор хабарласуы мүмкін." data-ru="На этот номер могут позвонить.">Осы нөмірге оператор хабарласуы мүмкін.</span>
           </div>
         </div>
 
-        <!-- Truck Number -->
         <div class="form-field">
           <label class="field-label" data-kz="Көлік нөмірі" data-ru="Номер машины">Көлік нөмірі</label>
-          <input type="text" class="field-input" id="truckNumber" name="truckNumber" required
-                 data-placeholder-kz="Мысалы: 777ABC01" data-placeholder-ru="Например: 777ABC01"
-                 autocomplete="off" inputmode="text" autocapitalize="characters" spellcheck="false">
+          <input type="text" class="field-input" id="truckNumber" name="truckNumber" required data-placeholder-kz="777ABC01" data-placeholder-ru="777ABC01" autocomplete="off" inputmode="text" autocapitalize="characters" spellcheck="false">
           <div class="field-message error" id="truckNumberError"></div>
           <div class="field-message success" id="truckNumberSuccess"></div>
           <div class="field-message pending" id="truckNumberPending"></div>
-
-          <div class="field-note warning">
-            <div class="note-ic">⚠️</div>
-            <div data-kz="Нөмір нақты көлігіңіздікі болуы керек. Әкімші құжат/фото арқылы тексереді."
-                 data-ru="Номер должен соответствовать вашему реальному авто. Администратор проверит по документам/фото.">
-              Нөмір нақты көлігіңіздікі болуы керек. Әкімші құжат/фото арқылы тексереді.
-            </div>
-          </div>
         </div>
       </div>
 
       <!-- Truck Type -->
       <div class="form-section">
-        <div class="section-title">
-          <span class="section-icon">🚚</span>
-          <span data-kz="Көлік түрі" data-ru="Тип транспорта">Көлік түрі</span>
-        </div>
-
-        <div class="section-hint">
-          <div class="hint-dot">🚛</div>
-          <div data-kz="Көлігіңізге сәйкес түрін таңдаңыз. Қате таңдау — тапсырыстардың дұрыс келмеуіне әкеледі."
-               data-ru="Выберите тип, соответствующий вашему транспорту. Ошибка приведет к некорректным заказам.">
-            Көлігіңізге сәйкес түрін таңдаңыз. Қате таңдау — тапсырыстардың дұрыс келмеуіне әкеледі.
-          </div>
+        <div class="section-header">
+          <div class="section-icon">🚚</div>
+          <div class="section-title" data-kz="Көлік түрі" data-ru="Тип транспорта">Көлік түрі</div>
         </div>
 
         <div class="truck-grid">
@@ -922,116 +816,108 @@
 
       <!-- Documents -->
       <div class="form-section">
-        <div class="section-title">
-          <span class="section-icon">📄</span>
-          <span data-kz="Құжаттар" data-ru="Документы">Құжаттар</span>
+        <div class="section-header">
+          <div class="section-icon">📄</div>
+          <div class="section-title" data-kz="Құжаттар" data-ru="Документы">Құжаттар</div>
         </div>
 
         <div class="section-hint">
-          <div class="hint-dot">🛡️</div>
-          <div data-kz="Құжаттар анық, толық көрінсін. Бұлыңғыр/кесілген фото — қайта жүктеуді талап етеді."
-               data-ru="Документы должны быть четкими и полностью видны. Размыто/обрезано — потребуется перезагрузка.">
-            Құжаттар анық, толық көрінсін. Бұлыңғыр/кесілген фото — қайта жүктеуді талап етеді.
-          </div>
+          <span class="hint-icon">🛡️</span>
+          <span class="hint-text" data-kz="Құжаттар анық, толық көрінсін." data-ru="Документы должны быть четкими.">Құжаттар анық, толық көрінсін.</span>
         </div>
 
         <div class="form-field">
-          <label class="field-label" data-kz="Жүргізуші куәлігі (алдыңғы жағы)" data-ru="Права (лицевая сторона)">Жүргізуші куәлігі (алдыңғы жағы)</label>
+          <label class="field-label" data-kz="Жүргізуші куәлігі (алдыңғы)" data-ru="Права (лицевая)">Жүргізуші куәлігі (алдыңғы)</label>
           <div class="file-field" id="licenseFrontField" onclick="document.getElementById('licenseFront').click()">
             <div class="file-icon">📋</div>
-            <div class="file-text" data-kz="Құжатты жүктеу (макс. 10MB)" data-ru="Загрузить документ (макс. 10MB)">Құжатты жүктеу (макс. 10MB)</div>
+            <div class="file-text" data-kz="Құжатты жүктеу (макс. 10MB)" data-ru="Загрузить (макс. 10MB)">Құжатты жүктеу (макс. 10MB)</div>
           </div>
           <input type="file" id="licenseFront" name="licenseFront" class="file-input" accept="image/*,.pdf" required>
           <div class="field-message error" id="licenseFrontError"></div>
-
-          <div class="field-note warning">
-            <div class="note-ic">⚠️</div>
-            <div data-kz="Түпнұсқа құжат жүктеңіз. Скрин/өңделген файл қабылданбауы мүмкін."
-                 data-ru="Загружайте оригинальный документ. Скрин/отредактированный файл может быть отклонен.">
-              Түпнұсқа құжат жүктеңіз. Скрин/өңделген файл қабылданбауы мүмкін.
-            </div>
-          </div>
         </div>
 
         <div class="form-field">
-          <label class="field-label" data-kz="Жүргізуші куәлігі (артқы жағы)" data-ru="Права (обратная сторона)">Жүргізуші куәлігі (артқы жағы)</label>
+          <label class="field-label" data-kz="Жүргізуші куәлігі (артқы)" data-ru="Права (обратная)">Жүргізуші куәлігі (артқы)</label>
           <div class="file-field" id="licenseBackField" onclick="document.getElementById('licenseBack').click()">
             <div class="file-icon">📋</div>
-            <div class="file-text" data-kz="Құжатты жүктеу (макс. 10MB)" data-ru="Загрузить документ (макс. 10MB)">Құжатты жүктеу (макс. 10MB)</div>
+            <div class="file-text" data-kz="Құжатты жүктеу (макс. 10MB)" data-ru="Загрузить (макс. 10MB)">Құжатты жүктеу (макс. 10MB)</div>
           </div>
           <input type="file" id="licenseBack" name="licenseBack" class="file-input" accept="image/*,.pdf" required>
           <div class="field-message error" id="licenseBackError"></div>
-
-          <div class="field-note">
-            <div class="note-ic">🔎</div>
-            <div data-kz="Барлық жазу оқылатын болсын: нөмірі, мерзімі, категориялары."
-                 data-ru="Все данные должны читаться: номер, срок действия, категории.">
-              Барлық жазу оқылатын болсын: нөмірі, мерзімі, категориялары.
-            </div>
-          </div>
         </div>
       </div>
 
       <!-- Location -->
       <div class="form-section">
-        <div class="section-title">
-          <span class="section-icon">📍</span>
-          <span data-kz="Жұмыс қаласы" data-ru="Город работы">Жұмыс қаласы</span>
-        </div>
-
-        <div class="section-hint">
-          <div class="hint-dot">📌</div>
-          <div data-kz="Дұрыс қала таңдаңыз — тапсырыстар сол аймақ бойынша келеді. Әкімші тексере алады."
-               data-ru="Укажите корректный город — заказы будут приходить по этому региону. Администратор может проверить.">
-            Дұрыс қала таңдаңыз — тапсырыстар сол аймақ бойынша келеді. Әкімші тексере алады.
-          </div>
+        <div class="section-header">
+          <div class="section-icon">📍</div>
+          <div class="section-title" data-kz="Жұмыс қаласы" data-ru="Город работы">Жұмыс қаласы</div>
         </div>
 
         <div class="form-field">
           <label class="field-label" data-kz="Қала" data-ru="Город">Қала</label>
           <div class="location-group">
-            <input type="text" class="field-input location-input" id="startCity" name="startCity" required
-                   data-placeholder-kz="Қаланы енгізіңіз" data-placeholder-ru="Введите город">
-            <button type="button" class="gps-btn" id="gpsBtn"
-                    data-title-kz="Орналасқан жерді анықтау"
-                    data-title-ru="Определить местоположение">📍</button>
+            <input type="text" class="field-input location-input" id="startCity" name="startCity" required data-placeholder-kz="Қаланы енгізіңіз" data-placeholder-ru="Введите город">
+            <button type="button" class="gps-btn" id="gpsBtn">📍</button>
           </div>
           <div class="field-message error" id="startCityError"></div>
           <div class="field-message success" id="startCitySuccess"></div>
-
-          <div class="field-note">
-            <div class="note-ic">🛰️</div>
-            <div data-kz="GPS арқылы автоматты анықтауға болады (рұқсат беріңіз)."
-                 data-ru="Можно определить автоматически через GPS (разрешите доступ).">
-              GPS арқылы автоматты анықтауға болады (рұқсат беріңіз).
-            </div>
-          </div>
         </div>
       </div>
 
-      <!-- Submit Info -->
+      <!-- Offerta (required) -->
+      <div class="form-section">
+        <div class="offerta-card">
+          <div class="offerta-top">
+            <div class="offerta-title">
+              <div class="ic">🧾</div>
+              <div class="tx" data-kz="Жүргізуші офертасы" data-ru="Оферта водителя">Жүргізуші офертасы</div>
+            </div>
+            <button type="button" class="offerta-open" id="openOffertaBtn" data-kz="Оқып шығу" data-ru="Открыть">Оқып шығу</button>
+          </div>
+
+          <div class="offerta-text" data-kz="Тіркелу үшін офертаны оқып, келісім беруіңіз керек. Оферта осы мини-қосымшаның ішінде ашылады." data-ru="Чтобы зарегистрироваться, прочитайте оферту и подтвердите согласие. Оферта открывается внутри мини-приложения.">
+            Тіркелу үшін офертаны оқып, келісім беруіңіз керек. Оферта осы мини-қосымшаның ішінде ашылады.
+          </div>
+
+          <div class="agree-row">
+            <div class="agree-check" id="agreeCheck" data-checked="false" role="button" aria-label="agree">
+              <!-- NOTE: keep checkbox in form, but server-approval is required -->
+              <input type="checkbox" id="offertaAgree" name="offertaAgree" />
+            </div>
+            <div class="agree-content">
+              <div class="agree-title" data-kz="Келісім" data-ru="Согласие">Келісім</div>
+              <div class="agree-sub" data-kz="Мен офертаны оқыдым және шарттарын қабылдаймын." data-ru="Я прочитал(а) оферту и принимаю условия.">
+                Мен офертаны оқыдым және шарттарын қабылдаймын.
+              </div>
+              <div class="agree-status ok" id="offertaOk" data-kz="Оферта қабылданды ✅" data-ru="Оферта принята ✅">Оферта қабылданды ✅</div>
+              <div class="agree-status bad" id="offertaBad"></div>
+              <div class="agree-status pending" id="offertaPending" data-kz="Тексерілуде..." data-ru="Проверка...">Тексерілуде...</div>
+            </div>
+          </div>
+
+          <div class="offerta-actions">
+            <button type="button" class="btn-soft" id="refreshOffertaBtn" data-kz="Статусты тексеру" data-ru="Проверить статус">Статусты тексеру</button>
+            <button type="button" class="btn-primary" id="acceptOffertaBtn" data-kz="Қабылдаймын" data-ru="Принимаю" disabled>Қабылдаймын</button>
+          </div>
+
+          <input type="hidden" id="offertaAcceptedHidden" name="offertaAccepted" value="">
+        </div>
+      </div>
+
       <div class="submit-info">
         <div class="submit-info-icon">✅</div>
-        <div class="submit-info-text"
-             data-kz="Барлық өрістерді толтырғаннан кейін, төмендегі батырманы басыңыз. Әкімші тексергеннен соң ғана жүйеге қосыласыз."
-             data-ru="После заполнения всех полей нажмите кнопку ниже. Доступ появится только после проверки администратором.">
-          Барлық өрістерді толтырғаннан кейін, төмендегі батырманы басыңыз. Әкімші тексергеннен соң ғана жүйеге қосыласыз.
-        </div>
+        <div class="submit-info-text" data-kz="Барлық өрістерді толтырғаннан кейін, төмендегі батырманы басыңыз." data-ru="После заполнения всех полей нажмите кнопку ниже.">Барлық өрістерді толтырғаннан кейін, төмендегі батырманы басыңыз.</div>
 
         <div class="gps-final-note">
           <div class="ic">🛰️</div>
           <div>
             <div class="t1" data-kz="GPS РҰҚСАТ" data-ru="ДОСТУП GPS">GPS РҰҚСАТ</div>
-            <div class="t2"
-              data-kz="Тапсырыстарды дәл беру үшін құрылғыңыздан GPS-ке толық қолжетімділік беріңіз. GPS қосулы болмаса, өтініміңіз кешігуі мүмкін."
-              data-ru="Чтобы точно получать заказы, предоставьте полный доступ к GPS на вашем устройстве. Если GPS выключен, заявка может обрабатываться дольше.">
-              Тапсырыстарды дәл беру үшін құрылғыңыздан GPS-ке толық қолжетімділік беріңіз. GPS қосулы болмаса, өтініміңіз кешігуі мүмкін.
-            </div>
+            <div class="t2" data-kz="Тапсырыстарды дәл беру үшін GPS-ке қолжетімділік беріңіз." data-ru="Для точного получения заказов предоставьте доступ к GPS.">Тапсырыстарды дәл беру үшін GPS-ке қолжетімділік беріңіз.</div>
           </div>
         </div>
       </div>
 
-      <!-- Hidden fields -->
       <input type="hidden" id="latitude" name="latitude">
       <input type="hidden" id="longitude" name="longitude">
       <input type="hidden" id="telegramId" name="telegramId">
@@ -1041,21 +927,27 @@
   </div>
 
   <script>
-    // Global state
     let currentLang = 'kz';
     let selectedTruckType = null;
-
-    // Truck number availability state
-    let truckNumberState = {
-      lastChecked: '',
-      available: false,
-      checking: false
-    };
-
-    // 10MB limit (requested)
+    let truckNumberState = { lastChecked: '', available: false, checking: false };
     const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
-    document.addEventListener('DOMContentLoaded', function() {
+    // Offerta
+    let offertaAccepted = false;
+    let offertaChecking = false;
+
+    const OFFERTA_ROLE = 'driver';
+    const OFFERTA_URL = '/static/offerta-driver.html'; // opens inside iframe
+
+    // API endpoints (supports both variants; fixes "permission/offerta invalid JSON" issues)
+    const API_OFFERTA_STATUS_GET = '/api/offerta/status';   // GET ?telegram_id=123&role=driver
+    const API_OFFERTA_STATUS_POST = '/api/offerta/status';  // POST {telegram_id:123, role:"driver"}
+    const API_OFFERTA_APPROVE = '/api/offerta/approve';     // POST {telegram_id:123, role:"driver"}  (your offerta-driver.html uses this)
+    const API_OFFERTA_ACCEPT  = '/api/offerta/accept';      // fallback (old)
+    const API_TRUCK_CHECK     = '/api/driver/truck-number/check';
+    const API_DRIVER_REGISTER = '/api/driver/register';
+
+    document.addEventListener('DOMContentLoaded', () => {
       initLanguage();
       initializeTelegram();
       setupEventListeners();
@@ -1063,8 +955,7 @@
     });
 
     function initLanguage() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const lang = urlParams.get('lang');
+      const lang = new URLSearchParams(window.location.search).get('lang');
       if (lang === 'kz' || lang === 'ru') currentLang = lang;
       applyTranslations();
     }
@@ -1072,22 +963,14 @@
     function applyTranslations() {
       document.querySelectorAll('[data-kz]').forEach(el => {
         const text = el.getAttribute('data-' + currentLang);
-        if (text) {
-          if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.placeholder = text;
-          else el.textContent = text;
-        }
+        if (!text) return;
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.placeholder = text;
+        else el.textContent = text;
       });
-
       document.querySelectorAll('[data-placeholder-kz]').forEach(el => {
         const text = el.getAttribute('data-placeholder-' + currentLang);
-        if (text && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) el.placeholder = text;
+        if (text) el.placeholder = text;
       });
-
-      const gpsBtn = document.getElementById('gpsBtn');
-      if (gpsBtn) {
-        const t = gpsBtn.getAttribute('data-title-' + currentLang);
-        if (t) gpsBtn.title = t;
-      }
     }
 
     function applyTheme(isDark) {
@@ -1095,8 +978,7 @@
     }
 
     function initializeTelegram() {
-      if (!window.Telegram || !Telegram.WebApp) return;
-
+      if (!window.Telegram?.WebApp) return;
       const tg = Telegram.WebApp;
       tg.ready();
       tg.expand();
@@ -1114,83 +996,341 @@
 
       const user = tg.initDataUnsafe?.user;
       if (user) {
-        document.getElementById('telegramId').value = user.id;
+        // IMPORTANT: keep telegramId numeric-looking; backend expects number
+        document.getElementById('telegramId').value = String(user.id || '');
+        document.getElementById('tgUsername').textContent = user.username ? '@' + user.username : (user.first_name || 'Telegram user');
+        document.getElementById('tgUsernameHidden').value = user.username || '';
+        document.getElementById('tgPhotoUrlHidden').value = user.photo_url || '';
 
-        // header username
-        const uEl = document.getElementById('tgUsername');
-        const uname = user.username ? '@' + user.username : (user.first_name || 'Telegram user');
-        uEl.textContent = uname;
-
-        // hidden
-        document.getElementById('tgUsernameHidden').value = user.username ? user.username : '';
-        document.getElementById('tgPhotoUrlHidden').value = user.photo_url ? user.photo_url : '';
-
-        // header avatar
         const avatarWrap = document.getElementById('tgAvatar');
         const avatarImg = document.getElementById('tgAvatarImg');
-
         if (user.photo_url) {
           avatarImg.src = user.photo_url;
           avatarImg.onload = () => {
             avatarImg.style.display = 'block';
-            avatarWrap.classList.remove('fallback');
             avatarWrap.textContent = '';
             avatarWrap.appendChild(avatarImg);
           };
-          avatarImg.onerror = () => {
-            avatarImg.style.display = 'none';
-            avatarWrap.classList.add('fallback');
-            avatarWrap.textContent = '👤';
-          };
-        } else {
-          avatarImg.style.display = 'none';
-          avatarWrap.classList.add('fallback');
-          avatarWrap.textContent = '👤';
         }
       }
 
       applyTheme(tg.colorScheme === 'dark');
       tg.onEvent('themeChanged', () => applyTheme(tg.colorScheme === 'dark'));
-
       tg.MainButton.hide();
+
+      queueMicrotask(() => checkOffertaStatus(true));
     }
 
     function setupEventListeners() {
       const form = document.getElementById('driverForm');
-      const inputs = form.querySelectorAll('input[required]');
-
-      inputs.forEach(input => {
+      form.querySelectorAll('input[required]').forEach(input => {
         input.addEventListener('blur', () => validateField(input));
         input.addEventListener('input', () => updateProgress());
       });
 
       document.getElementById('profilePhoto').addEventListener('change', handlePhotoChange);
-      document.getElementById('licenseFront').addEventListener('change', (e) => handleFileChange(e, 'licenseFrontField'));
-      document.getElementById('licenseBack').addEventListener('change', (e) => handleFileChange(e, 'licenseBackField'));
-
-      // PHONE MASK FIX: cursor inside parentheses, no "jump"
+      document.getElementById('licenseFront').addEventListener('change', e => handleFileChange(e, 'licenseFrontField'));
+      document.getElementById('licenseBack').addEventListener('change', e => handleFileChange(e, 'licenseBackField'));
       setupPhoneMask(document.getElementById('contactNumber'));
-
       document.getElementById('gpsBtn').addEventListener('click', getCurrentLocation);
 
-      const truckNumberInput = document.getElementById('truckNumber');
-      truckNumberInput.addEventListener('input', () => {
-        normalizeTruckNumber(truckNumberInput);
-        scheduleTruckNumberCheck(truckNumberInput.value);
+      const truckInput = document.getElementById('truckNumber');
+      truckInput.addEventListener('input', () => {
+        truckInput.value = truckInput.value.toUpperCase().replace(/\s+/g, '');
+        scheduleTruckNumberCheck(truckInput.value);
       });
-      truckNumberInput.addEventListener('blur', () => {
-        normalizeTruckNumber(truckNumberInput);
-        scheduleTruckNumberCheck(truckNumberInput.value, true);
+      truckInput.addEventListener('blur', () => scheduleTruckNumberCheck(truckInput.value, true));
+
+      // Offerta events
+      const agreeCheck = document.getElementById('agreeCheck');
+      const agreeCb = document.getElementById('offertaAgree');
+      const openBtn = document.getElementById('openOffertaBtn');
+      const acceptBtn = document.getElementById('acceptOffertaBtn');
+      const refreshBtn = document.getElementById('refreshOffertaBtn');
+
+      const syncAgreeUI = (checked) => {
+        agreeCheck.setAttribute('data-checked', checked ? 'true' : 'false');
+        agreeCb.checked = !!checked;
+        // accept button enabled only when checkbox checked AND not already accepted AND not checking
+        acceptBtn.disabled = !(checked && !offertaAccepted && !offertaChecking);
+      };
+
+      agreeCheck.addEventListener('click', () => {
+        if (offertaAccepted) return;
+        const next = !agreeCb.checked;
+        syncAgreeUI(next);
+        hideOffertaMsgs();
+        updateProgress();
       });
+
+      agreeCb.addEventListener('change', () => {
+        if (offertaAccepted) return;
+        syncAgreeUI(agreeCb.checked);
+        hideOffertaMsgs();
+        updateProgress();
+      });
+
+      openBtn.addEventListener('click', () => openOffertaInsideMiniApp());
+      refreshBtn.addEventListener('click', () => checkOffertaStatus(true));
+      acceptBtn.addEventListener('click', () => acceptOfferta());
+
+      // Modal events
+      document.getElementById('closeOffertaModalBtn').addEventListener('click', closeOffertaModal);
+      document.getElementById('offertaModal').addEventListener('click', (e) => {
+        if (e.target && e.target.id === 'offertaModal') closeOffertaModal();
+      });
+
+      document.getElementById('offertaModalScrollTopBtn').addEventListener('click', () => {
+        const iframe = document.getElementById('offertaIframe');
+        try { iframe.contentWindow.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
+      });
+
+      document.getElementById('offertaModalAcceptBtn').addEventListener('click', async () => {
+        if (!offertaAccepted) {
+          syncAgreeUI(true);
+          await acceptOfferta();
+        }
+        closeOffertaModal();
+      });
+
+      // initial UI
+      syncAgreeUI(false);
+    }
+
+    function openOffertaInsideMiniApp() {
+      const modal = document.getElementById('offertaModal');
+      const loading = document.getElementById('offertaModalLoading');
+      const iframe = document.getElementById('offertaIframe');
+
+      modal.classList.add('active');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-open');
+
+      loading.classList.add('active');
+      document.getElementById('offertaModalLoadingText').textContent =
+        currentLang === 'kz' ? 'Жүктелуде...' : 'Загрузка...';
+
+      const url = OFFERTA_URL + '?lang=' + encodeURIComponent(currentLang) + '&role=' + encodeURIComponent(OFFERTA_ROLE);
+
+      iframe.onload = () => loading.classList.remove('active');
+      iframe.onerror = () => {
+        loading.classList.remove('active');
+        if (window.Telegram?.WebApp) Telegram.WebApp.showAlert(currentLang === 'kz' ? 'Оферта ашылмады' : 'Оферта не открылась');
+        else alert('Offerta load failed');
+      };
+      iframe.src = url;
+    }
+
+    function closeOffertaModal() {
+      const modal = document.getElementById('offertaModal');
+      const iframe = document.getElementById('offertaIframe');
+      modal.classList.remove('active');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('modal-open');
+      iframe.src = 'about:blank';
+    }
+
+    function getTelegramIdNumber() {
+      const hidden = (document.getElementById('telegramId').value || '').trim();
+      if (hidden && /^\d+$/.test(hidden)) return Number(hidden);
+
+      const uid = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+      if (uid) {
+        document.getElementById('telegramId').value = String(uid);
+        return Number(uid);
+      }
+      return 0;
+    }
+
+    function extractAcceptedFlag(data) {
+      // supports multiple backend response shapes
+      return !!(
+        data?.approved === true ||
+        data?.accepted === true ||
+        data?.is_accepted === true ||
+        data?.isApproved === true ||
+        data?.isAccepted === true
+      );
+    }
+
+    async function tryFetchJSON(url, init) {
+      const res = await fetch(url, init);
+      const data = await res.json().catch(() => ({}));
+      return { res, data };
+    }
+
+    async function checkOffertaStatus(force=false) {
+      const tgId = getTelegramIdNumber();
+      if (!tgId) return;
+
+      if (offertaChecking && !force) return;
+
+      offertaChecking = true;
+      showOffertaPending(currentLang === 'kz' ? 'Тексерілуде...' : 'Проверка...');
+      document.getElementById('acceptOffertaBtn').disabled = true;
+
+      try {
+        // 1) Prefer GET ?telegram_id=...&role=... (same as your offerta-driver.html)
+        let out;
+        try {
+          const url = `${API_OFFERTA_STATUS_GET}?telegram_id=${encodeURIComponent(tgId)}&role=${encodeURIComponent(OFFERTA_ROLE)}`;
+          out = await tryFetchJSON(url, { method: 'GET', cache: 'no-store' });
+        } catch {
+          out = null;
+        }
+
+        // 2) Fallback to POST {telegram_id:number, role}
+        if (!out || !out.res) {
+          out = await tryFetchJSON(API_OFFERTA_STATUS_POST, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telegram_id: Number(tgId), role: OFFERTA_ROLE })
+          });
+        }
+
+        const { res, data } = out;
+
+        offertaChecking = false;
+
+        if (!res.ok || !data) {
+          showOffertaBad(currentLang === 'kz' ? 'Оферта статусын алу мүмкін болмады' : 'Не удалось получить статус оферты');
+          setOffertaAccepted(false, true);
+          updateProgress();
+          return;
+        }
+
+        // some backends use {success:true, approved:true}
+        const accepted = extractAcceptedFlag(data);
+
+        if (accepted) {
+          setOffertaAccepted(true, true);
+          showOffertaOk(currentLang === 'kz' ? 'Оферта қабылданды ✅' : 'Оферта принята ✅');
+        } else {
+          setOffertaAccepted(false, true);
+          hideOffertaMsgs();
+        }
+        updateProgress();
+      } catch {
+        offertaChecking = false;
+        showOffertaBad(currentLang === 'kz' ? 'Желі қатесі (оферта)' : 'Ошибка сети (оферта)');
+        setOffertaAccepted(false, true);
+        updateProgress();
+      }
+    }
+
+    async function acceptOfferta() {
+      const tgId = getTelegramIdNumber();
+      if (!tgId) {
+        showOffertaBad(currentLang === 'kz' ? 'Telegram ID жоқ' : 'Нет Telegram ID');
+        return;
+      }
+      if (offertaAccepted) return;
+
+      const agreeCb = document.getElementById('offertaAgree');
+      if (!agreeCb.checked) {
+        showOffertaBad(currentLang === 'kz' ? 'Алдымен келісім белгісін қойыңыз' : 'Сначала поставьте галочку согласия');
+        return;
+      }
+
+      offertaChecking = true;
+      showOffertaPending(currentLang === 'kz' ? 'Қабылдануда...' : 'Принятие...');
+      document.getElementById('acceptOffertaBtn').disabled = true;
+
+      const payload = JSON.stringify({ telegram_id: Number(tgId), role: OFFERTA_ROLE });
+
+      try {
+        // 1) approve (new)
+        let out = await tryFetchJSON(API_OFFERTA_APPROVE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload
+        });
+
+        // 2) fallback accept (old)
+        if (!out.res.ok) {
+          out = await tryFetchJSON(API_OFFERTA_ACCEPT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload
+          });
+        }
+
+        const { res, data } = out;
+
+        offertaChecking = false;
+
+        if (res.ok && (data?.success === true || extractAcceptedFlag(data) === true)) {
+          setOffertaAccepted(true, true);
+          showOffertaOk(currentLang === 'kz' ? 'Оферта қабылданды ✅' : 'Оферта принята ✅');
+        } else {
+          setOffertaAccepted(false, true);
+          showOffertaBad((data && data.message) ? data.message : (currentLang === 'kz' ? 'Қабылдау сәтсіз' : 'Не удалось принять'));
+        }
+        updateProgress();
+      } catch (e) {
+        offertaChecking = false;
+        setOffertaAccepted(false, true);
+        showOffertaBad(currentLang === 'kz' ? 'Желі қатесі (қабылдау)' : 'Ошибка сети (принятие)');
+        updateProgress();
+      }
+    }
+
+    function setOffertaAccepted(accepted, touchCheckbox) {
+      offertaAccepted = !!accepted;
+      document.getElementById('offertaAcceptedHidden').value = accepted ? 'true' : '';
+
+      const agreeCheck = document.getElementById('agreeCheck');
+      const agreeCb = document.getElementById('offertaAgree');
+
+      if (accepted) {
+        agreeCheck.setAttribute('data-checked', 'true');
+        agreeCb.checked = true;
+        agreeCb.disabled = true;
+        agreeCheck.style.pointerEvents = 'none';
+        document.getElementById('acceptOffertaBtn').disabled = true;
+      } else {
+        agreeCb.disabled = false;
+        agreeCheck.style.pointerEvents = '';
+        if (touchCheckbox) {
+          agreeCheck.setAttribute('data-checked', agreeCb.checked ? 'true' : 'false');
+          document.getElementById('acceptOffertaBtn').disabled = !(agreeCb.checked && !offertaChecking);
+        }
+      }
+    }
+
+    function hideOffertaMsgs() {
+      document.getElementById('offertaOk').style.display = 'none';
+      document.getElementById('offertaBad').style.display = 'none';
+      document.getElementById('offertaPending').style.display = 'none';
+    }
+    function showOffertaOk(msg) {
+      hideOffertaMsgs();
+      const ok = document.getElementById('offertaOk');
+      ok.textContent = msg;
+      ok.className = 'agree-status ok';
+      ok.style.display = 'block';
+    }
+    function showOffertaBad(msg) {
+      hideOffertaMsgs();
+      const bad = document.getElementById('offertaBad');
+      bad.textContent = msg;
+      bad.className = 'agree-status bad';
+      bad.style.display = 'block';
+    }
+    function showOffertaPending(msg) {
+      hideOffertaMsgs();
+      const p = document.getElementById('offertaPending');
+      p.textContent = msg;
+      p.className = 'agree-status pending';
+      p.style.display = 'block';
     }
 
     function selectTruck(type) {
       selectedTruckType = type;
       document.getElementById('truckType').value = type;
-
-      document.querySelectorAll('.truck-card').forEach(card => card.classList.remove('selected'));
-      document.querySelector(`[data-truck="${type}"]`).classList.add('selected');
-
+      document.querySelectorAll('.truck-card').forEach(c => c.classList.remove('selected'));
+      const el = document.querySelector(`[data-truck="${type}"]`);
+      if (el) el.classList.add('selected');
       const err = document.getElementById('truckTypeError');
       if (err) err.style.display = 'none';
       updateProgress();
@@ -1198,492 +1338,307 @@
 
     function handlePhotoChange(e) {
       const file = e.target.files[0];
-      if (file) {
-        if (file.size > MAX_FILE_BYTES) {
-          showError('profilePhotoError', currentLang === 'kz' ? 'Файл тым үлкен (макс. 10MB)' : 'Файл слишком большой (макс. 10MB)');
-          e.target.value = '';
-          return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-          document.getElementById('photoPreview').innerHTML = `<img src="${ev.target.result}" alt="Profile">`;
-          document.getElementById('photoPreview').classList.add('has-photo');
-        };
-        reader.readAsDataURL(file);
-
-        validateField(e.target);
-        updateProgress();
+      if (!file) return;
+      if (file.size > MAX_FILE_BYTES) {
+        showError('profilePhotoError', currentLang === 'kz' ? 'Файл тым үлкен (макс. 10MB)' : 'Файл слишком большой (макс. 10MB)');
+        e.target.value = '';
+        return;
       }
+      const reader = new FileReader();
+      reader.onload = ev => {
+        document.getElementById('photoPreview').innerHTML = `<img src="${ev.target.result}" alt="Profile">`;
+        document.getElementById('photoPreview').classList.add('has-photo');
+      };
+      reader.readAsDataURL(file);
+      validateField(e.target);
+      updateProgress();
     }
 
     function handleFileChange(e, fieldId) {
       const file = e.target.files[0];
-      const field = document.getElementById(fieldId);
-
-      if (file) {
-        if (file.size > MAX_FILE_BYTES) {
-          const errorId = e.target.id + 'Error';
-          showError(errorId, currentLang === 'kz' ? 'Файл тым үлкен (макс. 10MB)' : 'Файл слишком большой (макс. 10MB)');
-          e.target.value = '';
-          return;
-        }
-
-        field.classList.add('has-file');
-        field.querySelector('.file-text').textContent = file.name;
-        field.querySelector('.file-icon').textContent = '✅';
-
-        validateField(e.target);
-        updateProgress();
+      if (!file) return;
+      if (file.size > MAX_FILE_BYTES) {
+        showError(e.target.id + 'Error', currentLang === 'kz' ? 'Файл тым үлкен (макс. 10MB)' : 'Файл слишком большой (макс. 10MB)');
+        e.target.value = '';
+        return;
       }
+      const field = document.getElementById(fieldId);
+      field.classList.add('has-file');
+      field.querySelector('.file-text').textContent = file.name;
+      field.querySelector('.file-icon').textContent = '✅';
+      validateField(e.target);
+      updateProgress();
     }
 
-    /* =========================
-       PHONE MASK (FIXED CARET)
-       +7 (___) ___-__-__
-       - caret can go inside ()
-       - no jumping after '('
-    ========================= */
     function setupPhoneMask(input) {
       if (!input) return;
-
-      const template = '+7 (___) ___-__-__';
-
-      function onlyDigits(s) { return (s || '').replace(/\D/g, ''); }
-
-      function build(digits) {
-        // digits may include starting 7 or 8
+      const build = digits => {
         let d = digits;
         if (d.startsWith('8')) d = '7' + d.slice(1);
         if (!d.startsWith('7')) d = '7' + d;
-
-        // we need 11 digits total: 7 + 10
         d = d.slice(0, 11);
-
-        const a = d.slice(1, 4);
-        const b = d.slice(4, 7);
-        const c = d.slice(7, 9);
-        const e = d.slice(9, 11);
-
-        let out = '+7 (';
-        out += (a + '___').slice(0, 3);
-        out += ') ';
-        out += (b + '___').slice(0, 3);
-        out += '-';
-        out += (c + '__').slice(0, 2);
-        out += '-';
-        out += (e + '__').slice(0, 2);
-        return out;
-      }
-
-      function mapCaret(masked, caretPos) {
-        // Move caret to nearest "_" on the right, or keep within allowed zone
-        const first = masked.indexOf('_');
-        if (first === -1) return masked.length;
-
-        // if caret is before first editable slot, snap to first editable
-        if (caretPos < first) return first;
-
-        // if caret is on a non-editable char, snap to nearest editable to right, else keep
-        if (masked[caretPos] && masked[caretPos] !== '_' && /\D/.test(masked[caretPos])) {
-          const next = masked.indexOf('_', caretPos);
-          if (next !== -1) return next;
-        }
-        return caretPos;
-      }
-
-      function setValWithCaret(newVal, caret) {
-        input.value = newVal;
-        requestAnimationFrame(() => {
-          input.setSelectionRange(caret, caret);
-        });
-      }
+        const a = (d.slice(1,4) + '___').slice(0,3);
+        const b = (d.slice(4,7) + '___').slice(0,3);
+        const c = (d.slice(7,9) + '__').slice(0,2);
+        const e = (d.slice(9,11) + '__').slice(0,2);
+        return `+7 (${a}) ${b}-${c}-${e}`;
+      };
+      const onlyDigits = s => (s||'').replace(/\D/g,'');
+      const mapCaret = (m,p) => {
+        const f = m.indexOf('_');
+        if (f===-1) return m.length;
+        if (p<f) return f;
+        return p;
+      };
+      const set = (v,c) => { input.value=v; requestAnimationFrame(()=>input.setSelectionRange(c,c)); };
 
       input.addEventListener('focus', () => {
-        if (!input.value) {
-          const v = build('7');
-          setValWithCaret(v, v.indexOf('_'));
-        } else {
-          // ensure mask format
-          const digits = onlyDigits(input.value);
-          const v = build(digits);
-          const c = mapCaret(v, input.selectionStart || v.indexOf('_'));
-          setValWithCaret(v, c);
-        }
+        if (!input.value) { const v=build('7'); set(v,v.indexOf('_')); }
+        else { const v=build(onlyDigits(input.value)); set(v,mapCaret(v,input.selectionStart||v.indexOf('_'))); }
       });
-
-      input.addEventListener('keydown', (e) => {
-        const pos = input.selectionStart || 0;
-
-        // prevent deleting fixed prefix "+7 ("
-        const fixedMin = 4; // "+7 (". length = 4
-        if ((e.key === 'Backspace' || e.key === 'Delete') && pos <= fixedMin) {
-          e.preventDefault();
-          return;
-        }
+      input.addEventListener('keydown', e => {
+        if ((e.key==='Backspace'||e.key==='Delete') && (input.selectionStart||0)<=4) e.preventDefault();
       });
-
       input.addEventListener('input', () => {
-        const caretBefore = input.selectionStart || 0;
-        const digits = onlyDigits(input.value);
-        const v = build(digits);
-        const c = mapCaret(v, caretBefore);
-        setValWithCaret(v, c);
+        const c=input.selectionStart||0, v=build(onlyDigits(input.value));
+        set(v,mapCaret(v,c));
         validateField(input);
         updateProgress();
       });
-
       input.addEventListener('click', () => {
-        const v = input.value || template;
-        if (!input.value) {
-          setValWithCaret(build('7'), build('7').indexOf('_'));
-          return;
-        }
-        const pos = input.selectionStart || 0;
-        const c = mapCaret(v, pos);
-        if (c !== pos) requestAnimationFrame(() => input.setSelectionRange(c, c));
+        if (!input.value) { const v=build('7'); set(v,v.indexOf('_')); return; }
+        const p=input.selectionStart||0, c=mapCaret(input.value,p);
+        if (c!==p) requestAnimationFrame(()=>input.setSelectionRange(c,c));
       });
-
       input.addEventListener('blur', () => {
-        // if user didn't fill anything (only +7), clear
-        const digits = onlyDigits(input.value);
-        if (digits === '7') input.value = '';
+        if (onlyDigits(input.value)==='7') input.value='';
         validateField(input);
       });
     }
 
-    function normalizeTruckNumber(inputEl) {
-      let v = (inputEl.value || '').toUpperCase();
-      v = v.replace(/\s+/g, '');
-      inputEl.value = v;
-    }
-
-    let truckNumberTimer = null;
-    function scheduleTruckNumberCheck(value, immediate = false) {
-      const tn = (value || '').toUpperCase().replace(/\s+/g, '');
-
+    let truckTimer = null;
+    function scheduleTruckNumberCheck(value, immediate=false) {
+      const tn = (value||'').toUpperCase().replace(/\s+/g,'');
       if (!tn) {
-        truckNumberState = { lastChecked: '', available: false, checking: false };
-        clearTruckNumberMessages();
-        setTruckNumberVisualState(null);
+        truckNumberState={lastChecked:'',available:false,checking:false};
+        clearTruckMsgs();
+        setTruckVisual(null);
         updateProgress();
         return;
       }
-
-      if (tn.length < 5 || tn.length > 15) {
-        truckNumberState = { lastChecked: '', available: false, checking: false };
-        showTruckNumberError(currentLang === 'kz' ? 'Нөмір форматы дұрыс емес' : 'Неверный формат номера');
+      if (tn.length<5||tn.length>15) {
+        truckNumberState={lastChecked:'',available:false,checking:false};
+        showTruckErr(currentLang==='kz'?'Нөмір форматы дұрыс емес':'Неверный формат');
         updateProgress();
         return;
       }
-
-      if (truckNumberTimer) clearTimeout(truckNumberTimer);
-      truckNumberTimer = setTimeout(() => {
-        checkTruckNumberServer(tn);
-      }, immediate ? 0 : 450);
+      if (truckTimer) clearTimeout(truckTimer);
+      truckTimer = setTimeout(() => checkTruckServer(tn), immediate?0:450);
     }
 
-    async function checkTruckNumberServer(tn) {
-      if (truckNumberState.checking && truckNumberState.lastChecked === tn) return;
-      if (truckNumberState.lastChecked === tn && (truckNumberState.available === true || truckNumberState.available === false)) {
-        updateProgress();
-        return;
-      }
+    async function checkTruckServer(tn) {
+      if (truckNumberState.checking && truckNumberState.lastChecked===tn) return;
+      if (truckNumberState.lastChecked===tn && truckNumberState.available!==null) { updateProgress(); return; }
+      truckNumberState.checking=true; truckNumberState.lastChecked=tn;
 
-      truckNumberState.checking = true;
-      truckNumberState.lastChecked = tn;
-      clearTruckNumberMessages();
-      showTruckNumberPending(currentLang === 'kz' ? 'Тексерілуде...' : 'Проверка...');
-
-      const input = document.getElementById('truckNumber');
-      input.classList.remove('error', 'success');
-      input.classList.add('pending');
+      clearTruckMsgs();
+      showTruckPending(currentLang==='kz'?'Тексерілуде...':'Проверка...');
+      document.getElementById('truckNumber').classList.remove('error','success');
+      document.getElementById('truckNumber').classList.add('pending');
 
       try {
-        const res = await fetch('/api/driver/truck-number/check', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ truck_number: tn })
+        const res = await fetch(API_TRUCK_CHECK, {
+          method:'PATCH',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({truck_number:tn})
         });
+        const data = await res.json().catch(()=>({}));
+        truckNumberState.checking=false;
 
-        const data = await res.json().catch(() => ({}));
-        truckNumberState.checking = false;
-
-        if (!res.ok || !data || data.success !== true) {
-          truckNumberState.available = false;
-          showTruckNumberError(currentLang === 'kz' ? 'Сервер қатесі' : 'Ошибка сервера');
+        if (!res.ok||!data||data.success!==true) {
+          truckNumberState.available=false;
+          showTruckErr(currentLang==='kz'?'Сервер қатесі':'Ошибка сервера');
           updateProgress();
           return;
         }
 
         if (data.available) {
-          truckNumberState.available = true;
-          showTruckNumberSuccess(currentLang === 'kz' ? 'Нөмір бос' : 'Номер свободен');
+          truckNumberState.available=true;
+          showTruckOk(currentLang==='kz'?'Нөмір бос':'Номер свободен');
         } else {
-          truckNumberState.available = false;
-          showTruckNumberError(data.message || (currentLang === 'kz' ? 'Нөмір бос емес' : 'Номер занят'));
+          truckNumberState.available=false;
+          showTruckErr(data.message||(currentLang==='kz'?'Нөмір бос емес':'Номер занят'));
         }
-
         updateProgress();
-      } catch (e) {
-        truckNumberState.checking = false;
-        truckNumberState.available = false;
-        showTruckNumberError(currentLang === 'kz' ? 'Желі қатесі' : 'Ошибка сети');
+      } catch {
+        truckNumberState.checking=false;
+        truckNumberState.available=false;
+        showTruckErr(currentLang==='kz'?'Желі қатесі':'Ошибка сети');
         updateProgress();
       }
     }
 
-    function clearTruckNumberMessages() {
-      const e = document.getElementById('truckNumberError');
-      const s = document.getElementById('truckNumberSuccess');
-      const p = document.getElementById('truckNumberPending');
-      if (e) e.style.display = 'none';
-      if (s) s.style.display = 'none';
-      if (p) p.style.display = 'none';
+    function clearTruckMsgs() {
+      ['truckNumberError','truckNumberSuccess','truckNumberPending'].forEach(id=>{
+        const e=document.getElementById(id);
+        if(e)e.style.display='none';
+      });
     }
-
-    function setTruckNumberVisualState(state) {
-      const input = document.getElementById('truckNumber');
-      input.classList.remove('error', 'success', 'pending');
-      if (state === 'error') input.classList.add('error');
-      if (state === 'success') input.classList.add('success');
-      if (state === 'pending') input.classList.add('pending');
+    function setTruckVisual(s) {
+      const i=document.getElementById('truckNumber');
+      i.classList.remove('error','success','pending');
+      if(s)i.classList.add(s);
     }
-
-    function showTruckNumberError(msg) {
-      clearTruckNumberMessages();
-      setTruckNumberVisualState('error');
-      const el = document.getElementById('truckNumberError');
-      el.textContent = msg;
-      el.classList.add('error');
-      el.style.display = 'block';
+    function showTruckErr(m) {
+      clearTruckMsgs();
+      setTruckVisual('error');
+      const e=document.getElementById('truckNumberError');
+      e.textContent=m; e.classList.add('error'); e.style.display='block';
     }
-
-    function showTruckNumberSuccess(msg) {
-      clearTruckNumberMessages();
-      setTruckNumberVisualState('success');
-      const el = document.getElementById('truckNumberSuccess');
-      el.textContent = msg;
-      el.classList.add('success');
-      el.style.display = 'block';
+    function showTruckOk(m) {
+      clearTruckMsgs();
+      setTruckVisual('success');
+      const e=document.getElementById('truckNumberSuccess');
+      e.textContent=m; e.classList.add('success'); e.style.display='block';
     }
-
-    function showTruckNumberPending(msg) {
-      clearTruckNumberMessages();
-      setTruckNumberVisualState('pending');
-      const el = document.getElementById('truckNumberPending');
-      el.textContent = msg;
-      el.classList.add('pending');
-      el.style.display = 'block';
+    function showTruckPending(m) {
+      clearTruckMsgs();
+      setTruckVisual('pending');
+      const e=document.getElementById('truckNumberPending');
+      e.textContent=m; e.classList.add('pending'); e.style.display='block';
     }
 
     function getCurrentLocation() {
-      const btn = document.getElementById('gpsBtn');
-      const input = document.getElementById('startCity');
-
-      if (!navigator.geolocation) {
-        showError('startCityError', currentLang === 'kz' ? 'Геолокация қолдау көрсетілмейді' : 'Геолокация не поддерживается');
-        return;
-      }
-
-      btn.classList.add('loading');
-      btn.textContent = '⏳';
+      const btn = document.getElementById('gpsBtn'), input = document.getElementById('startCity');
+      if (!navigator.geolocation) { showError('startCityError', currentLang==='kz'?'Геолокация қолдау көрсетілмейді':'Геолокация не поддерживается'); return; }
+      btn.classList.add('loading'); btn.textContent='⏳';
 
       navigator.geolocation.getCurrentPosition(
-        async function(position) {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-
+        async pos => {
+          const {latitude:lat,longitude:lon} = pos.coords;
           try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`);
-            const data = await response.json();
-
-            if (data && data.address) {
-              const city = data.address.city || data.address.town || data.address.village || data.address.state;
-              input.value = city || (data.display_name ? data.display_name.split(',')[0] : '');
-              document.getElementById('latitude').value = lat;
-              document.getElementById('longitude').value = lon;
-
-              btn.classList.remove('loading');
-              btn.classList.add('success');
-              btn.textContent = '✅';
-
-              showSuccess('startCitySuccess', currentLang === 'kz' ? 'Орналасқан жер анықталды' : 'Местоположение определено');
-
-              setTimeout(() => {
-                btn.classList.remove('success');
-                btn.textContent = '📍';
-              }, 2000);
-
-              validateField(input);
-              updateProgress();
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`, { cache: 'no-store' });
+            const data = await res.json();
+            if (data?.address) {
+              input.value = data.address.city||data.address.town||data.address.village||data.address.state||(data.display_name?.split(',')[0]||'');
+              document.getElementById('latitude').value=lat;
+              document.getElementById('longitude').value=lon;
+              btn.classList.remove('loading'); btn.classList.add('success'); btn.textContent='✅';
+              showSuccess('startCitySuccess', currentLang==='kz'?'Орналасқан жер анықталды':'Местоположение определено');
+              setTimeout(()=>{btn.classList.remove('success');btn.textContent='📍';},2000);
+              validateField(input); updateProgress();
             }
-          } catch (error) {
-            console.error('Reverse geocoding error:', error);
-            showError('startCityError', currentLang === 'kz' ? 'Қаланы анықтауда қате' : 'Ошибка определения города');
-            btn.classList.remove('loading');
-            btn.textContent = '📍';
+          } catch {
+            showError('startCityError', currentLang==='kz'?'Қаланы анықтауда қате':'Ошибка определения');
+            btn.classList.remove('loading'); btn.textContent='📍';
           }
         },
-        function(error) {
-          console.error('Geolocation error:', error);
-          let errorMsg = currentLang === 'kz' ? 'Геолокация қатесі' : 'Ошибка геолокации';
-
-          switch(error.code) {
-            case error.PERMISSION_DENIED:
-              errorMsg = currentLang === 'kz' ? 'Геолокацияға кіру тыйым салынған' : 'Доступ к геолокации запрещен';
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMsg = currentLang === 'kz' ? 'Орналасқан жер қолжетімді емес' : 'Местоположение недоступно';
-              break;
-            case error.TIMEOUT:
-              errorMsg = currentLang === 'kz' ? 'Күту уақыты аяқталды' : 'Время ожидания истекло';
-              break;
-          }
-
-          showError('startCityError', errorMsg);
-          btn.classList.remove('loading');
-          btn.textContent = '📍';
+        err => {
+          let msg = currentLang==='kz'?'Геолокация қатесі':'Ошибка геолокации';
+          if (err.code===err.PERMISSION_DENIED) msg=currentLang==='kz'?'Геолокацияға кіру тыйым салынған':'Доступ запрещен';
+          else if (err.code===err.POSITION_UNAVAILABLE) msg=currentLang==='kz'?'Орналасқан жер қолжетімді емес':'Недоступно';
+          else if (err.code===err.TIMEOUT) msg=currentLang==='kz'?'Күту уақыты аяқталды':'Время истекло';
+          showError('startCityError', msg);
+          btn.classList.remove('loading'); btn.textContent='📍';
         },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        {enableHighAccuracy:true,timeout:10000,maximumAge:0}
       );
     }
 
     function validateField(field) {
-      const value = (field.value || '').trim();
-      const fieldId = field.id;
-      let isValid = true;
-      let errorMsg = '';
+      const value = (field.value||'').trim(), id = field.id;
+      let valid=true, msg='';
+      field.classList.remove('error','success');
+      const err = document.getElementById(id+'Error'); if(err)err.style.display='none';
 
-      field.classList.remove('error', 'success');
-      const errEl = document.getElementById(fieldId + 'Error');
-      if (errEl) errEl.style.display = 'none';
-
-      if (field.hasAttribute('required') && !value && field.type !== 'file') {
-        isValid = false;
-        errorMsg = currentLang === 'kz' ? 'Бұл өріс міндетті' : 'Это поле обязательно';
+      if (field.required && !value && field.type!=='file') {
+        valid=false; msg=currentLang==='kz'?'Бұл өріс міндетті':'Обязательное поле';
       }
 
-      if (field.type === 'file' && field.hasAttribute('required')) {
-        if (field.files.length === 0) {
-          isValid = false;
-          errorMsg = currentLang === 'kz' ? 'Файл міндетті' : 'Файл обязателен';
-        } else {
-          const file = field.files[0];
-          if (file.size > MAX_FILE_BYTES) {
-            isValid = false;
-            errorMsg = currentLang === 'kz' ? 'Файл тым үлкен (макс. 10MB)' : 'Файл слишком большой (макс. 10MB)';
-          }
-        }
+      if (field.type==='file' && field.required) {
+        if (!field.files.length) { valid=false; msg=currentLang==='kz'?'Файл міндетті':'Файл обязателен'; }
+        else if (field.files[0].size>MAX_FILE_BYTES) { valid=false; msg=currentLang==='kz'?'Файл тым үлкен':'Файл слишком большой'; }
       }
 
-      switch (fieldId) {
-        case 'firstName':
-        case 'lastName':
-          if (value && (value.length < 2 || value.length > 50)) {
-            isValid = false;
-            errorMsg = currentLang === 'kz' ? '2-ден 50-ге дейін символ' : 'От 2 до 50 символов';
-          }
-          break;
-
-        case 'birthday':
-          if (value) {
-            const birthDate = new Date(value);
-            const age = new Date().getFullYear() - birthDate.getFullYear();
-            if (age < 18 || age > 80) {
-              isValid = false;
-              errorMsg = currentLang === 'kz' ? 'Жасы 18-ден 80-ге дейін болуы керек' : 'Возраст должен быть от 18 до 80 лет';
-            }
-          }
-          break;
-
-        case 'contactNumber':
-          // allow partial while typing, strict on submit
-          if (value && value.length < 18) {
-            isValid = false;
-            errorMsg = currentLang === 'kz' ? 'Нөмірді толық енгізіңіз' : 'Введите номер полностью';
-          } else if (value) {
-            const phoneRegex = /^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/;
-            if (!phoneRegex.test(value)) {
-              isValid = false;
-              errorMsg = currentLang === 'kz' ? 'Нөмір форматы дұрыс емес' : 'Неверный формат номера';
-            }
-          }
-          break;
-
-        case 'truckType':
-          if (!selectedTruckType) {
-            isValid = false;
-            errorMsg = currentLang === 'kz' ? 'Көлік түрін таңдаңыз' : 'Выберите тип транспорта';
-          }
-          break;
-
-        case 'truckNumber':
-          if (value) {
-            const v = value.toUpperCase().replace(/\s+/g, '');
-            if (v.length < 5 || v.length > 15) {
-              isValid = false;
-              errorMsg = currentLang === 'kz' ? 'Нөмір форматы дұрыс емес' : 'Неверный формат номера';
-            }
-          }
-          break;
+      if (id==='firstName'||id==='lastName') { if(value&&(value.length<2||value.length>50)){valid=false;msg=currentLang==='kz'?'2-50 символ':'2-50 символов';} }
+      if (id==='birthday'&&value) { const age=new Date().getFullYear()-new Date(value).getFullYear(); if(age<18||age>80){valid=false;msg=currentLang==='kz'?'18-80 жас':'Возраст 18-80';} }
+      if (id==='contactNumber'&&value) {
+        if(value.length<18){valid=false;msg=currentLang==='kz'?'Толық енгізіңіз':'Введите полностью';}
+        else if(!/^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/.test(value)){valid=false;msg=currentLang==='kz'?'Формат дұрыс емес':'Неверный формат';}
       }
+      if (id==='truckNumber'&&value) { const v=value.toUpperCase().replace(/\s+/g,''); if(v.length<5||v.length>15){valid=false;msg=currentLang==='kz'?'Формат дұрыс емес':'Неверный формат';} }
 
-      if (isValid && (value || (field.files && field.files.length > 0))) {
-        field.classList.add('success');
-      } else if (!isValid) {
-        field.classList.add('error');
-        if (document.getElementById(fieldId + 'Error')) showError(fieldId + 'Error', errorMsg);
-      }
-
-      return isValid;
+      if (valid && (value || field.files?.length)) field.classList.add('success');
+      else if (!valid) { field.classList.add('error'); if(document.getElementById(id+'Error'))showError(id+'Error',msg); }
+      return valid;
     }
 
-    function showError(elementId, message) {
-      const el = document.getElementById(elementId);
-      if (el) {
-        el.textContent = message;
-        el.classList.add('error');
-        el.style.display = 'block';
-      }
+    function showError(id,msg) {
+      const e=document.getElementById(id);
+      if(e){e.textContent=msg;e.classList.add('error');e.style.display='block';}
     }
-
-    function showSuccess(elementId, message) {
-      const el = document.getElementById(elementId);
-      if (el) {
-        el.textContent = message;
-        el.classList.add('success');
-        el.style.display = 'block';
-        setTimeout(() => { el.style.display = 'none'; }, 3000);
+    function showSuccess(id,msg) {
+      const e=document.getElementById(id);
+      if(e){
+        e.textContent=msg;
+        e.classList.add('success');
+        e.style.display='block';
+        setTimeout(()=>e.style.display='none',3000);
       }
     }
 
     function updateProgress() {
       const form = document.getElementById('driverForm');
-      const requiredFields = form.querySelectorAll('input[required]');
-      let filledFields = 0;
 
-      requiredFields.forEach(field => {
-        if (field.type === 'file') {
-          if (field.files.length > 0) filledFields++;
-        } else if (field.id === 'truckType') {
-          if (selectedTruckType) filledFields++;
-        } else if (field.id === 'truckNumber') {
-          const v = (field.value || '').trim();
-          if (v && truckNumberState.available === true && truckNumberState.checking === false) filledFields++;
-        } else if ((field.value || '').trim()) {
-          filledFields++;
+      // required list (manual + server)
+      const requiredFields = [
+        'profilePhoto',
+        'firstName',
+        'lastName',
+        'birthday',
+        'contactNumber',
+        'truckNumber',
+        'truckType',
+        'licenseFront',
+        'licenseBack',
+        'startCity',
+        '__offerta_server__'
+      ];
+
+      let filled = 0;
+      let total = requiredFields.length;
+
+      for (const id of requiredFields) {
+        if (id === '__offerta_server__') {
+          if (offertaAccepted) filled++;
+          continue;
         }
-      });
+        const f = document.getElementById(id);
+        if (!f) continue;
 
-      const progress = Math.round((filledFields / requiredFields.length) * 100);
-      document.getElementById('progressFill').style.width = progress + '%';
-      document.getElementById('progressText').textContent = progress + '%';
+        if (f.type === 'file') {
+          if (f.files && f.files.length) filled++;
+          continue;
+        }
+        if (id === 'truckType') {
+          if (selectedTruckType) filled++;
+          continue;
+        }
+        if (id === 'truckNumber') {
+          const v = (f.value || '').trim();
+          if (v && truckNumberState.available && !truckNumberState.checking) filled++;
+          continue;
+        }
+        if ((f.value || '').trim()) filled++;
+      }
 
-      if (window.Telegram && Telegram.WebApp) {
-        if (progress === 100) {
-          const buttonText = currentLang === 'kz' ? 'Тіркелу' : 'Зарегистрироваться';
-          Telegram.WebApp.MainButton.setText(buttonText);
+      const pct = Math.round((filled/total)*100);
+      document.getElementById('progressFill').style.width=pct+'%';
+      document.getElementById('progressText').textContent=pct+'%';
+
+      if (window.Telegram?.WebApp) {
+        if (pct===100) {
+          Telegram.WebApp.MainButton.setText(currentLang==='kz'?'Тіркелу':'Зарегистрироваться');
           Telegram.WebApp.MainButton.show();
           Telegram.WebApp.MainButton.offClick(submitForm);
           Telegram.WebApp.MainButton.onClick(submitForm);
@@ -1696,119 +1651,89 @@
     async function submitForm() {
       const form = document.getElementById('driverForm');
 
-      const tn = (document.getElementById('truckNumber').value || '').toUpperCase().replace(/\s+/g,'');
-      if (!tn) {
-        showTruckNumberError(currentLang === 'kz' ? 'Бұл өріс міндетті' : 'Это поле обязательно');
-        return;
-      }
-      if (truckNumberState.checking) {
-        showTruckNumberPending(currentLang === 'kz' ? 'Тексерілуде...' : 'Проверка...');
-        return;
-      }
-      if (!truckNumberState.available) {
-        showTruckNumberError(currentLang === 'kz' ? 'Нөмір бос емес' : 'Номер занят');
+      // strict: server acceptance required
+      if (!offertaAccepted) {
+        showOffertaBad(currentLang==='kz'?'Тіркелу үшін офертаны қабылдаңыз':'Для регистрации примите оферту');
+        window.Telegram?.WebApp
+          ? Telegram.WebApp.showAlert(currentLang==='kz'?'Офертаны қабылдамайынша тіркеу мүмкін емес':'Нельзя зарегистрироваться без принятия оферты')
+          : alert('Offerta required');
         return;
       }
 
-      const telegramId = document.getElementById('telegramId').value;
-      if (!telegramId) {
-        if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
-          document.getElementById('telegramId').value = Telegram.WebApp.initDataUnsafe.user.id;
-        } else {
-          alert(currentLang === 'kz' ? 'Қате: Telegram пайдаланушы ID алынбады' : 'Ошибка: не удалось получить ID пользователя Telegram');
-          return;
-        }
-      }
-
-      // strict phone check on submit
-      const phoneValue = (document.getElementById('contactNumber').value || '').trim();
-      const phoneRegex = /^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/;
-      if (!phoneRegex.test(phoneValue)) {
-        showError('contactNumberError', currentLang === 'kz' ? 'Телефон нөмірін толық енгізіңіз' : 'Введите номер телефона полностью');
+      const tgId = getTelegramIdNumber();
+      if (!tgId) {
+        window.Telegram?.WebApp ? Telegram.WebApp.showAlert(currentLang==='kz'?'Telegram ID алынбады':'Не удалось получить ID') : alert('No Telegram ID');
         return;
       }
 
-      let isFormValid = true;
-      const requiredFields = form.querySelectorAll('input[required]');
+      const tn = (document.getElementById('truckNumber').value||'').toUpperCase().replace(/\s+/g,'');
+      if (!tn) { showTruckErr(currentLang==='kz'?'Бұл өріс міндетті':'Обязательное поле'); return; }
+      if (truckNumberState.checking) { showTruckPending(currentLang==='kz'?'Тексерілуде...':'Проверка...'); return; }
+      if (!truckNumberState.available) { showTruckErr(currentLang==='kz'?'Нөмір бос емес':'Номер занят'); return; }
 
-      requiredFields.forEach(field => {
-        if (field.id === 'truckNumber') return;
-        if (!validateField(field)) isFormValid = false;
+      const phone = (document.getElementById('contactNumber').value||'').trim();
+      if (!/^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/.test(phone)) {
+        showError('contactNumberError',currentLang==='kz'?'Телефон толық енгізіңіз':'Введите номер полностью');
+        return;
+      }
+
+      // validate required inputs except offerta checkbox (server already validated)
+      let valid=true;
+      form.querySelectorAll('input[required]').forEach(f => {
+        if (f.id==='truckNumber') return; // already validated with server
+        if (!validateField(f)) valid=false;
       });
-
-      if (!selectedTruckType) {
-        isFormValid = false;
-        showError('truckTypeError', currentLang === 'kz' ? 'Көлік түрін таңдаңыз' : 'Выберите тип транспорта');
-      }
-
-      if (!isFormValid) {
-        alert(currentLang === 'kz' ? 'Барлық өрістерді дұрыс толтырыңыз' : 'Пожалуйста, заполните все поля корректно');
+      if (!selectedTruckType) { valid=false; showError('truckTypeError',currentLang==='kz'?'Көлік түрін таңдаңыз':'Выберите тип'); }
+      if (!valid) {
+        window.Telegram?.WebApp ? Telegram.WebApp.showAlert(currentLang==='kz'?'Барлық өрістерді толтырыңыз':'Заполните все поля') : alert('Fill required fields');
         return;
       }
 
-      showLoading(currentLang === 'kz' ? 'Тіркелуде...' : 'Регистрация...');
+      showLoading(currentLang==='kz'?'Тіркелуде...':'Регистрация...');
 
       try {
-        const formData = new FormData(form);
-
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 90000);
+        const timeout = setTimeout(()=>controller.abort(),90000);
 
-        const response = await fetch('/api/driver/register', {
-          method: 'POST',
-          body: formData,
-          signal: controller.signal
+        // Ensure telegramId saved
+        document.getElementById('telegramId').value = String(tgId);
+
+        const res = await fetch(API_DRIVER_REGISTER, {
+          method:'POST',
+          body:new FormData(form),
+          signal:controller.signal
         });
+        clearTimeout(timeout);
 
-        clearTimeout(timeoutId);
-        const result = await response.json();
-
+        const result = await res.json().catch(()=>({}));
         hideLoading();
 
-        if (response.ok && result.success) {
-          const successMsg = currentLang === 'kz'
-            ? 'Тіркелу сәтті! Растауды күтіңіз.'
-            : 'Регистрация успешна! Ожидайте подтверждения.';
-
-          if (window.Telegram && Telegram.WebApp) {
-            Telegram.WebApp.showAlert(successMsg, () => Telegram.WebApp.close());
-          } else {
-            alert(successMsg);
-          }
+        if (res.ok && result.success) {
+          const msg = currentLang==='kz'?'Тіркелу сәтті! Растауды күтіңіз.':'Регистрация успешна! Ожидайте подтверждения.';
+          window.Telegram?.WebApp ? Telegram.WebApp.showAlert(msg,()=>Telegram.WebApp.close()) : alert(msg);
         } else {
-          throw new Error(result.message || 'Registration failed');
+          throw new Error(result.message||'Registration failed');
         }
-      } catch (error) {
+      } catch (e) {
         hideLoading();
-        console.error('Registration error:', error);
-
-        let errorMsg;
-        if (error.name === 'AbortError') {
-          errorMsg = currentLang === 'kz'
-            ? 'Жүктеу уақыты аяқталды. Файл көлемін азайтып көріңіз.'
-            : 'Время загрузки истекло. Попробуйте уменьшить размер файлов.';
-        } else {
-          errorMsg = currentLang === 'kz'
-            ? `Тіркелу қатесі: ${error.message}`
-            : `Ошибка регистрации: ${error.message}`;
-        }
-
-        if (window.Telegram && Telegram.WebApp) Telegram.WebApp.showAlert(errorMsg);
-        else alert(errorMsg);
+        const msg = e.name==='AbortError'
+          ? (currentLang==='kz'?'Уақыт аяқталды. Файл көлемін азайтыңыз.':'Время истекло. Уменьшите файлы.')
+          : (currentLang==='kz'?`Қате: ${e.message}`:`Ошибка: ${e.message}`);
+        window.Telegram?.WebApp ? Telegram.WebApp.showAlert(msg) : alert(msg);
       }
     }
 
-    function showLoading(text) {
-      document.getElementById('loadingText').textContent = text;
+    function showLoading(t) {
+      document.getElementById('loadingText').textContent=t;
       document.getElementById('loadingOverlay').classList.add('active');
-      if (window.Telegram && Telegram.WebApp) Telegram.WebApp.MainButton.showProgress();
+      window.Telegram?.WebApp?.MainButton?.showProgress();
     }
-
     function hideLoading() {
       document.getElementById('loadingOverlay').classList.remove('active');
-      if (window.Telegram && Telegram.WebApp) Telegram.WebApp.MainButton.hideProgress();
+      window.Telegram?.WebApp?.MainButton?.hideProgress();
     }
 
+    // expose
     window.selectTruck = selectTruck;
   </script>
 </body>
