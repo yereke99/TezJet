@@ -2,7 +2,7 @@
 <html lang="kz">
 <head>
   <meta charset="UTF-8">
-  <title>QazLine Әкімші Панелі</title>
+  <title>Alash-Go Әкімші Панелі</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script defer src="https://api-maps.yandex.ru/v3/?apikey=8a3e4da0-9ef2-4176-9203-e7014c1dba6f&lang=ru_RU"></script>
@@ -18,12 +18,12 @@
 
     /* ==================== LIGHT THEME (Uber-style) ==================== */
     :root {
-      --primary: #020617;           /* almost black */
+      --primary: #020617;
       --primary-dark: #000000;
       --primary-light: #111827;
       --primary-ultra-light: #e5e7eb;
       
-      --bg-main: #f3f4f6;           /* neutral gray background */
+      --bg-main: #f3f4f6;
       --bg-secondary: #ffffff;
       --bg-tertiary: #e5e7eb;
       --bg-card: #ffffff;
@@ -683,13 +683,25 @@
     }
 
     .btn-danger {
-      background: #111827;
-      color: #f9fafb;
-      border: 1px solid #111827;
+      background: #ef4444;
+      color: #ffffff;
+      border: 1px solid #ef4444;
     }
 
     .btn-danger:hover {
-      background: #000000;
+      background: #dc2626;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-success {
+      background: #22c55e;
+      color: #ffffff;
+      border: 1px solid #22c55e;
+    }
+
+    .btn-success:hover {
+      background: #16a34a;
       transform: translateY(-1px);
       box-shadow: var(--shadow-md);
     }
@@ -945,68 +957,6 @@
       display: none;
     }
 
-    /* ==================== RESPONSIVE ==================== */
-    @media (max-width: 1024px) {
-      .content-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .search-box {
-        display: none;
-      }
-
-      .chart-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .sidebar {
-        position: fixed;
-        left: 0;
-        top: 0;
-        height: 100vh;
-        z-index: 100;
-        transform: translateX(-100%);
-      }
-
-      .sidebar.open {
-        transform: translateX(0);
-      }
-
-      .menu-toggle {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .header-right {
-        gap: 4px;
-      }
-
-      .user-info {
-        display: none;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .stats-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .content-area {
-        padding: 16px;
-      }
-
-      .header {
-        padding: 0 16px;
-      }
-    }
-
     /* ==================== LOADING STATE ==================== */
     .loading {
       display: flex;
@@ -1136,6 +1086,65 @@
       flex-wrap: wrap;
     }
 
+    /* ==================== BLOCK REASON MODAL ==================== */
+    .block-reason-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .block-reason-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--bg-secondary);
+    }
+
+    .block-reason-option:hover {
+      border-color: var(--danger);
+      background: rgba(239, 68, 68, 0.05);
+    }
+
+    .block-reason-option input[type="radio"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .block-reason-option input[type="radio"]:checked + .reason-content {
+      color: var(--danger);
+    }
+
+    .block-reason-option:has(input:checked) {
+      border-color: var(--danger);
+      background: rgba(239, 68, 68, 0.08);
+    }
+
+    .reason-content {
+      flex: 1;
+    }
+
+    .reason-title {
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+
+    .reason-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    #blockReasonModal .modal {
+      max-width: 600px;
+    }
+
     /* ==================== DRIVER DETAILS ==================== */
     .driver-details {
       display: grid;
@@ -1238,7 +1247,53 @@
       display: block;
     }
 
+    /* ==================== RESPONSIVE ==================== */
+    @media (max-width: 1024px) {
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .search-box {
+        display: none;
+      }
+
+      .chart-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        z-index: 100;
+        transform: translateX(-100%);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .menu-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .header-right {
+        gap: 4px;
+      }
+
+      .user-info {
+        display: none;
+      }
+
       .driver-details {
         grid-template-columns: 1fr;
       }
@@ -1247,6 +1302,20 @@
         width: 120px;
         height: 120px;
         margin: 0 auto;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .content-area {
+        padding: 16px;
+      }
+
+      .header {
+        padding: 0 16px;
       }
     }
   </style>
@@ -1273,7 +1342,7 @@
               </defs>
             </svg>
           </div>
-          <div class="logo-text">QazLine</div>
+          <div class="logo-text">Alash-Go</div>
         </div>
         <span class="admin-badge">
           <span>👑</span>
@@ -1673,15 +1742,137 @@
           <div class="spinner"></div>
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer" id="driverModalFooter">
         <button class="btn btn-secondary" id="closeDriverModalBtn">Жабу</button>
-        <button class="btn btn-danger" id="rejectDriverBtn">
+        <button class="btn btn-danger" id="blockDriverBtn" style="display: none;">
           <span>🚫</span>
           <span>Блоктау</span>
+        </button>
+        <button class="btn btn-success" id="unblockDriverBtn" style="display: none;">
+          <span>✅</span>
+          <span>Блоктан шығару</span>
         </button>
         <button class="btn btn-primary" id="contactDriverBtn">
           <span>💬</span>
           <span>Хабарласу</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Block Reason Modal -->
+  <div class="modal-overlay" id="blockReasonModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">🚫 Жүргізушіні блоктау / Блокировка водителя</h3>
+        <button class="modal-close" onclick="closeBlockReasonModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="blockDriverInfo" style="margin-bottom: 20px; padding: 12px; background: var(--bg-tertiary); border-radius: 8px;">
+          <!-- Driver info will be inserted here -->
+        </div>
+        
+        <h4 style="margin-bottom: 12px; font-size: 16px;">Блоктау себебін таңдаңыз / Выберите причину блокировки:</h4>
+        
+        <div class="block-reason-options">
+          <label class="block-reason-option">
+            <input type="radio" name="blockReason" value="incorrect_documents" checked>
+            <div class="reason-content">
+              <div class="reason-title">📄 Құжаттар дұрыс емес</div>
+              <div class="reason-subtitle">Документы не соответствуют требованиям</div>
+            </div>
+          </label>
+
+          <label class="block-reason-option">
+            <input type="radio" name="blockReason" value="name_mismatch">
+            <div class="reason-content">
+              <div class="reason-title">👤 Аты-жөні құжаттармен сәйкес келмейді</div>
+              <div class="reason-subtitle">Имя и фамилия не совпадают с документами</div>
+            </div>
+          </label>
+
+          <label class="block-reason-option">
+            <input type="radio" name="blockReason" value="photo_mismatch">
+            <div class="reason-content">
+              <div class="reason-title">📸 Профиль фотосы құжаттармен сәйкес келмейді</div>
+              <div class="reason-subtitle">Фото профиля не совпадает с документами</div>
+            </div>
+          </label>
+
+          <label class="block-reason-option">
+            <input type="radio" name="blockReason" value="payment_required">
+            <div class="reason-content">
+              <div class="reason-title">💳 Төлем төленбеген</div>
+              <div class="reason-subtitle">Не оплачен доступ к платформе</div>
+            </div>
+          </label>
+
+          <label class="block-reason-option">
+            <input type="radio" name="blockReason" value="custom">
+            <div class="reason-content">
+              <div class="reason-title">✍️ Басқа себеп</div>
+              <div class="reason-subtitle">Другая причина (укажите ниже)</div>
+            </div>
+          </label>
+        </div>
+
+        <div id="customReasonField" style="display: none; margin-top: 16px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600;">
+            Себебін жазыңыз / Укажите причину:
+          </label>
+          <textarea 
+            id="customReasonText" 
+            style="width: 100%; min-height: 80px; padding: 10px; border: 2px solid var(--border); border-radius: 8px; font-size: 14px; resize: vertical; font-family: inherit; color: var(--text-primary); background: var(--bg-main);"
+            placeholder="Блоктау себебін толық жазыңыз..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeBlockReasonModal()">
+          Болдырмау / Отмена
+        </button>
+        <button class="btn btn-danger" id="confirmBlockBtn" onclick="confirmBlockDriver()">
+          <span>🚫</span>
+          <span>Блоктау / Заблокировать</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Message Modal -->
+  <div class="modal-overlay" id="adminMessageModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">📢 Жүргізушіге хабарлама жіберу / Отправить сообщение водителю</h3>
+        <button class="modal-close" onclick="closeAdminMessageModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="messageDriverInfo" style="margin-bottom: 20px; padding: 12px; background: var(--bg-tertiary); border-radius: 8px;">
+          <!-- Driver info will be inserted here -->
+        </div>
+        
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">
+            Хабарламаңызды жазыңыз / Напишите ваше сообщение:
+          </label>
+          <textarea 
+            id="adminMessageText" 
+            style="width: 100%; min-height: 120px; padding: 12px; border: 2px solid var(--border); border-radius: 8px; font-size: 14px; resize: vertical; font-family: inherit; color: var(--text-primary); background: var(--bg-main); line-height: 1.5;"
+            placeholder="Мысалы: Сіздің өтінішіңіз қаралуда. Жақын арада жауап береміз.
+
+Например: Ваша заявка рассматривается. Мы свяжемся с вами в ближайшее время."></textarea>
+          <div style="margin-top: 8px; font-size: 12px; color: var(--text-muted);">
+            💡 Хабарлама жүргізушіге әкімшіден ресми хабарлама ретінде жіберіледі<br>
+            💡 Сообщение будет отправлено водителю как официальное уведомление от администратора
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeAdminMessageModal()">
+          Болдырмау / Отмена
+        </button>
+        <button class="btn btn-primary" id="sendMessageBtn" onclick="confirmSendMessage()">
+          <span>📤</span>
+          <span>Жіберу / Отправить</span>
         </button>
       </div>
     </div>
@@ -1697,7 +1888,6 @@
       if (savedTheme) {
         theme = savedTheme;
       } else {
-        // Auto: 6:00-20:00 = light, 20:00-6:00 = dark
         theme = (hour >= 6 && hour < 20) ? 'light' : 'dark';
       }
       
@@ -1719,10 +1909,7 @@
       setTheme(newTheme);
     }
 
-    // Initialize theme on load
     initTheme();
-
-    // Theme toggle button
     document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
 
     // ==================== TELEGRAM WEBAPP ====================
@@ -1731,18 +1918,15 @@
     let ymap = null;
     let driverMarkers = [];
 
-    // Data storage
     let driversData = [];
     let ordersData = [];
     let summaryData = null;
 
-    // Charts
     let ordersChart = null;
     let driversChart = null;
     let revenueChart = null;
     let statusChart = null;
 
-    // Initialize app
     document.addEventListener('DOMContentLoaded', () => {
       initTelegram();
       initUI();
@@ -1769,13 +1953,11 @@
 
       adminIdDisplay.textContent = `ID: ${adminTelegramId}`;
 
-      // CHANGE THIS TO YOUR ADMIN ID
       if (parseInt(adminTelegramId, 10) !== 800703982) {
         blockAccess('Қол жетімділік жоқ: Тек әкімшіге');
         return;
       }
 
-      // Load data
       loadAdminData();
       initMap();
     }
@@ -1785,7 +1967,7 @@
         <div style="display:flex;align-items:center;justify-content:center;height:100vh;padding:40px;text-align:center;background:var(--bg-main);color:var(--text-primary);">
           <div>
             <div style="font-size:64px;margin-bottom:20px;">🔒</div>
-            <h2 style="font-size:24px;margin-bottom:12px;">QazLine Әкімші Панелі</h2>
+            <h2 style="font-size:24px;margin-bottom:12px;">Alash-Go Әкімші Панелі</h2>
             <p style="color:var(--text-muted);">${message}</p>
           </div>
         </div>
@@ -1794,7 +1976,6 @@
 
     // ==================== UI INITIALIZATION ====================
     function initUI() {
-      // Mobile menu toggle
       const menuToggle = document.getElementById('menuToggle');
       const sidebar = document.getElementById('sidebar');
       const sidebarBackdrop = document.getElementById('sidebarBackdrop');
@@ -1809,24 +1990,20 @@
         sidebarBackdrop.classList.remove('active');
       });
 
-      // Navigation
       document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', (e) => {
           e.preventDefault();
           const view = item.dataset.view;
           switchView(view);
           
-          // Update active state
           document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
           item.classList.add('active');
           
-          // Close mobile menu
           sidebar.classList.remove('open');
           sidebarBackdrop.classList.remove('active');
         });
       });
 
-      // Modal
       const driverModal = document.getElementById('driverModal');
       const closeDriverModal = document.getElementById('closeDriverModal');
       const closeDriverModalBtn = document.getElementById('closeDriverModalBtn');
@@ -1844,17 +2021,27 @@
           driverModal.classList.remove('active');
         }
       });
+
+      // Handle custom reason field visibility
+      document.querySelectorAll('input[name="blockReason"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          const customField = document.getElementById('customReasonField');
+          if (e.target.value === 'custom') {
+            customField.style.display = 'block';
+          } else {
+            customField.style.display = 'none';
+          }
+        });
+      });
     }
 
     // ==================== VIEW SWITCHING ====================
     function switchView(view) {
-      // Hide all views
       document.getElementById('dashboardView').style.display = 'none';
       document.getElementById('analyticsView').style.display = 'none';
       document.getElementById('driversView').style.display = 'none';
       document.getElementById('ordersView').style.display = 'none';
 
-      // Update page title
       const titles = {
         'dashboard': 'Бастапқы бет',
         'analytics': 'Аналитика',
@@ -1864,7 +2051,6 @@
       };
       document.getElementById('pageTitle').textContent = titles[view] || 'Бастапқы бет';
 
-      // Show selected view
       switch(view) {
         case 'dashboard':
           document.getElementById('dashboardView').style.display = 'block';
@@ -1887,7 +2073,6 @@
     // ==================== DATA LOADING ====================
     async function loadAdminData() {
       try {
-        // Load summary
         const summaryRes = await fetch(`/api/admin/summary?telegram_id=${adminTelegramId}`);
         const summary = await summaryRes.json();
         
@@ -1896,7 +2081,6 @@
           updateDashboardStats(summaryData);
         }
 
-        // Load drivers
         const driversRes = await fetch(`/api/admin/drivers?telegram_id=${adminTelegramId}`);
         const driversJson = await driversRes.json();
         driversData = driversJson.data?.drivers || driversJson.drivers || [];
@@ -1904,7 +2088,6 @@
         updateDriversOnMap();
         loadRecentActivity();
 
-        // Load orders
         const ordersRes = await fetch(`/api/admin/orders?telegram_id=${adminTelegramId}`);
         const ordersJson = await ordersRes.json();
         ordersData = ordersJson.data?.orders || ordersJson.orders || [];
@@ -1928,16 +2111,13 @@
       document.getElementById('completedOrders').textContent = orders.completed || 0;
       document.getElementById('pendingOrders').textContent = orders.pending || 0;
 
-      // Update badges
       document.getElementById('pendingDriversBadge').textContent = drivers.pending || 0;
       document.getElementById('pendingOrdersBadge').textContent = orders.pending || 0;
 
-      // Calculate revenue (mock)
       const avgPrice = 5000;
       const revenue = ((orders.completed || 0) * avgPrice / 1000).toFixed(0);
       document.getElementById('totalRevenue').textContent = revenue + 'мың';
 
-      // Active drivers (mock - 30% of approved)
       const active = Math.ceil((drivers.approved || 0) * 0.3);
       document.getElementById('activeNow').textContent = active;
       document.getElementById('mapActiveDrivers').textContent = active;
@@ -1958,7 +2138,7 @@
 
       ymap = new YMap(mapElement, {
         location: {
-          center: [76.889709, 43.238949], // Almaty
+          center: [76.889709, 43.238949],
           zoom: 11
         },
         behaviors: ['drag', 'scrollZoom', 'dblClick', 'pinchZoom']
@@ -1973,7 +2153,6 @@
     function updateDriversOnMap() {
       if (!ymap || !window.ymaps3) return;
 
-      // Clear existing markers
       driverMarkers.forEach(m => ymap.removeChild(m));
       driverMarkers = [];
 
@@ -2012,7 +2191,7 @@
       });
     }
 
-    // ==================== RECENT ACTIVITY ==================== */
+    // ==================== RECENT ACTIVITY ====================
     function loadRecentActivity() {
       const activityList = document.getElementById('activityList');
       
@@ -2054,7 +2233,7 @@
       `).join('');
     }
 
-    // ==================== RECENT ORDERS TABLE ==================== */
+    // ==================== RECENT ORDERS TABLE ====================
     function loadRecentOrders() {
       const tbody = document.getElementById('recentOrdersBody');
       const recentOrders = ordersData.slice(0, 5);
@@ -2097,7 +2276,7 @@
       `).join('');
     }
 
-    // ==================== DRIVERS TABLE ==================== */
+    // ==================== DRIVERS TABLE ====================
     function loadDriversTable() {
       const tbody = document.getElementById('driversTableBody');
 
@@ -2116,39 +2295,51 @@
         return;
       }
 
-      tbody.innerHTML = driversData.map(driver => `
-        <tr>
-          <td>
-            <div class="table-user">
-              <div class="table-avatar">
-                ${driver.profile_photo ? 
-                  `<img src="/ava/${driver.profile_photo}" alt="${driver.first_name}">` : 
-                  (driver.first_name?.[0] || '?').toUpperCase()}
-              </div>
-              <div class="table-user-info">
-                <div class="table-user-name">${driver.first_name} ${driver.last_name}</div>
-                <div class="table-user-meta">ID: ${driver.telegram_id}</div>
-              </div>
-            </div>
-          </td>
-          <td>${driver.contact_number || 'Жоқ'}</td>
-          <td>${driver.start_city || 'Жоқ'}</td>
-          <td><span class="badge badge-info">${getTruckTypeName(driver.truck_type)}</span></td>
-          <td>${getStatusBadge(driver.status)}</td>
-          <td>${formatDate(driver.created_at)}</td>
-          <td style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="btn btn-sm btn-secondary" onclick="showDriverDetails('${driver.id}')">
-              Көру
-            </button>
-            <button class="btn btn-sm btn-danger" onclick="openRejectPrompt('${driver.id}')">
+      tbody.innerHTML = driversData.map(driver => {
+        const isBlocked = driver.status === 'rejected' || driver.status === 'suspended';
+        const actionButton = isBlocked 
+          ? `<button class="btn btn-sm btn-success" onclick="openUnblockPrompt('${driver.id}')">
+              ✅ Блоктан шығару
+            </button>`
+          : `<button class="btn btn-sm btn-danger" onclick="openBlockPrompt('${driver.id}')">
               🚫 Блок
-            </button>
-          </td>
-        </tr>
-      `).join('');
+            </button>`;
+
+        return `
+          <tr>
+            <td>
+              <div class="table-user">
+                <div class="table-avatar">
+                  ${driver.profile_photo ? 
+                    `<img src="/ava/${driver.profile_photo}" alt="${driver.first_name}">` : 
+                    (driver.first_name?.[0] || '?').toUpperCase()}
+                </div>
+                <div class="table-user-info">
+                  <div class="table-user-name">${driver.first_name} ${driver.last_name}</div>
+                  <div class="table-user-meta">ID: ${driver.telegram_id}</div>
+                </div>
+              </div>
+            </td>
+            <td>${driver.contact_number || 'Жоқ'}</td>
+            <td>${driver.start_city || 'Жоқ'}</td>
+            <td><span class="badge badge-info">${getTruckTypeName(driver.truck_type)}</span></td>
+            <td>${getStatusBadge(driver.status)}</td>
+            <td>${formatDate(driver.created_at)}</td>
+            <td style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="btn btn-sm btn-secondary" onclick="showDriverDetails('${driver.id}')">
+                👁️ Көру
+              </button>
+              <button class="btn btn-sm btn-primary" onclick="openAdminMessageModal('${driver.id}')" title="Хабарлама жіберу">
+                📢 Хабар
+              </button>
+              ${actionButton}
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
 
-    // ==================== ORDERS TABLE ==================== */
+    // ==================== ORDERS TABLE ====================
     function loadOrdersTable() {
       const tbody = document.getElementById('ordersTableBody');
 
@@ -2194,7 +2385,7 @@
       `).join('');
     }
 
-    // ==================== DRIVER DETAILS MODAL ==================== */
+    // ==================== DRIVER DETAILS MODAL ====================
     function showDriverDetails(driverId) {
       const driver = driversData.find(d => d.id === driverId);
       if (!driver) return;
@@ -2258,6 +2449,28 @@
 
       modal.classList.add('active');
 
+      // Show/hide buttons based on driver status
+      const blockBtn = document.getElementById('blockDriverBtn');
+      const unblockBtn = document.getElementById('unblockDriverBtn');
+      const isBlocked = driver.status === 'rejected' || driver.status === 'suspended';
+
+      blockBtn.style.display = isBlocked ? 'none' : 'inline-flex';
+      unblockBtn.style.display = isBlocked ? 'inline-flex' : 'none';
+
+      // Add message button if not already present
+      const footer = document.getElementById('driverModalFooter');
+      let messageBtn = footer.querySelector('.message-driver-btn');
+      if (!messageBtn) {
+        messageBtn = document.createElement('button');
+        messageBtn.className = 'btn btn-primary message-driver-btn';
+        messageBtn.innerHTML = '<span>📢</span><span>Хабарлама / Сообщение</span>';
+        messageBtn.onclick = () => openAdminMessageModal(driverId);
+        
+        // Insert before contact button
+        const contactBtn = document.getElementById('contactDriverBtn');
+        footer.insertBefore(messageBtn, contactBtn);
+      }
+
       // Contact button
       const contactBtn = document.getElementById('contactDriverBtn');
       contactBtn.onclick = () => {
@@ -2267,40 +2480,104 @@
         }
       };
 
-      // Reject button from modal
-      const rejectBtn = document.getElementById('rejectDriverBtn');
-      rejectBtn.onclick = () => {
-        openRejectPrompt(driver.id);
+      // Block button
+      blockBtn.onclick = () => {
+        openBlockPrompt(driver.id);
+      };
+
+      // Unblock button
+      unblockBtn.onclick = () => {
+        openUnblockPrompt(driver.id);
       };
     }
 
-    // ==================== REJECT / BLOCK DRIVER ==================== */
-    function openRejectPrompt(driverId) {
-      const driver = driversData.find(d => d.id === driverId);
-      const name = driver ? `${driver.first_name} ${driver.last_name}` : '';
-      const reason = prompt(`Жүргізушіні неге блоктайсыз?\n\nЖүргізуші: ${name}\n\nСебебін жазыңыз (клиентке де осы мәтін жіберіледі):`);
-      if (!reason || !reason.trim()) return;
+    // ==================== BLOCK DRIVER FUNCTIONALITY ====================
+    let currentBlockDriverId = null;
+    let currentBlockDriverData = null;
 
-      rejectDriver(driverId, reason.trim());
+    function openBlockPrompt(driverId) {
+      const driver = driversData.find(d => d.id === driverId);
+      if (!driver) {
+        alert('Жүргізуші табылмады / Водитель не найден');
+        return;
+      }
+
+      currentBlockDriverId = driverId;
+      currentBlockDriverData = driver;
+
+      document.getElementById('blockDriverInfo').innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="table-avatar">
+            ${driver.profile_photo ? 
+              `<img src="/ava/${driver.profile_photo}" alt="${driver.first_name}">` : 
+              (driver.first_name?.[0] || '?').toUpperCase()}
+          </div>
+          <div>
+            <div style="font-weight: 600; font-size: 16px;">${driver.first_name} ${driver.last_name}</div>
+            <div style="font-size: 13px; color: var(--text-muted);">
+              📱 ${driver.contact_number || 'Жоқ'} • 
+              🆔 ${driver.telegram_id}
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.querySelectorAll('input[name="blockReason"]')[0].checked = true;
+      document.getElementById('customReasonText').value = '';
+      document.getElementById('customReasonField').style.display = 'none';
+
+      document.getElementById('blockReasonModal').classList.add('active');
+      document.getElementById('driverModal').classList.remove('active');
     }
 
-    async function rejectDriver(driverId, reason) {
+    function closeBlockReasonModal() {
+      document.getElementById('blockReasonModal').classList.remove('active');
+      currentBlockDriverId = null;
+      currentBlockDriverData = null;
+    }
+
+    async function confirmBlockDriver() {
+      if (!currentBlockDriverId) {
+        alert('Қате / Ошибка');
+        return;
+      }
+
+      const selectedReason = document.querySelector('input[name="blockReason"]:checked').value;
+      let customReason = '';
+
+      if (selectedReason === 'custom') {
+        customReason = document.getElementById('customReasonText').value.trim();
+        if (!customReason) {
+          alert('Себебін жазыңыз / Укажите причину');
+          document.getElementById('customReasonText').focus();
+          return;
+        }
+      }
+
+      const confirmBtn = document.getElementById('confirmBlockBtn');
+      confirmBtn.disabled = true;
+      confirmBtn.innerHTML = '<span>⏳</span><span>Өңделуде...</span>';
+
       try {
-        const res = await fetch(`/api/admin/drivers/${driverId}/reject?telegram_id=${adminTelegramId}`, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ reason })
-        });
+        const res = await fetch(
+          `/api/admin/drivers/${currentBlockDriverId}/reject?telegram_id=${adminTelegramId}`,
+          {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+              reason_type: selectedReason,
+              custom_reason: customReason
+            })
+          }
+        );
 
         const data = await res.json();
 
         if (!res.ok || !data.success) {
-          alert(data.message || 'Жүргізушіні блоктау сәтсіз аяқталды');
-          return;
+          throw new Error(data.message || 'Блоктау сәтсіз аяқталды');
         }
 
-        // Update local state
-        const idx = driversData.findIndex(d => d.id === driverId);
+        const idx = driversData.findIndex(d => d.id === currentBlockDriverId);
         if (idx !== -1) {
           driversData[idx].status = 'rejected';
           driversData[idx].is_verified = false;
@@ -2308,18 +2585,211 @@
 
         loadDriversTable();
         updateDriversOnMap();
+        closeBlockReasonModal();
 
-        alert('Жүргізуші блокталды және хабарлама жіберілді.');
-        
-        const modal = document.getElementById('driverModal');
-        modal.classList.remove('active');
+        alert('✅ Жүргізуші сәтті блокталды және хабарлама жіберілді!\n\nВодитель успешно заблокирован и уведомление отправлено!');
+
       } catch (err) {
-        console.error(err);
-        alert('Қате пайда болды. Кейінірек қайталап көріңіз.');
+        console.error('Block driver error:', err);
+        alert('❌ Қате: ' + err.message + '\n\nОшибка: ' + err.message);
+      } finally {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<span>🚫</span><span>Блоктау / Заблокировать</span>';
       }
     }
 
-    // ==================== ANALYTICS CHARTS ==================== */
+    // ==================== UNBLOCK DRIVER FUNCTIONALITY ====================
+    async function openUnblockPrompt(driverId) {
+      const driver = driversData.find(d => d.id === driverId);
+      if (!driver) {
+        alert('Жүргізуші табылмады / Водитель не найден');
+        return;
+      }
+
+      const confirmUnblock = confirm(
+        `🔓 Жүргізушіні блоктан шығару / Разблокировать водителя?\n\n` +
+        `👤 ${driver.first_name} ${driver.last_name}\n` +
+        `📱 ${driver.contact_number || 'Жоқ'}\n` +
+        `🆔 Telegram ID: ${driver.telegram_id}\n\n` +
+        `Жүргізуші Alash-Go платформасына қайта қол жеткізе алады.\n` +
+        `Водитель снова сможет получить доступ к платформе Alash-Go.`
+      );
+
+      if (!confirmUnblock) return;
+
+      try {
+        const res = await fetch(
+          `/api/admin/drivers/${driverId}/unblock?telegram_id=${adminTelegramId}`,
+          {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+          }
+        );
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || 'Блоктан шығару сәтсіз аяқталды');
+        }
+
+        // Update local data
+        const idx = driversData.findIndex(d => d.id === driverId);
+        if (idx !== -1) {
+          driversData[idx].status = 'pending';
+          driversData[idx].is_verified = false;
+        }
+
+        loadDriversTable();
+        updateDriversOnMap();
+        document.getElementById('driverModal').classList.remove('active');
+
+        alert(
+          '✅ Жүргізуші сәтті блоктан шығарылды!\n\n' +
+          'Водитель успешно разблокирован!\n\n' +
+          '📩 Жүргізушіге хабарлама жіберілді.\n' +
+          'Уведомление отправлено водителю.'
+        );
+
+      } catch (err) {
+        console.error('Unblock driver error:', err);
+        alert('❌ Қате: ' + err.message + '\n\nОшибка: ' + err.message);
+      }
+    }
+
+    document.getElementById('blockReasonModal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'blockReasonModal') {
+        closeBlockReasonModal();
+      }
+    });
+
+    // ==================== ADMIN MESSAGE FUNCTIONALITY ====================
+    let currentMessageDriverId = null;
+    let currentMessageDriverData = null;
+
+    function openAdminMessageModal(driverId) {
+      const driver = driversData.find(d => d.id === driverId);
+      if (!driver) {
+        alert('Жүргізуші табылмады / Водитель не найден');
+        return;
+      }
+
+      currentMessageDriverId = driverId;
+      currentMessageDriverData = driver;
+
+      document.getElementById('messageDriverInfo').innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="table-avatar">
+            ${driver.profile_photo ? 
+              `<img src="/ava/${driver.profile_photo}" alt="${driver.first_name}">` : 
+              (driver.first_name?.[0] || '?').toUpperCase()}
+          </div>
+          <div>
+            <div style="font-weight: 600; font-size: 16px;">${driver.first_name} ${driver.last_name}</div>
+            <div style="font-size: 13px; color: var(--text-muted);">
+              📱 ${driver.contact_number || 'Жоқ'} • 
+              🆔 ${driver.telegram_id}
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('adminMessageText').value = '';
+
+      document.getElementById('adminMessageModal').classList.add('active');
+      document.getElementById('driverModal').classList.remove('active');
+      
+      // Focus on textarea
+      setTimeout(() => {
+        document.getElementById('adminMessageText').focus();
+      }, 300);
+    }
+
+    function closeAdminMessageModal() {
+      document.getElementById('adminMessageModal').classList.remove('active');
+      currentMessageDriverId = null;
+      currentMessageDriverData = null;
+    }
+
+    async function confirmSendMessage() {
+      if (!currentMessageDriverId || !currentMessageDriverData) {
+        alert('Қате: Жүргізуші деректері жоқ\n\nОшибка: Данные водителя отсутствуют');
+        return;
+      }
+
+      const message = document.getElementById('adminMessageText').value.trim();
+
+      if (!message) {
+        alert('Хабарлама бос болмауы керек!\n\nСообщение не может быть пустым!');
+        document.getElementById('adminMessageText').focus();
+        return;
+      }
+
+      if (message.length < 10) {
+        alert('Хабарлама тым қысқа (кемінде 10 таңба)!\n\nСообщение слишком короткое (минимум 10 символов)!');
+        document.getElementById('adminMessageText').focus();
+        return;
+      }
+
+      if (message.length > 4000) {
+        alert('Хабарлама тым ұзын (максимум 4000 таңба)!\n\nСообщение слишком длинное (максимум 4000 символов)!');
+        return;
+      }
+
+      // ✅ CRITICAL FIX: Save driver info BEFORE any async operation
+      const driverFirstName = currentMessageDriverData.first_name;
+      const driverLastName = currentMessageDriverData.last_name;
+      const driverFullName = `${driverFirstName} ${driverLastName}`;
+
+      const sendBtn = document.getElementById('sendMessageBtn');
+      sendBtn.disabled = true;
+      sendBtn.innerHTML = '<span>⏳</span><span>Жіберілуде...</span>';
+
+      try {
+        const res = await fetch(
+          `/api/admin/drivers/${currentMessageDriverId}/message?telegram_id=${adminTelegramId}`,
+          {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+              message: message
+            })
+          }
+        );
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || 'Хабарлама жіберу сәтсіз аяқталды');
+        }
+
+        // Close modal AFTER successful send
+        closeAdminMessageModal();
+
+        // Use saved driver name (not currentMessageDriverData which is now null)
+        alert(
+          '✅ Хабарлама сәтті жіберілді!\n\n' +
+          'Сообщение успешно отправлено!\n\n' +
+          `📩 Жүргізуші: ${driverFullName}\n` +
+          `Водитель: ${driverFullName}`
+        );
+
+      } catch (err) {
+        console.error('Send message error:', err);
+        alert('❌ Қате: ' + err.message + '\n\nОшибка: ' + err.message);
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<span>📤</span><span>Жіберу / Отправить</span>';
+      }
+    }
+
+    // Close modal on backdrop click
+    document.getElementById('adminMessageModal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'adminMessageModal') {
+        closeAdminMessageModal();
+      }
+    });
+
+    // ==================== ANALYTICS CHARTS ====================
     function initCharts() {
       if (!summaryData) return;
 
@@ -2327,7 +2797,6 @@
       const textColor = isDark ? '#cbd5e1' : '#4b5563';
       const gridColor = isDark ? '#111827' : '#e5e7eb';
 
-      // Orders chart
       const ordersChartData = summaryData.charts?.orders_by_day || [];
       if (ordersChart) ordersChart.destroy();
       ordersChart = new Chart(document.getElementById('ordersChart'), {
@@ -2363,7 +2832,6 @@
         }
       });
 
-      // Drivers chart
       const driversChartData = summaryData.charts?.drivers_by_day || [];
       if (driversChart) driversChart.destroy();
       driversChart = new Chart(document.getElementById('driversChart'), {
@@ -2397,7 +2865,6 @@
         }
       });
 
-      // Revenue chart (mock from orders)
       if (revenueChart) revenueChart.destroy();
       revenueChart = new Chart(document.getElementById('revenueChart'), {
         type: 'line',
@@ -2435,7 +2902,6 @@
         }
       });
 
-      // Status chart
       const orders = summaryData.orders || {};
       if (statusChart) statusChart.destroy();
       statusChart = new Chart(document.getElementById('statusChart'), {
@@ -2470,12 +2936,12 @@
       });
     }
 
-    // ==================== HELPER FUNCTIONS ==================== */
+    // ==================== HELPER FUNCTIONS ====================
     function getStatusBadge(status) {
       const badges = {
         'approved': '<span class="badge badge-success">Мақұлданған</span>',
         'pending': '<span class="badge badge-warning">Күтуде</span>',
-        'rejected': '<span class="badge badge-danger">Бас тартылған</span>',
+        'rejected': '<span class="badge badge-danger">Блокталған</span>',
         'suspended': '<span class="badge badge-danger">Тоқтатылған</span>',
         'completed': '<span class="badge badge-success">Аяқталған</span>',
         'in_progress': '<span class="badge badge-info">Орындалуда</span>',
@@ -2514,12 +2980,10 @@
       return date.toLocaleDateString('kk-KZ', { month: 'short', day: 'numeric' });
     }
 
-    // Auto-refresh data every 30 seconds
     setInterval(() => {
       loadAdminData();
     }, 30000);
 
-    // Update theme on hour change
     setInterval(() => {
       if (!localStorage.getItem('theme')) {
         initTheme();

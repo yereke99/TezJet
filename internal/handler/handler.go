@@ -1638,7 +1638,9 @@ func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 	r.HandleFunc("/api/admin/drivers", h.handleAdminDrivers).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/admin/drivers/{id}", h.handleAdminDriverDetail).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/admin/orders", h.handleAdminOrders).Methods("GET", "OPTIONS")
-	r.HandleFunc("/api/admin/drivers/{id}/reject", h.RejectDriver).Methods(http.MethodPost)
+	r.HandleFunc("/api/admin/drivers/{id}/message", h.SendDriverMessage).Methods("POST", "OPTIONS") // ⬅️ ADD THIS
+	r.HandleFunc("/api/admin/drivers/{id}/reject", h.RejectDriver).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/admin/drivers/{id}/unblock", h.UnblockDriver).Methods("POST", "OPTIONS")
 
 	// Delivery list routes
 	r.HandleFunc("/api/delivery-list", h.handleDeliveryList).Methods("POST", "OPTIONS")
