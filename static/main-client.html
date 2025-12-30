@@ -38,28 +38,17 @@
       --bottom-nav-height: 72px;
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    html, body {
-      height: 100vh;
-      height: 100dvh;
-    }
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100vh; height: 100dvh; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", "Inter", sans-serif;
       background: var(--bg-secondary);
       color: var(--text-primary);
-
       position: fixed;
       inset: 0;
       width: 100%;
       height: var(--tg-viewport-stable-height, 100vh);
-
       padding-top: calc(
         var(--tg-safe-area-inset-top, 0px) +
         var(--tg-content-safe-area-inset-top, 0px) +
@@ -71,7 +60,6 @@
       );
       padding-left: max(16px, var(--tg-safe-area-inset-left, 0px));
       padding-right: max(16px, var(--tg-safe-area-inset-right, 0px));
-
       overflow: hidden;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
@@ -84,7 +72,6 @@
                   var(--bg-secondary);
       z-index: -2;
     }
-
     .background::before {
       content: "";
       position: absolute;
@@ -107,32 +94,16 @@
       z-index: 9999;
       transition: opacity 0.25s ease, visibility 0.25s ease;
     }
-
-    .loading-overlay.hidden {
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-    }
+    .loading-overlay.hidden { opacity:0; visibility:hidden; pointer-events:none; }
 
     .loading-spinner {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
+      width: 32px; height:32px; border-radius:50%;
       border: 2px solid var(--border-light);
       border-top: 2px solid var(--accent-primary);
       animation: spin 1s linear infinite;
     }
-
-    .loading-text {
-      font-size: 15px;
-      font-weight: 500;
-      color: var(--text-secondary);
-      text-align: center;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    .loading-text { font-size:15px; font-weight:500; color: var(--text-secondary); text-align:center; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     .app-root {
       position: relative;
@@ -145,117 +116,53 @@
       transform: translateY(6px);
       transition: opacity 0.25s ease, transform 0.25s ease;
     }
-
-    .app-root.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    .app-root.visible { opacity:1; transform: translateY(0); }
 
     .top-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 4px 2px 10px 2px;
-      flex-shrink: 0;
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 4px 2px 10px 2px; flex-shrink:0;
     }
 
-    .logo-wrap {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
+    .logo-wrap { display:flex; align-items:center; gap:10px; }
     .logo-square {
-      width: 38px;
-      height: 38px;
-      border-radius: 14px;
+      width:38px; height:38px; border-radius:14px;
       background: var(--accent-primary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display:flex; align-items:center; justify-content:center;
       color: var(--text-white);
-      font-weight: 800;
-      font-size: 20px;
-      letter-spacing: -1px;
+      font-weight:800; font-size:20px; letter-spacing:-1px;
       box-shadow: 0 6px 18px rgba(0,0,0,0.25);
     }
-
-    .brand-info {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .brand-title {
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: -0.3px;
-    }
-
-    .brand-subtitle {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
+    .brand-info { display:flex; flex-direction:column; gap:2px; }
+    .brand-title { font-size:18px; font-weight:700; letter-spacing:-0.3px; }
+    .brand-subtitle { font-size:12px; color: var(--text-muted); }
 
     .user-pill {
       padding: 6px 10px;
       border-radius: 999px;
       background: rgba(0,0,0,0.04);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      color: var(--text-secondary);
-      max-width: 200px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      display:flex; align-items:center; gap:6px;
+      font-size:12px; color: var(--text-secondary);
+      max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     }
-
     .user-avatar {
-      width: 24px;
-      height: 24px;
-      border-radius: 999px;
-      background: #111;
-      color: #fff;
-      font-size: 11px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      overflow: hidden;
-      position: relative;
+      width:24px; height:24px; border-radius:999px;
+      background:#111; color:#fff;
+      font-size:11px; font-weight:600;
+      display:flex; align-items:center; justify-content:center;
+      flex-shrink:0; overflow:hidden; position:relative;
     }
-
-    .user-avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: none;
-    }
-
-    .user-avatar span {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+    .user-avatar img { width:100%; height:100%; object-fit:cover; display:none; }
+    .user-avatar span { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
 
     .content-scroll {
-      flex: 1;
-      min-height: 0;
-      overflow-y: auto;
-      padding: 4px 2px 0 2px;
+      flex:1; min-height:0;
+      overflow-y:auto;
+      padding: 6px 2px 0 2px;
       -webkit-overflow-scrolling: touch;
     }
+    .content-scroll::-webkit-scrollbar { width:0; height:0; }
 
-    .content-scroll::-webkit-scrollbar {
-      width: 0;
-      height: 0;
-    }
-
+    /* HERO */
     .hero-card {
       position: relative;
       border-radius: var(--radius-xl);
@@ -265,337 +172,201 @@
       box-shadow: var(--shadow-strong);
       margin-bottom: 14px;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+      display:flex; flex-direction:column; gap:10px;
     }
 
     .lang-switch {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      display: flex;
+      position:absolute;
+      top:12px;
+      right:12px;
+      display:flex;
       background: rgba(15,23,42,0.9);
-      border-radius: 24px;
-      padding: 3px;
-      border: 1px solid rgba(148,163,184,0.6);
+      border-radius:24px;
+      padding:3px;
+      border:1px solid rgba(148,163,184,0.6);
       box-shadow: 0 8px 18px rgba(0,0,0,0.35);
-      z-index: 5;
+      z-index:5;
     }
-
     .lang-btn {
-      background: transparent;
-      border: none;
-      border-radius: 18px;
-      padding: 4px 12px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 11px;
-      min-width: 40px;
-      color: rgba(226,232,240,0.8);
+      background:transparent;
+      border:none;
+      border-radius:18px;
+      padding:4px 12px;
+      cursor:pointer;
+      font-weight:700;
+      font-size:11px;
+      min-width:44px;
+      color: rgba(226,232,240,0.78);
       transition: all 0.18s ease;
     }
+    .lang-btn.active { background:#f9fafb; color:#020617; transform: scale(1.02); }
+    .lang-btn:hover:not(.active) { background: rgba(148,163,184,0.25); color:#e5e7eb; }
 
-    .lang-btn.active {
-      background: #f9fafb;
-      color: #020617;
-      transform: scale(1.02);
-    }
-
-    .lang-btn:hover:not(.active) {
-      background: rgba(148,163,184,0.25);
-      color: #e5e7eb;
+    .hero-time {
+      position:absolute;
+      top:16px;
+      right:110px;
+      font-size:11px;
+      color: rgba(255,255,255,0.78);
+      letter-spacing: 0.2px;
     }
 
     .hero-badge-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 10px;
-      margin-bottom: 4px;
-      padding-right: 84px;
+      display:flex;
+      justify-content:flex-start;
+      align-items:center;
+      margin-top: 26px;
+      gap: 10px;
     }
-
     .pill-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      border-radius: 999px;
+      display:inline-flex; align-items:center; gap:6px;
+      padding:4px 10px;
+      border-radius:999px;
       background: rgba(255,255,255,0.08);
-      font-size: 11px;
-      font-weight: 500;
+      font-size:11px; font-weight:600;
+      border: 1px solid rgba(255,255,255,0.10);
     }
-
     .pill-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #22c55e;
+      width:7px; height:7px; border-radius:50%;
+      background:#22c55e;
       box-shadow: 0 0 0 3px rgba(34,197,94,0.35);
     }
 
-    .hero-time {
-      font-size: 11px;
-      color: rgba(255,255,255,0.75);
-    }
+    .hero-title { font-size:20px; font-weight:800; letter-spacing:-0.5px; margin-top:2px; }
+    .hero-subtitle { font-size:13px; color: rgba(255,255,255,0.82); max-width:300px; line-height:1.35; }
 
-    .hero-title {
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: -0.4px;
-      margin-bottom: 2px;
-    }
-
-    .hero-subtitle {
-      font-size: 13px;
-      color: rgba(255,255,255,0.8);
-      max-width: 260px;
-      margin-bottom: 10px;
-    }
-
-    .hero-cta-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
+    .hero-cta-row { display:flex; align-items:center; gap:10px; margin-top: 2px; }
     .hero-btn-primary {
-      flex: 1;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      border-radius: 999px;
-      border: none;
-      padding: 11px 14px;
-      font-size: 14px;
-      font-weight: 600;
-      background: #f9fafb;
-      color: #000;
-      cursor: pointer;
-      text-decoration: none;
+      flex:1;
+      display:inline-flex; align-items:center; justify-content:center; gap:8px;
+      border-radius:999px;
+      border:none;
+      padding:12px 14px;
+      font-size:14px; font-weight:700;
+      background:#f9fafb;
+      color:#000;
+      cursor:pointer;
+      text-decoration:none;
       box-shadow: 0 10px 30px rgba(15,23,42,0.6);
       transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
-      -webkit-user-select: none;
-      user-select: none;
+      -webkit-user-select:none; user-select:none;
     }
-
-    .hero-btn-primary span {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .hero-btn-primary:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 14px 40px rgba(15,23,42,0.8);
-      background: #ffffff;
-    }
-
-    .hero-btn-primary:active {
-      transform: translateY(0);
-      box-shadow: 0 8px 24px rgba(15,23,42,0.7);
-    }
+    .hero-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 40px rgba(15,23,42,0.8); background:#fff; }
+    .hero-btn-primary:active { transform: translateY(0); box-shadow: 0 8px 24px rgba(15,23,42,0.7); }
 
     .hero-secondary {
-      width: 40px;
-      height: 40px;
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,0.45);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      cursor: pointer;
+      width:42px; height:42px;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,0.45);
+      display:flex; align-items:center; justify-content:center;
+      font-size:18px;
+      cursor:pointer;
       background: rgba(15,23,42,0.6);
       backdrop-filter: blur(12px);
-      color: rgba(255,255,255,0.9);
+      color: rgba(255,255,255,0.92);
     }
+    .hero-secondary:active { transform: scale(0.98); }
 
     .hero-map-hint {
-      margin-top: 8px;
-      font-size: 11px;
-      color: rgba(148,163,184,0.9);
-      display: flex;
-      align-items: center;
-      gap: 4px;
+      margin-top:2px;
+      font-size:11px;
+      color: rgba(148,163,184,0.92);
+      display:flex; align-items:center; gap:6px;
     }
+    .hero-map-dot { width:7px; height:7px; border-radius:50%; background:#38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,0.18); }
 
-    .hero-map-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #38bdf8;
-    }
-
+    /* Sections */
     .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 4px 2px 8px 2px;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      margin: 6px 2px 10px 2px;
+      gap: 12px;
     }
+    .section-title { font-size:15px; font-weight:800; letter-spacing:-0.2px; }
+    .section-subtitle { font-size:12px; color: var(--text-muted); margin-top:2px; }
+    .section-action { font-size:12px; color: var(--accent-secondary); font-weight:700; cursor:pointer; white-space:nowrap; }
 
-    .section-title {
-      font-size: 15px;
-      font-weight: 600;
-    }
-
-    .section-subtitle {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    .section-action {
-      font-size: 12px;
-      color: var(--accent-secondary);
-      font-weight: 500;
-      cursor: pointer;
-    }
-
-    .card-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-
+    .card-list { display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
     .info-card {
       border-radius: var(--radius-lg);
       background: var(--bg-card);
       padding: 12px 12px;
       box-shadow: var(--shadow-subtle);
-      border: 1px solid var(--border-light);
-      display: flex;
-      gap: 10px;
+      border:1px solid var(--border-light);
+      display:flex; gap:10px;
+      align-items:flex-start;
     }
-
     .info-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 999px;
-      background: #000;
-      color: #fff;
-      font-size: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
+      width:34px; height:34px; border-radius:999px;
+      background:#000; color:#fff;
+      font-size:16px;
+      display:flex; align-items:center; justify-content:center;
+      flex-shrink:0;
+      margin-top: 1px;
     }
-
-    .info-body {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .info-title {
-      font-size: 14px;
-      font-weight: 600;
-    }
-
-    .info-text {
-      font-size: 12px;
-      color: var(--text-secondary);
-      line-height: 1.35;
-    }
-
-    .info-meta-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 4px;
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
+    .info-body { flex:1; display:flex; flex-direction:column; gap:4px; }
+    .info-title { font-size:14px; font-weight:800; letter-spacing:-0.2px; }
+    .info-text { font-size:12px; color: var(--text-secondary); line-height:1.35; }
+    .info-meta-row { display:flex; justify-content:space-between; align-items:center; margin-top:6px; font-size:11px; color: var(--text-muted); gap:10px; }
     .pill-small {
-      padding: 2px 8px;
-      border-radius: 999px;
+      padding:3px 10px;
+      border-radius:999px;
       background: rgba(0,0,0,0.04);
-      font-size: 11px;
+      font-size:11px;
+      white-space:nowrap;
     }
+    .gray-text { color: var(--text-muted); font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
-    .gray-text {
-      color: var(--text-muted);
-      font-size: 11px;
-    }
-
-    /* bottom nav */
     .bottom-nav {
       position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      left:0; right:0; bottom:0;
       padding: 8px max(16px, var(--tg-safe-area-inset-left, 0px))
-                  max(8px, var(--tg-safe-area-inset-bottom, 0px))
-                  max(16px, var(--tg-safe-area-inset-right, 0px));
+               max(8px, var(--tg-safe-area-inset-bottom, 0px))
+               max(16px, var(--tg-safe-area-inset-right, 0px));
       background: rgba(255,255,255,0.95);
       backdrop-filter: blur(18px);
       border-top: 1px solid rgba(148,163,184,0.3);
-      z-index: 30;
-      display: flex;
-      justify-content: center;
+      z-index:30;
+      display:flex; justify-content:center;
     }
-
     .bottom-nav-inner {
-      width: 100%;
-      max-width: 420px;
-      display: grid;
+      width:100%;
+      max-width:420px;
+      display:grid;
       grid-template-columns: 1fr 1fr 1fr;
-      column-gap: 10px;
-      align-items: center;
+      column-gap:10px;
+      align-items:center;
     }
-
     .nav-item {
-      border-radius: 999px;
-      padding: 7px 8px;
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      font-size: 11px;
-      font-weight: 500;
+      border-radius:999px;
+      padding:7px 8px;
+      display:flex; flex-direction:row; align-items:center; justify-content:center;
+      gap:6px;
+      font-size:11px; font-weight:700;
       color: var(--text-secondary);
-      cursor: pointer;
-      border: 1px solid transparent;
+      cursor:pointer;
+      border:1px solid transparent;
       background: transparent;
-      -webkit-user-select: none;
-      user-select: none;
-      text-decoration: none;
-      min-width: 0;
+      -webkit-user-select:none; user-select:none;
+      text-decoration:none;
+      min-width:0;
     }
-
-    .nav-item span.icon {
-      font-size: 16px;
-    }
-
+    .nav-item span.icon { font-size:16px; }
     .nav-item.active {
-      background: #000;
-      color: #fff;
-      border-color: #000;
+      background:#000;
+      color:#fff;
+      border-color:#000;
       box-shadow: 0 8px 24px rgba(15,23,42,0.45);
     }
-
-    .nav-item.active .icon {
-      transform: translateY(-0.5px);
-    }
-
-    .nav-item-label { white-space: nowrap; }
-
-    .nav-item:active:not(.active) {
-      background: rgba(0,0,0,0.05);
-    }
+    .nav-item:active:not(.active) { background: rgba(0,0,0,0.05); }
 
     @media (max-width: 480px) {
-      .hero-title { font-size: 18px; }
-      .hero-subtitle { font-size: 12px; }
-      .info-title { font-size: 13px; }
-      .info-text { font-size: 12px; }
+      .hero-title { font-size:19px; }
+      .hero-subtitle { font-size:12px; }
+      .info-title { font-size:13px; }
+      .info-text { font-size:12px; }
     }
-
     @media (max-height: 640px) {
       body {
         padding-top: calc(
@@ -604,27 +375,18 @@
           8px
         );
       }
-      .hero-card {
-        padding: 14px 12px 10px 12px;
-        border-radius: 18px;
-      }
+      .hero-card { padding:14px 12px 10px 12px; border-radius:18px; }
+      .hero-time { top:14px; }
+      .lang-switch { top:10px; right:10px; }
+      .hero-badge-row { margin-top: 24px; }
     }
-
-    .lang-btn:focus,
-    .nav-item:focus {
-      outline: 2px solid var(--accent-secondary);
-      outline-offset: 1px;
-    }
+    .lang-btn:focus, .nav-item:focus { outline: 2px solid var(--accent-secondary); outline-offset:1px; }
   </style>
 </head>
 <body>
   <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-spinner"></div>
-    <div class="loading-text"
-         data-kz="Жүктелуде..."
-         data-ru="Загрузка...">
-      Жүктелуде...
-    </div>
+    <div class="loading-text" data-kz="Жүктелуде..." data-ru="Загрузка...">Жүктелуде...</div>
   </div>
 
   <div class="background"></div>
@@ -635,10 +397,7 @@
         <div class="logo-square">AG</div>
         <div class="brand-info">
           <div class="brand-title">Alash Go</div>
-          <div class="brand-subtitle"
-               id="brandSubtitle"
-               data-kz="Жеткізу клиенті"
-               data-ru="Клиент доставки">
+          <div class="brand-subtitle" id="brandSubtitle" data-kz="Жеткізу клиенті" data-ru="Клиент доставки">
             Жеткізу клиенті
           </div>
         </div>
@@ -648,9 +407,7 @@
           <img id="userAvatarImg" alt="User avatar">
           <span id="userAvatarFallback">👤</span>
         </div>
-        <span id="userNameText"
-              data-kz="Клиент"
-              data-ru="Клиент">Клиент</span>
+        <span id="userNameText" data-kz="Клиент" data-ru="Клиент">Клиент</span>
       </div>
     </header>
 
@@ -661,49 +418,39 @@
           <button class="lang-btn" id="lang-ru" onclick="setLang('ru')">РУС</button>
         </div>
 
+        <div class="hero-time" id="heroTime"></div>
+
         <div class="hero-badge-row">
           <div class="pill-badge">
             <span class="pill-dot"></span>
-            <span id="statusBadge"
-                  data-kz="Қызмет онлайн"
-                  data-ru="Сервис онлайн">Қызмет онлайн</span>
+            <span id="statusBadge" data-kz="Қызмет онлайн" data-ru="Сервис онлайн">Қызмет онлайн</span>
           </div>
-          <div class="hero-time" id="heroTime"></div>
         </div>
 
-        <h1 class="hero-title"
-            id="heroTitle"
-            data-kz="Қайда жеткіземіз?"
-            data-ru="Куда везём жүк?">
+        <h1 class="hero-title" id="heroTitle" data-kz="Қайда жеткіземіз?" data-ru="Куда везём жүк?">
           Қайда жеткіземіз?
         </h1>
 
-        <p class="hero-subtitle"
-           id="heroSubtitle"
+        <p class="hero-subtitle" id="heroSubtitle"
            data-kz="Жаңа тапсырыс беріп, жақын жүргізушіні табыңыз."
-           data-ru="Оформите новый заказ, және біз жақын жүргізушіні табамыз.">
+           data-ru="Оформите новый заказ, и мы найдём ближайшего водителя.">
           Жаңа тапсырыс беріп, жақын жүргізушіні табыңыз.
         </p>
 
         <div class="hero-cta-row">
+          <!-- ✅ FIXED: Simple link to delivery-opm.html, no onclick handler -->
           <a href="/delivery" class="hero-btn-primary" id="newOrderBtn">
-            <span>
+            <span style="display:inline-flex;align-items:center;gap:6px;">
               <span>📦</span>
-              <span id="newOrderText"
-                    data-kz="Жаңа тапсырыс"
-                    data-ru="Новый заказ">Жаңа тапсырыс</span>
+              <span id="newOrderText" data-kz="Жаңа тапсырыс" data-ru="Новый заказ">Жаңа тапсырыс</span>
             </span>
           </a>
-          <button class="hero-secondary" type="button" id="historyQuickBtn" aria-label="History">
-            ⏱
-          </button>
+          <button class="hero-secondary" type="button" id="historyQuickBtn" aria-label="History">⏱</button>
         </div>
 
         <div class="hero-map-hint">
           <div class="hero-map-dot"></div>
-          <span id="etaText"
-                data-kz="Орташа күту: 5–10 мин"
-                data-ru="Среднее ожидание: 5–10 мин">
+          <span id="etaText" data-kz="Орташа күту: 5–10 мин" data-ru="Среднее ожидание: 5–10 мин">
             Орташа күту: 5–10 мин
           </span>
         </div>
@@ -712,22 +459,15 @@
       <section>
         <div class="section-header">
           <div>
-            <div class="section-title"
-                 id="sectionRecentTitle"
-                 data-kz="Соңғы тапсырысыңыз"
-                 data-ru="Ваш последний заказ">
+            <div class="section-title" id="sectionRecentTitle" data-kz="Соңғы тапсырысыңыз" data-ru="Ваш последний заказ">
               Соңғы тапсырысыңыз
             </div>
-            <div class="section-subtitle"
-                 id="sectionRecentSubtitle"
-                 data-kz="Мәртебесін тез тексеріңіз"
-                 data-ru="Быстро проверяйте статус">
+            <div class="section-subtitle" id="sectionRecentSubtitle" data-kz="Мәртебесін тез тексеріңіз" data-ru="Быстро проверяйте статус">
               Мәртебесін тез тексеріңіз
             </div>
           </div>
           <div class="section-action" id="goHistoryFromHeader">
-            <span data-kz="Барлық тарих"
-                  data-ru="Вся история">Барлық тарих</span> →
+            <span data-kz="Барлық тарих" data-ru="Вся история">Барлық тарих</span> →
           </div>
         </div>
 
@@ -735,9 +475,7 @@
           <article class="info-card" id="lastOrderCard">
             <div class="info-icon">🚚</div>
             <div class="info-body">
-              <div class="info-title" id="lastOrderTitle"
-                   data-kz="Соңғы тапсырыс табылмады"
-                   data-ru="Последний заказ не найден">
+              <div class="info-title" id="lastOrderTitle" data-kz="Соңғы тапсырыс табылмады" data-ru="Последний заказ не найден">
                 Соңғы тапсырыс табылмады
               </div>
               <div class="info-text" id="lastOrderDesc"
@@ -746,14 +484,10 @@
                 Жаңа тапсырыс жасағаннан кейін мұнда соңғы бағыт көрінеді.
               </div>
               <div class="info-meta-row">
-                <span class="pill-small" id="lastOrderStatus"
-                      data-kz="Статус: белсенді емес"
-                      data-ru="Статус: нет активных">
+                <span class="pill-small" id="lastOrderStatus" data-kz="Статус: белсенді емес" data-ru="Статус: нет активных">
                   Статус: белсенді емес
                 </span>
-                <span class="gray-text" id="lastOrderMeta"
-                      data-kz="Әзірге тапсырыс жоқ"
-                      data-ru="Заказов пока нет">
+                <span class="gray-text" id="lastOrderMeta" data-kz="Әзірге тапсырыс жоқ" data-ru="Заказов пока нет">
                   Әзірге тапсырыс жоқ
                 </span>
               </div>
@@ -765,10 +499,7 @@
       <section>
         <div class="section-header">
           <div>
-            <div class="section-title"
-                 id="sectionTipsTitle"
-                 data-kz="Кеңестер мен қауіпсіздік"
-                 data-ru="Советы и безопасность">
+            <div class="section-title" id="sectionTipsTitle" data-kz="Кеңестер мен қауіпсіздік" data-ru="Советы и безопасность">
               Кеңестер мен қауіпсіздік
             </div>
           </div>
@@ -777,9 +508,7 @@
           <article class="info-card">
             <div class="info-icon">🛡</div>
             <div class="info-body">
-              <div class="info-title"
-                   data-kz="Жеткізу барысын бақылаңыз"
-                   data-ru="Отслеживайте доставку">
+              <div class="info-title" data-kz="Жеткізу барысын бақылаңыз" data-ru="Отслеживайте доставку">
                 Жеткізу барысын бақылаңыз
               </div>
               <div class="info-text"
@@ -793,9 +522,7 @@
           <article class="info-card">
             <div class="info-icon">💳</div>
             <div class="info-body">
-              <div class="info-title"
-                   data-kz="Қауіпсіз төлем"
-                   data-ru="Безопасная оплата">
+              <div class="info-title" data-kz="Қауіпсіз төлем" data-ru="Безопасная оплата">
                 Қауіпсіз төлем
               </div>
               <div class="info-text"
@@ -810,28 +537,21 @@
     </main>
   </div>
 
-  <!-- ✅ Bottom Nav: now 3 buttons -->
   <nav class="bottom-nav">
     <div class="bottom-nav-inner">
       <button class="nav-item" id="tabHistory" type="button">
         <span class="icon">📜</span>
-        <span class="nav-item-label"
-              data-kz="Тарих"
-              data-ru="История">Тарих</span>
+        <span class="nav-item-label" data-kz="Тарих" data-ru="История">Тарих</span>
       </button>
 
       <button class="nav-item active" id="tabHome" type="button">
         <span class="icon">🏠</span>
-        <span class="nav-item-label"
-              data-kz="Басты"
-              data-ru="Главная">Басты</span>
+        <span class="nav-item-label" data-kz="Басты" data-ru="Главная">Басты</span>
       </button>
 
       <button class="nav-item" id="tabDrivers" type="button">
         <span class="icon">🚚</span>
-        <span class="nav-item-label"
-              data-kz="Жүргізушілер"
-              data-ru="Водители">Жүргізушілер</span>
+        <span class="nav-item-label" data-kz="Жүргізушілер" data-ru="Водители">Жүргізушілер</span>
       </button>
     </div>
   </nav>
@@ -840,12 +560,17 @@
     let currentLang = "kz";
     let isCheckingUser = false;
 
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
       initTelegram();
       setLang("kz");
       initTimeLabel();
       bindEvents();
-      checkUserRoleAndShow();
+
+      // ✅ STEP 1: Check user role (driver vs client)
+      await checkUserRoleAndShow();
+
+      // ✅ STEP 2: OFFERTA GATE - check ONCE on page load only
+      await checkOffertaGate("client");
     });
 
     function initTelegram() {
@@ -853,9 +578,7 @@
         if (window.Telegram && Telegram.WebApp) {
           Telegram.WebApp.ready();
           Telegram.WebApp.expand();
-          if (Telegram.WebApp.disableVerticalSwipes) {
-            Telegram.WebApp.disableVerticalSwipes();
-          }
+          if (Telegram.WebApp.disableVerticalSwipes) Telegram.WebApp.disableVerticalSwipes();
         }
       } catch (e) {
         console.warn("Telegram init error:", e);
@@ -873,11 +596,7 @@
       if (historyBtn) historyBtn.addEventListener("click", () => goHistory());
       if (headerHistory) headerHistory.addEventListener("click", () => goHistory());
 
-      if (tabHome) {
-        tabHome.addEventListener("click", () => {
-          setActiveTab("home");
-        });
-      }
+      if (tabHome) tabHome.addEventListener("click", () => setActiveTab("home"));
 
       if (tabHistory) {
         tabHistory.addEventListener("click", () => {
@@ -892,6 +611,10 @@
           goDrivers();
         });
       }
+
+      // ✅ REMOVED: No onclick handler for newOrderBtn
+      // The button is now a simple <a href="/delivery-opm.html">
+      // Offerta check happens ONLY on page load, not on button click
     }
 
     function setActiveTab(tab) {
@@ -901,15 +624,8 @@
       if (tab === "drivers") document.getElementById("tabDrivers")?.classList.add("active");
     }
 
-    function goHistory() {
-      window.location.href = "/user-history";
-    }
-
-    function goDrivers() {
-      // ✅ если у тебя файл реально /driver-list.html — замени строку ниже:
-      window.location.href = "/driver-list";
-      // window.location.href = "/driver-list.html";
-    }
+    function goHistory() { window.location.href = "/user-history"; }
+    function goDrivers() { window.location.href = "/driver-list"; }
 
     function initTimeLabel() {
       const el = document.getElementById("heroTime");
@@ -965,9 +681,7 @@
 
           if (userData.exists === true && userData.user_type === "driver") {
             updateLoadingText("redirectDriver");
-            setTimeout(() => {
-              window.location.replace("/delivery-list");
-            }, 600);
+            setTimeout(() => window.location.replace("/delivery-list"), 600);
             return;
           }
 
@@ -997,9 +711,7 @@
         const avatarFallback = document.getElementById("userAvatarFallback");
 
         const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ");
-        const displayName = user.username
-          ? ("@" + user.username)
-          : (fullName || "Клиент");
+        const displayName = user.username ? ("@" + user.username) : (fullName || "Клиент");
 
         if (nameEl && displayName) nameEl.textContent = displayName;
 
@@ -1025,13 +737,17 @@
           checkingUser: "Пайдаланушы түрі тексерілуде...",
           redirectDriver: "Жүргізуші панеліне бағыттау...",
           error: "Қате пайда болды. Кейінірек қайталап көріңіз.",
-          noUser: "WebApp деректері жоқ. Клиент беті ашылуда."
+          noUser: "WebApp деректері жоқ. Клиент беті ашылуда.",
+          checkingOfferta: "Оферта тексерілуде...",
+          offertaNeed: "Оферта қабылданбаған. Бағыттау..."
         },
         ru: {
           checkingUser: "Проверяем тип пользователя...",
           redirectDriver: "Перенаправляем в панель водителя...",
           error: "Произошла ошибка. Попробуйте позже.",
-          noUser: "Нет данных WebApp. Открываем клиентский экран."
+          noUser: "Нет данных WebApp. Открываем клиентский экран.",
+          checkingOfferta: "Проверяем оферту...",
+          offertaNeed: "Оферта не принята. Перенаправляем..."
         }
       };
 
@@ -1058,8 +774,60 @@
         setTimeout(() => { root.style.transform = "scale(1)"; }, 100);
       }
     }
-
     window.setLang = setLang;
+
+    // =========================
+    // ✅ OFFERTA GATE - CHECK ONLY ON PAGE LOAD
+    // =========================
+    function redirectToOfferta(role) {
+      const ret = encodeURIComponent("/main-client");
+      window.location.replace(`/offerta/${role}?return=${ret}`);
+    }
+
+    async function isOffertaAccepted(role) {
+      const tgId = getTelegramId();
+      if (!tgId) return true; // No user - allow access
+
+      try {
+        const timestamp = Date.now();
+        const url = `/api/offerta/status?role=${encodeURIComponent(role)}&telegram_id=${encodeURIComponent(tgId)}&_t=${timestamp}`;
+
+        const res = await fetch(url, {
+          method: "GET",
+          cache: "no-store"
+        });
+
+        if (!res.ok) {
+          console.error("❌ Offerta status check failed:", res.status);
+          return false;
+        }
+
+        const data = await res.json();
+        return !!data.approved;
+      } catch (e) {
+        console.error("❌ Offerta status error:", e);
+        return false;
+      }
+    }
+
+    async function checkOffertaGate(role) {
+      const overlay = document.getElementById("loadingOverlay");
+      const root = document.getElementById("appRoot");
+
+      updateLoadingText("checkingOfferta");
+
+      const ok = await isOffertaAccepted(role);
+      if (!ok) {
+        // ✅ Offerta NOT accepted - redirect to offerta page
+        updateLoadingText("offertaNeed");
+        setTimeout(() => redirectToOfferta(role), 450);
+        return;
+      }
+
+      // ✅ Offerta IS accepted - show main page
+      // overlay/root already managed by checkUserRoleAndShow
+      console.log("✅ Offerta accepted - showing main page");
+    }
   </script>
 </body>
 </html>

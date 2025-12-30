@@ -1527,9 +1527,9 @@ func (h *Handler) handleOffertaDoc(w http.ResponseWriter, r *http.Request) {
 
 	var path string
 	if role == "driver" {
-		path = "./offerta/driver-privicy.docx"
+		path = "./offerta-files/driver-privicy.docx"
 	} else {
-		path = "./offerta/client-privicy.docx"
+		path = "./offerta-files/client-privicy.docx"
 	}
 
 	f, err := os.Open(path)
@@ -1588,7 +1588,10 @@ func (h *Handler) StartWebServer(ctx context.Context, b *bot.Bot) {
 
 	// Serve static files
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
-	r.PathPrefix("/offerta/").Handler(http.StripPrefix("/offerta/", http.FileServer(http.Dir("./offerta/"))))
+	// ✅ Отдельный префикс для файлов (docx/pdf/и т.д.)
+	r.PathPrefix("/offerta-files/").Handler(
+		http.StripPrefix("/offerta-files/", http.FileServer(http.Dir("./offerta-files/"))),
+	)
 
 	// Serve uploaded files
 	r.PathPrefix("/ava/").Handler(http.StripPrefix("/ava/", http.FileServer(http.Dir("./ava/"))))

@@ -57,7 +57,7 @@ type Config struct {
 func NewConfig() (*Config, error) {
 	cfg := &Config{
 		// Server defaults
-		Port:         ":8081",
+		Port:         ":8082",
 		Host:         "0.0.0.0",
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,

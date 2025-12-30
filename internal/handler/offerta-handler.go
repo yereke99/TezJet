@@ -1,4 +1,4 @@
-// offerta-handler.go
+// offerta_handler.go
 package handler
 
 import (
@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -26,111 +27,164 @@ type offertaApproveReq struct {
 func normalizeRole(role string) string {
 	r := strings.ToLower(strings.TrimSpace(role))
 	if r == "" {
-		return "driver"
+		return "client"
 	}
 	return r
 }
 
 func isAllowedRole(role string) bool {
-	switch role {
-	case "driver", "client":
-		return true
-	default:
-		return false
-	}
+	return role == "driver" || role == "client"
 }
 
-func writeJSON(w http.ResponseWriter, status int, v any) {
+func writeOffertaJSON(w http.ResponseWriter, status int, v interface{}) {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)
 }
 
 func (h *Handler) handleOffertaStatus(w http.ResponseWriter, r *http.Request) {
-	// GET /api/offerta/status?telegram_id=...&role=driver|client
+	if r.Method == http.MethodOptions {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	tgStr := strings.TrimSpace(r.URL.Query().Get("telegram_id"))
 	role := normalizeRole(r.URL.Query().Get("role"))
 
 	if !isAllowedRole(role) {
-		writeJSON(w, http.StatusBadRequest, offertaStatusResp{
-			Success: false, Approved: false, Message: "Invalid role. Use driver|client",
+		writeOffertaJSON(w, http.StatusBadRequest, offertaStatusResp{
+			Success: false,
+			Message: "Invalid role",
 		})
 		return
 	}
 
-	tgID, _ := strconv.ParseInt(tgStr, 10, 64)
-	if tgID == 0 {
-		writeJSON(w, http.StatusBadRequest, offertaStatusResp{
-			Success: false, Approved: false, Message: "Telegram ID обязателен",
+	tgID, err := strconv.ParseInt(tgStr, 10, 64)
+	if err != nil || tgID == 0 {
+		writeOffertaJSON(w, http.StatusBadRequest, offertaStatusResp{
+			Success: false,
+			Message: "Telegram ID обязателен",
 		})
 		return
 	}
 
-	// approve stored as INTEGER 0/1
 	var approveInt int
-	err := h.db.QueryRow(
-		`SELECT approve FROM offerta WHERE id_user = ? AND role = ? LIMIT 1`,
-		tgID, role,
-	).Scan(&approveInt)
+	err = h.db.QueryRow(`SELECT approve FROM offerta WHERE id_user = ? AND role = ? LIMIT 1`, tgID, role).Scan(&approveInt)
 
 	if err == sql.ErrNoRows {
-		writeJSON(w, http.StatusOK, offertaStatusResp{Success: true, Approved: false, Role: role})
-		return
-	}
-	if err != nil {
-		h.logger.Error("offerta status query failed", zap.Error(err))
-		writeJSON(w, http.StatusInternalServerError, offertaStatusResp{
-			Success: false, Approved: false, Message: "Server error",
+		h.logger.Info("❌ Offerta not found",
+			zap.Int64("telegram_id", tgID),
+			zap.String("role", role))
+
+		writeOffertaJSON(w, http.StatusOK, offertaStatusResp{
+			Success:  true,
+			Approved: false,
+			Role:     role,
 		})
 		return
 	}
 
-	writeJSON(w, http.StatusOK, offertaStatusResp{
+	if err != nil {
+		h.logger.Error("Database error checking offerta", zap.Error(err))
+		writeOffertaJSON(w, http.StatusInternalServerError, offertaStatusResp{
+			Success: false,
+			Message: "Server error",
+		})
+		return
+	}
+
+	approved := approveInt == 1
+
+	h.logger.Info("✅ Offerta status checked",
+		zap.Int64("telegram_id", tgID),
+		zap.String("role", role),
+		zap.Bool("approved", approved))
+
+	writeOffertaJSON(w, http.StatusOK, offertaStatusResp{
 		Success:  true,
-		Approved: approveInt == 1,
+		Approved: approved,
 		Role:     role,
 	})
 }
 
 func (h *Handler) handleOffertaApprove(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodOptions {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	if r.Method != http.MethodPost {
-		writeJSON(w, http.StatusMethodNotAllowed, Response{Success: false, Message: "Method not allowed"})
+		writeOffertaJSON(w, http.StatusMethodNotAllowed, Response{Success: false, Message: "Method not allowed"})
 		return
 	}
 
 	var req offertaApproveReq
-	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, Response{Success: false, Message: "Invalid JSON"})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.logger.Error("Invalid JSON", zap.Error(err))
+		writeOffertaJSON(w, http.StatusBadRequest, Response{Success: false, Message: "Invalid JSON"})
 		return
 	}
 
 	req.Role = normalizeRole(req.Role)
 
 	if req.TelegramID == 0 {
-		writeJSON(w, http.StatusBadRequest, Response{Success: false, Message: "telegram_id обязателен"})
-		return
-	}
-	if !isAllowedRole(req.Role) {
-		writeJSON(w, http.StatusBadRequest, Response{Success: false, Message: "Invalid role. Use driver|client"})
+		h.logger.Warn("Missing telegram_id in approval request")
+		writeOffertaJSON(w, http.StatusBadRequest, Response{Success: false, Message: "telegram_id обязателен"})
 		return
 	}
 
-	// ✅ правильный UPSERT по UNIQUE(id_user, role)
-	_, err := h.db.Exec(`
+	if !isAllowedRole(req.Role) {
+		writeOffertaJSON(w, http.StatusBadRequest, Response{Success: false, Message: "Invalid role"})
+		return
+	}
+
+	now := time.Now()
+
+	// ✅ CRITICAL: Use transaction to ensure immediate visibility
+	tx, err := h.db.Begin()
+	if err != nil {
+		h.logger.Error("Failed to begin transaction", zap.Error(err))
+		writeOffertaJSON(w, http.StatusInternalServerError, Response{Success: false, Message: "Server error"})
+		return
+	}
+	defer tx.Rollback()
+
+	_, err = tx.Exec(`
 		INSERT INTO offerta (id_user, role, approve, created_at, updated_at)
-		VALUES (?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-		ON CONFLICT(id_user, role) DO UPDATE SET
-			approve = 1,
-			updated_at = CURRENT_TIMESTAMP
-	`, req.TelegramID, req.Role)
+		VALUES (?, ?, 1, ?, ?)
+		ON CONFLICT(id_user, role) 
+		DO UPDATE SET approve = 1, updated_at = ?
+	`, req.TelegramID, req.Role, now, now, now)
 
 	if err != nil {
-		h.logger.Error("offerta approve failed", zap.Error(err))
-		writeJSON(w, http.StatusInternalServerError, Response{Success: false, Message: "Ошибка сохранения"})
+		h.logger.Error("Failed to save offerta",
+			zap.Error(err),
+			zap.Int64("telegram_id", req.TelegramID),
+			zap.String("role", req.Role))
+		writeOffertaJSON(w, http.StatusInternalServerError, Response{
+			Success: false,
+			Message: "Database error: " + err.Error(),
+		})
 		return
 	}
 
-	writeJSON(w, http.StatusOK, Response{Success: true, Message: "OK"})
+	// ✅ CRITICAL: Commit transaction before responding
+	if err := tx.Commit(); err != nil {
+		h.logger.Error("Failed to commit transaction", zap.Error(err))
+		writeOffertaJSON(w, http.StatusInternalServerError, Response{Success: false, Message: "Commit error"})
+		return
+	}
+
+	h.logger.Info("✅ Offerta approved successfully",
+		zap.Int64("telegram_id", req.TelegramID),
+		zap.String("role", req.Role))
+
+	writeOffertaJSON(w, http.StatusOK, Response{Success: true, Message: "Offerta approved"})
 }

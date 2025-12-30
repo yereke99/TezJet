@@ -14,25 +14,20 @@ import (
 
 var _ = time.Second
 
-// InitDatabase initializes the SQLite database
 func InitDatabase(cfg *config.Config, logger *zap.Logger) (*sql.DB, error) {
-	// Ensure data directory exists
 	if err := os.MkdirAll(cfg.DBPath, 0755); err != nil {
 		return nil, err
 	}
 
-	// Open database connection
 	db, err := sql.Open("sqlite3", cfg.GetDatabasePath()+"?_foreign_keys=on&_journal_mode=WAL&_busy_timeout=5000")
 	if err != nil {
 		return nil, err
 	}
 
-	// Configure connection pool
 	db.SetMaxOpenConns(cfg.MaxOpenConns)
 	db.SetMaxIdleConns(cfg.MaxIdleConns)
 	db.SetConnMaxLifetime(cfg.ConnMaxLifetime)
 
-	// Test connection
 	if err := db.Ping(); err != nil {
 		db.Close()
 		return nil, err
@@ -44,7 +39,6 @@ func InitDatabase(cfg *config.Config, logger *zap.Logger) (*sql.DB, error) {
 		zap.Int("max_idle_conns", cfg.MaxIdleConns),
 	)
 
-	// Create schema
 	if err := CreateTables(db, logger); err != nil {
 		_ = db.Close()
 		return nil, err
@@ -53,26 +47,24 @@ func InitDatabase(cfg *config.Config, logger *zap.Logger) (*sql.DB, error) {
 	return db, nil
 }
 
-// GenerateUUID generates a new UUID string
 func GenerateUUID() string {
 	return uuid.New().String()
 }
 
-// CreateTables creates core tables
 func CreateTables(db *sql.DB, logger *zap.Logger) error {
-	// privicy police
+	// ✅ FIXED: Changed UNIQUE constraint to composite (id_user, role)
 	offertaTable := `
 	CREATE TABLE IF NOT EXISTS offerta (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		id_user BIGINT NOT NULL UNIQUE,
-		role TEXT DEFAULT '', -- driver or client
-		approve BOOLEAN NOT NULL DEFAULT FALSE,
+		id_user BIGINT NOT NULL,
+		role TEXT NOT NULL CHECK(role IN ('driver', 'client')),
+		approve INTEGER NOT NULL DEFAULT 0 CHECK(approve IN (0, 1)),
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		UNIQUE(id_user, role)
 	);
 	`
 
-	// just users
 	justTable := `
 	CREATE TABLE IF NOT EXISTS just (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -83,7 +75,7 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
 	`
-	// Users table (нужна репозиторию)
+
 	usersTable := `
 	CREATE TABLE IF NOT EXISTS users (
 		id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
@@ -100,14 +92,13 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);`
 
-	// delivery_requests: добавлены user_id, matched_driver_id, item_photo_path
 	deliveryRequestsTable := `
 	CREATE TABLE IF NOT EXISTS delivery_requests (
 		id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
 		user_id TEXT NULL,
 		telegram_id INTEGER NOT NULL,
-		driver_id TEXT NULL,             -- legacy (оставляем)
-		matched_driver_id TEXT NULL,     -- актуальная колонка для матчей
+		driver_id TEXT NULL,
+		matched_driver_id TEXT NULL,
 		from_address TEXT NOT NULL,
 		from_lat REAL NOT NULL,
 		from_lon REAL NOT NULL,
@@ -183,7 +174,6 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 		FOREIGN KEY (driver_id) REFERENCES drivers(id) ON DELETE CASCADE
 	);`
 
-	// Create tables
 	for _, sql := range []string{offertaTable, justTable, usersTable, driversTable, driverTripsTable, deliveryRequestsTable} {
 		if _, err := db.Exec(sql); err != nil {
 			logger.Error("Failed to create table", zap.Error(err))
@@ -191,7 +181,6 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 		}
 	}
 
-	// Ensure columns exist for delivery_requests (safe ALTERs)
 	addCols := []string{
 		"ALTER TABLE delivery_requests ADD COLUMN user_id TEXT NULL;",
 		"ALTER TABLE delivery_requests ADD COLUMN matched_driver_id TEXT NULL;",
@@ -201,17 +190,13 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 	}
 	for _, q := range addCols {
 		if _, err := db.Exec(q); err != nil {
-			// ignore "duplicate column name"
 			logger.Debug("ALTER delivery_requests (might exist)", zap.Error(err))
 		}
 	}
 
-	// Indexes
 	indexes := []string{
-		// users
 		"CREATE INDEX IF NOT EXISTS idx_users_telegram_id ON users(telegram_id);",
-
-		// delivery_requests
+		"CREATE INDEX IF NOT EXISTS idx_offerta_user_role ON offerta(id_user, role);",
 		"CREATE INDEX IF NOT EXISTS idx_dr_telegram_id ON delivery_requests(telegram_id);",
 		"CREATE INDEX IF NOT EXISTS idx_dr_user_id ON delivery_requests(user_id);",
 		"CREATE INDEX IF NOT EXISTS idx_dr_driver_id ON delivery_requests(driver_id);",
@@ -219,16 +204,12 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 		"CREATE INDEX IF NOT EXISTS idx_dr_status ON delivery_requests(status);",
 		"CREATE INDEX IF NOT EXISTS idx_dr_created_at ON delivery_requests(created_at);",
 		"CREATE INDEX IF NOT EXISTS idx_dr_location ON delivery_requests(from_lat, from_lon, to_lat, to_lon);",
-
-		// drivers
 		"CREATE INDEX IF NOT EXISTS idx_drivers_telegram_id ON drivers(telegram_id);",
 		"CREATE INDEX IF NOT EXISTS idx_drivers_status ON drivers(status);",
 		"CREATE INDEX IF NOT EXISTS idx_drivers_created_at ON drivers(created_at);",
 		"CREATE INDEX IF NOT EXISTS idx_drivers_location ON drivers(latitude, longitude);",
 		"CREATE INDEX IF NOT EXISTS idx_drivers_city ON drivers(start_city);",
 		"CREATE UNIQUE INDEX IF NOT EXISTS ux_drivers_truck_number ON drivers(truck_number) WHERE truck_number <> '';",
-
-		// driver_trips
 		"CREATE INDEX IF NOT EXISTS idx_dt_driver_id ON driver_trips(driver_id);",
 		"CREATE INDEX IF NOT EXISTS idx_dt_telegram_id ON driver_trips(telegram_id);",
 		"CREATE INDEX IF NOT EXISTS idx_dt_status ON driver_trips(status);",
@@ -242,47 +223,39 @@ func CreateTables(db *sql.DB, logger *zap.Logger) error {
 		}
 	}
 
-	// Triggers for updated_at
 	triggers := []struct {
 		name string
 		sql  string
 	}{
 		{
 			name: "trigger_users_updated_at",
-			sql: `
-				CREATE TRIGGER IF NOT EXISTS trigger_users_updated_at 
+			sql: `CREATE TRIGGER IF NOT EXISTS trigger_users_updated_at 
 				AFTER UPDATE ON users
-				BEGIN
-					UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-				END;
-			`,
+				BEGIN UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id; END;`,
+		},
+		{
+			name: "trigger_offerta_updated_at",
+			sql: `CREATE TRIGGER IF NOT EXISTS trigger_offerta_updated_at 
+				AFTER UPDATE ON offerta
+				BEGIN UPDATE offerta SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id; END;`,
 		},
 		{
 			name: "trigger_delivery_requests_updated_at",
-			sql: `
-				CREATE TRIGGER IF NOT EXISTS trigger_delivery_requests_updated_at 
+			sql: `CREATE TRIGGER IF NOT EXISTS trigger_delivery_requests_updated_at 
 				AFTER UPDATE ON delivery_requests
-				BEGIN
-					UPDATE delivery_requests SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-				END;`,
+				BEGIN UPDATE delivery_requests SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id; END;`,
 		},
 		{
 			name: "trigger_drivers_updated_at",
-			sql: `
-				CREATE TRIGGER IF NOT EXISTS trigger_drivers_updated_at 
+			sql: `CREATE TRIGGER IF NOT EXISTS trigger_drivers_updated_at 
 				AFTER UPDATE ON drivers
-				BEGIN
-					UPDATE drivers SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-				END;`,
+				BEGIN UPDATE drivers SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id; END;`,
 		},
 		{
 			name: "trigger_driver_trips_updated_at",
-			sql: `
-				CREATE TRIGGER IF NOT EXISTS trigger_driver_trips_updated_at 
+			sql: `CREATE TRIGGER IF NOT EXISTS trigger_driver_trips_updated_at 
 				AFTER UPDATE ON driver_trips
-				BEGIN
-					UPDATE driver_trips SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-				END;`,
+				BEGIN UPDATE driver_trips SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id; END;`,
 		},
 	}
 	for _, t := range triggers {
