@@ -1,3 +1,4 @@
+<!-- delivery-opm.html (OPTIMIZED / SAME LOGIC + SAME UI) -->
 <!DOCTYPE html>
 <html lang="kz">
 <head>
@@ -8,10 +9,15 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Alash Go - Жеткізу</title>
 
-  <!-- Telegram SDK -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Faster connections -->
+  <link rel="preconnect" href="https://telegram.org">
+  <link rel="preconnect" href="https://nominatim.openstreetmap.org" crossorigin>
+  <link rel="preconnect" href="https://a.basemaps.cartocdn.com" crossorigin>
+  <link rel="preconnect" href="https://b.basemaps.cartocdn.com" crossorigin>
+  <link rel="preconnect" href="https://c.basemaps.cartocdn.com" crossorigin>
+  <link rel="preconnect" href="https://d.basemaps.cartocdn.com" crossorigin>
 
-  <!-- Leaflet -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -19,646 +25,327 @@
     :root{
       --primary:#111827; --primary-dark:#000000; --secondary:#0B63F6;
       --success:#00D395; --warning:#FFB800; --danger:#FF5C5C;
-      --dark:#0F172A; --dark-light:#111827; --grey:#6B7280; --grey-light:#E5E7EB;
-      --white:#FFFFFF; --bg:#F5F5F5; --radius:16px; --radius-lg:24px;
+      --dark:#0F172A; --grey:#6B7280; --grey-light:#E5E7EB;
+      --white:#FFFFFF; --bg:#F5F5F5; --radius:16px; --radius-lg:22px;
       --shadow:0 4px 24px rgba(15,23,42,.12); --shadow-lg:0 10px 40px rgba(15,23,42,.18);
 
-      /* iOS safe areas */
       --tg-safe-area-inset-top: env(safe-area-inset-top, 0px);
       --tg-safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
-
-      /* Telegram content safe areas (set via JS if available) */
       --tg-content-safe-area-inset-top: 0px;
       --tg-content-safe-area-inset-bottom: 0px;
-
-      /* Combined insets for UI */
       --tg-top-inset: calc(var(--tg-safe-area-inset-top) + var(--tg-content-safe-area-inset-top));
       --tg-bottom-inset: calc(var(--tg-safe-area-inset-bottom) + var(--tg-content-safe-area-inset-bottom));
-
-      /* Telegram viewport */
       --tg-viewport-stable-height: 100vh;
+
+      --sheet-max-height: min(520px, 64vh);
+      --sheet-real-height: 360px;
+      --sheet-pad-x: clamp(14px, 4vw, 18px);
+      --sheet-pad-bottom: calc(var(--tg-bottom-inset) + 10px);
+      --desktop-max: 560px;
+      --desktop-gap: 16px;
+      --picker-confirm-h: 54px;
     }
 
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-    html,body{
-      height:100%;
-      width:100%;
-      overflow:hidden;
-      position:fixed;
-      font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;
-      background:var(--bg);
-    }
-
-    /* IMPORTANT: keep body stable in Telegram fullscreen + iOS */
+    html,body{height:100%;width:100%;}
     body{
       height: var(--tg-viewport-stable-height, 100vh);
-      padding-top: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px) + 15px);
-      background: var(--bg);
-    }
-
-    #map,#pickerMap{
-      position:fixed;
-      top:0;
-      left:0;
       width:100%;
-      height:100%;
-      touch-action:none;
-      z-index:1;
-      background:#f9fafb;
+      overflow:hidden;
+      font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;
+      background:var(--bg);
+      padding-top: calc(var(--tg-top-inset) + 12px);
+      touch-action: manipulation;
     }
 
-    /* BACK BUTTON */
+    #map,#pickerMap{position:fixed;inset:0;z-index:1;background:#f9fafb;}
+
     .back-to-main{
-      position:fixed;
-      top:calc(var(--tg-top-inset) + 16px);
-      left:16px;
-      width:48px;
-      height:48px;
-      background:#fff;
-      border:none;
-      border-radius:50%;
-      box-shadow:var(--shadow-lg);
-      cursor:pointer;
-      z-index:1003;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      transition:all .2s ease;
+      position:fixed;top:calc(var(--tg-top-inset) + 12px);left:12px;
+      width:48px;height:48px;background:#fff;border:none;border-radius:50%;
+      box-shadow:var(--shadow-lg);cursor:pointer;z-index:1003;
+      display:flex;align-items:center;justify-content:center;transition:transform .2s ease;
     }
     .back-to-main:active{transform:scale(.94);}
     .back-to-main svg{width:24px;height:24px;fill:var(--dark);}
 
     .geo-btn{
-      position:fixed;
-      bottom:calc(var(--tg-bottom-inset) + 240px);
-      right:16px;
-      width:56px;
-      height:56px;
-      background:#fff;
-      border:none;
-      border-radius:999px;
-      box-shadow:var(--shadow-lg);
-      cursor:pointer;
-      z-index:1002;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      transition:all .2s ease;
+      position:fixed;right:12px;
+      bottom: calc(var(--sheet-real-height) + var(--tg-bottom-inset) + 10px);
+      width:56px;height:56px;background:#fff;border:none;border-radius:999px;
+      box-shadow:var(--shadow-lg);cursor:pointer;z-index:1002;
+      display:flex;align-items:center;justify-content:center;transition:transform .2s ease;
     }
     .geo-btn:active{transform:scale(.94);}
     .geo-btn svg{width:24px;height:24px;fill:var(--dark);}
 
     .bottom-sheet{
-      position:fixed;
-      bottom:0;
-      left:0;
-      right:0;
-      background:#fff;
+      position:fixed;bottom:0;left:0;right:0;background:#fff;
       border-radius:var(--radius-lg) var(--radius-lg) 0 0;
-      box-shadow:var(--shadow-lg);
-      z-index:1001;
-      max-height:88vh;
-      display:flex;
-      flex-direction:column;
-      transition:transform .3s ease;
-      padding-bottom: calc(var(--tg-bottom-inset) + 10px);
+      box-shadow:var(--shadow-lg);z-index:1001;
+      max-height: var(--sheet-max-height);
+      display:flex;flex-direction:column;padding-bottom: var(--sheet-pad-bottom);
     }
 
-    .sheet-header{
-      padding:12px 20px 8px;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      flex-shrink:0;
-    }
-    .sheet-handle{
-      width:40px;
-      height:4px;
-      background:var(--grey-light);
-      border-radius:999px;
-      margin-bottom:16px;
-    }
-    .step-progress{
-      display:flex;
-      gap:8px;
-      width:100%;
-      max-width:200px;
-    }
-    .step-bar{
-      flex:1;
-      height:3px;
-      background:var(--grey-light);
-      border-radius:999px;
-      position:relative;
-      overflow:hidden;
-    }
-    .step-bar.active::after{
-      content:'';
-      position:absolute;
-      inset:0;
-      background:var(--primary);
-      animation:fillBar .4s ease;
-    }
+    .sheet-header{padding:10px var(--sheet-pad-x) 6px;display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+    .sheet-handle{width:44px;height:4px;background:var(--grey-light);border-radius:999px;margin-bottom:10px;}
+    .step-progress{display:flex;gap:8px;width:100%;max-width:220px;padding-bottom:2px;}
+    .step-bar{flex:1;height:3px;background:var(--grey-light);border-radius:999px;position:relative;overflow:hidden;}
+    .step-bar.active::after{content:'';position:absolute;inset:0;background:var(--primary);animation:fillBar .35s ease;}
     @keyframes fillBar{from{transform:translateX(-100%)}to{transform:translateX(0)}}
 
-    .sheet-content{
-      flex:1;
-      overflow-y:auto;
-      overflow-x:hidden;
-      -webkit-overflow-scrolling:touch;
-      padding:0 20px 32px;
-    }
-    .form-step{display:none;animation:slideIn .3s ease;}
+    .sheet-content{overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:0 var(--sheet-pad-x) 10px;}
+    .form-step{display:none;animation:slideIn .28s ease;}
     .form-step.active{display:block;}
-    @keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+    @keyframes slideIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
 
     .address-card{
-      display:flex;
-      align-items:center;
-      gap:16px;
-      padding:20px 16px;
-      background:#F9FAFB;
-      border-radius:var(--radius);
-      margin-bottom:12px;
-      cursor:pointer;
-      transition:all .2s ease;
-      border:1px solid rgba(148,163,184,.35);
-      position:relative;
-      overflow:hidden;
+      display:flex;align-items:center;gap:14px;padding:16px 14px;background:#F9FAFB;
+      border-radius:var(--radius);margin-bottom:10px;cursor:pointer;transition:transform .18s ease;
+      border:1px solid rgba(148,163,184,.35);position:relative;overflow:hidden;
     }
-    .address-card:active{transform:scale(.98);}
-    .address-card.filled{
-      background:#EEF2FF;
-      border-color:#4F46E5;
-      box-shadow:0 10px 30px rgba(79,70,229,.25);
-    }
+    .address-card:active{transform:scale(.985);}
+    .address-card.filled{background:#EEF2FF;border-color:#4F46E5;box-shadow:0 10px 30px rgba(79,70,229,.22);}
     .location-icon{
-      width:48px;
-      height:48px;
-      border-radius:999px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:700;
-      font-size:18px;
-      flex-shrink:0;
-      color:#fff;
+      width:46px;height:46px;border-radius:999px;display:flex;align-items:center;justify-content:center;
+      font-weight:800;font-size:18px;flex-shrink:0;color:#fff;
     }
     .location-icon.start{background:linear-gradient(135deg,#111827,#020617);}
     .location-icon.end{background:linear-gradient(135deg,#EF4444,#FB7185);}
     .location-text{flex:1;min-width:0;}
-    .location-label{
-      font-size:12px;
-      color:var(--grey);
-      font-weight:600;
-      text-transform:uppercase;
-      letter-spacing:.5px;
-      margin-bottom:4px;
-    }
-    .location-value{
-      font-size:15px;
-      font-weight:500;
-      color:var(--dark);
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
+    .location-label{font-size:12px;color:var(--grey);font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;}
+    .location-value{font-size:15px;font-weight:600;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
     .distance-badge{
-      display:none;
-      align-items:center;
-      gap:8px;
-      padding:16px;
-      background:linear-gradient(135deg,#22C55E,#4ADE80);
-      color:#fff;
-      border-radius:var(--radius);
-      margin-bottom:20px;
-      font-weight:600;
-      box-shadow:0 10px 35px rgba(22,163,74,.4);
+      display:none;align-items:center;gap:8px;padding:14px 14px;
+      background:linear-gradient(135deg,#22C55E,#4ADE80);color:#fff;border-radius:var(--radius);
+      margin:8px 0 14px;font-weight:700;box-shadow:0 10px 28px rgba(22,163,74,.35);
     }
-    .distance-badge.active{display:flex;animation:slideDown .3s ease;}
-    @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+    .distance-badge.active{display:flex;animation:slideDown .25s ease;}
+    @keyframes slideDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
 
-    .form-title{font-size:22px;font-weight:700;color:var(--dark);margin-bottom:24px;}
-    .form-field{margin-bottom:16px;}
-    .field-label{font-size:13px;font-weight:600;color:var(--grey);margin-bottom:8px;display:block;}
+    .form-title{font-size:20px;font-weight:800;color:var(--dark);margin:6px 0 16px;}
+    .form-field{margin-bottom:14px;}
+    .field-label{font-size:13px;font-weight:700;color:var(--grey);margin-bottom:8px;display:block;}
+
     .field-input{
-      width:100%;
-      padding:16px;
-      background:#F9FAFB;
-      border:1px solid rgba(148,163,184,.5);
-      border-radius:var(--radius);
-      font-size:15px;
-      font-weight:500;
-      color:var(--dark);
-      transition:all .2s ease;
-      font-family:inherit;
+      width:100%;padding:14px 14px;background:#F9FAFB;border:1px solid rgba(148,163,184,.5);
+      border-radius:var(--radius);font-size:15px;font-weight:600;color:var(--dark);
+      transition:all .18s ease;font-family:inherit;-webkit-appearance:none;appearance:none;display:block;min-height:52px;
     }
-    .field-input:focus{
-      outline:none;
-      background:#fff;
-      border-color:#4C6FFF;
-      box-shadow:0 0 0 1px #4C6FFF33;
-    }
+    .field-input:focus{outline:none;background:#fff;border-color:#4C6FFF;box-shadow:0 0 0 1px #4C6FFF33;}
     .field-input::placeholder{color:var(--grey);}
     .field-input.error{border-color:var(--danger);}
-    textarea.field-input{min-height:100px;resize:none;}
+    textarea.field-input{min-height:92px;resize:none;}
 
-    .truck-grid{
-      display:grid;
-      grid-template-columns:repeat(3,1fr);
-      gap:12px;
-      margin-bottom:20px;
-    }
+    .truck-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;}
     .truck-card{
-      padding:16px 12px;
-      background:#F9FAFB;
-      border:1px solid rgba(148,163,184,.4);
-      border-radius:var(--radius);
-      text-align:center;
-      cursor:pointer;
-      transition:all .2s ease;
-      position:relative;
+      padding:14px 10px;background:#F9FAFB;border:1px solid rgba(148,163,184,.4);
+      border-radius:var(--radius);text-align:center;cursor:pointer;position:relative;
+      user-select:none;transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
     }
-    .truck-card:active{transform:scale(.96);}
-    .truck-card.selected{
-      background:#EEF2FF;
-      border-color:#4F46E5;
-      box-shadow:0 8px 30px rgba(79,70,229,.35);
-    }
+    .truck-card:active{transform:scale(.97);}
+    .truck-card.selected{background:#EEF2FF;border-color:#4F46E5;box-shadow:0 8px 26px rgba(79,70,229,.28);}
     .truck-card.selected::after{
-      content:'✓';
-      position:absolute;
-      top:8px;
-      right:8px;
-      width:20px;
-      height:20px;
-      background:#4F46E5;
-      color:#fff;
-      border-radius:999px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:12px;
-      font-weight:700;
+      content:'✓';position:absolute;top:8px;right:8px;width:20px;height:20px;background:#4F46E5;color:#fff;
+      border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;
     }
-    .truck-icon{font-size:26px;margin-bottom:6px;}
-    .truck-name{font-size:13px;font-weight:600;color:var(--dark);margin-bottom:2px;}
+    .truck-icon{font-size:24px;margin-bottom:5px;}
+    .truck-name{font-size:13px;font-weight:800;color:var(--dark);margin-bottom:2px;}
     .truck-desc{font-size:11px;color:var(--grey);}
 
     .photo-uploader{
-      background:#F9FAFB;
-      border:1px dashed rgba(148,163,184,.7);
-      border-radius:var(--radius);
-      padding:14px;
-      display:flex;
-      gap:12px;
-      align-items:center;
+      background:#F9FAFB;border:1px dashed rgba(148,163,184,.7);border-radius:var(--radius);
+      padding:12px;display:flex;gap:12px;align-items:center;position:relative;
     }
+    .photo-uploader.uploading{pointer-events:none;opacity:.6;}
     .photo-thumb{
-      width:64px;
-      height:64px;
-      border-radius:14px;
-      background:#fff;
-      box-shadow:var(--shadow);
-      overflow:hidden;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      flex-shrink:0;
+      width:62px;height:62px;border-radius:14px;background:#fff;box-shadow:var(--shadow);
+      overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;
     }
     .photo-thumb img{width:100%;height:100%;object-fit:cover;}
     .photo-actions{display:flex;gap:8px;flex-wrap:wrap;}
-    .uploader-note{font-size:12px;color:var(--grey);margin-top:6px;}
+    .uploader-note{font-size:12px;color:var(--grey);margin-top:6px;line-height:1.35;}
 
-    .datetime-grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
+    .upload-progress{
+      position:absolute;inset:0;background:rgba(0,0,0,0.7);border-radius:14px;display:none;
+      align-items:center;justify-content:center;flex-direction:column;gap:8px;
     }
+    .upload-progress.active{display:flex;}
+    .upload-spinner{width:24px;height:24px;border:3px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .upload-text{color:#fff;font-size:10px;font-weight:700;}
 
-    .btn-group{
-      display:grid;
-      grid-template-columns:1fr;
-      gap:12px;
-      margin-top:24px;
-      position:sticky;
-      bottom:0;
-      background:#fff;
-      padding-top:16px;
-      padding-bottom: 10px;
-    }
+    .datetime-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;}
+    .datetime-grid .form-field{min-width:0;}
+
+    .btn-group{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px;padding:6px 0;}
     .btn-group.double{grid-template-columns:1fr 1fr;}
     .btn{
-      padding:18px 24px;
-      border:none;
-      border-radius:999px;
-      font-size:16px;
-      font-weight:600;
-      cursor:pointer;
-      transition:all .2s ease;
-      position:relative;
-      overflow:hidden;
-      user-select:none;
-      -webkit-user-select:none;
+      padding:16px 18px;border:none;border-radius:999px;font-size:15px;font-weight:800;cursor:pointer;
+      transition:transform .18s ease, background .18s ease, box-shadow .18s ease, color .18s ease;
+      position:relative;overflow:hidden;user-select:none;-webkit-appearance:none;appearance:none;
     }
     .btn::before{
-      content:'';
-      position:absolute;
-      top:50%;left:50%;
-      width:0;height:0;
-      border-radius:50%;
-      background:rgba(255,255,255,.3);
-      transform:translate(-50%,-50%);
-      transition:width .5s,height .5s;
+      content:'';position:absolute;top:50%;left:50%;width:0;height:0;border-radius:50%;
+      background:rgba(255,255,255,.3);transform:translate(-50%,-50%);transition:width .5s,height .5s;
     }
     .btn:active::before{width:260px;height:260px;}
-    .btn-primary{
-      background:linear-gradient(135deg,#111827,#020617);
-      color:#fff;
-      box-shadow:0 10px 40px rgba(15,23,42,.55);
-    }
-    .btn-primary:active{transform:scale(.96);}
-    .btn-primary:disabled{
-      background:#E5E7EB;
-      color:#9CA3AF;
-      box-shadow:none;
-      cursor:not-allowed;
-    }
-    .btn-secondary{
-      background:#F9FAFB;
-      color:var(--dark);
-      border:1px solid rgba(148,163,184,.7);
-    }
-    .btn-secondary:active{background:#E5E7EB;transform:scale(.96);}
+    .btn-primary{background:linear-gradient(135deg,#111827,#020617);color:#fff;box-shadow:0 10px 34px rgba(15,23,42,.45);}
+    .btn-primary:active{transform:scale(.97);}
+    .btn-primary:disabled{background:#E5E7EB;color:#9CA3AF;box-shadow:none;cursor:not-allowed;}
+    .btn-secondary{background:#F9FAFB;color:var(--dark);border:1px solid rgba(148,163,184,.7);}
+    .btn-secondary:active{background:#E5E7EB;transform:scale(.97);}
 
-    .error-message{
-      font-size:12px;
-      color:var(--danger);
-      margin-top:4px;
-      display:none;
-    }
+    .error-message{font-size:12px;color:var(--danger);margin-top:4px;display:none;font-weight:700;}
     .error-message.show{display:block;}
 
     .success-screen{
-      position:fixed;
-      inset:0;
-      background:radial-gradient(circle at top,#4ADE80,#22C55E 45%,#16A34A 80%);
-      z-index:3000;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      flex-direction:column;
-      padding:40px;
-      text-align:center;
+      position:fixed;inset:0;background:radial-gradient(circle at top,#4ADE80,#22C55E 45%,#16A34A 80%);
+      z-index:3000;display:none;align-items:center;justify-content:center;flex-direction:column;
+      padding:40px 18px;text-align:center;
     }
-    .success-screen.active{display:flex;animation:fadeIn .4s ease;}
+    .success-screen.active{display:flex;animation:fadeIn .35s ease;}
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
     .success-icon{
-      width:120px;
-      height:120px;
-      background:rgba(22,163,74,.25);
-      border-radius:999px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:64px;
-      margin-bottom:32px;
-      box-shadow:0 16px 40px rgba(22,163,74,.55);
-      animation:scaleIn .5s ease;
+      width:116px;height:116px;background:rgba(22,163,74,.25);border-radius:999px;
+      display:flex;align-items:center;justify-content:center;font-size:64px;margin-bottom:26px;
+      box-shadow:0 16px 40px rgba(22,163,74,.55);animation:scaleIn .45s ease;
     }
     @keyframes scaleIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
-    .success-title{font-size:28px;font-weight:700;color:#fff;margin-bottom:12px;}
-    .success-message{font-size:16px;color:rgba(255,255,255,.9);margin-bottom:32px;line-height:1.6;}
-    .success-btn{
-      padding:16px 32px;
-      background:#fff;
-      color:#16A34A;
-      border:none;
-      border-radius:999px;
-      font-size:16px;
-      font-weight:600;
-      cursor:pointer;
-      box-shadow:0 8px 30px rgba(0,0,0,.25);
-    }
+    .success-title{font-size:26px;font-weight:900;color:#fff;margin-bottom:10px;}
+    .success-message{font-size:15px;color:rgba(255,255,255,.92);margin-bottom:26px;line-height:1.6;}
+    .success-btn{padding:14px 28px;background:#fff;color:#16A34A;border:none;border-radius:999px;font-size:15px;font-weight:900;cursor:pointer;box-shadow:0 8px 30px rgba(0,0,0,.25);}
 
-    /* PICKER MODAL */
     .picker-modal{position:fixed;inset:0;background:#fff;z-index:2000;display:none;}
     .picker-modal.active{display:block;}
 
     .picker-header{
-      position:fixed;
-      top:calc(var(--tg-top-inset) + 16px);
-      left:16px;
-      right:16px;
-      z-index:2010;
-      display:flex;
-      gap:12px;
-      pointer-events:auto;
+      position:fixed;top:calc(var(--tg-top-inset) + 10px);left:12px;right:12px;z-index:2010;
+      display:flex;gap:10px;pointer-events:auto;
     }
     .picker-back-btn{
-      width:48px;height:48px;
-      background:#fff;
-      border:none;
-      border-radius:999px;
-      box-shadow:var(--shadow);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      cursor:pointer;
-      flex-shrink:0;
+      width:48px;height:48px;background:#fff;border:none;border-radius:999px;box-shadow:var(--shadow);
+      display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-weight:900;
     }
     .picker-back-btn:active{transform:scale(.94);}
     .search-box{
-      flex:1;
-      background:#fff;
-      border:none;
-      border-radius:999px;
-      padding:14px 16px;
-      box-shadow:var(--shadow);
-      font-size:15px;
-      font-weight:500;
+      flex:1;background:#fff;border:none;border-radius:999px;padding:14px 16px;box-shadow:var(--shadow);
+      font-size:15px;font-weight:700;min-height:48px;
     }
-    .search-box:focus{
-      outline:none;
-      box-shadow:0 0 0 1px #4C6FFF33, var(--shadow);
-    }
+    .search-box:focus{outline:none;box-shadow:0 0 0 1px #4C6FFF33, var(--shadow);}
 
-    /* CENTER PIN (THIN UBER-STYLE) */
-    .center-pin-overlay{
-      position:fixed;
-      top:0;
-      left:0;
-      right:0;
-      bottom:0;
-      z-index:2005;
-      pointer-events:none;
-      display:none;
-    }
+    .center-pin-overlay{position:fixed;inset:0;z-index:2005;pointer-events:none;display:none;}
     .center-pin-overlay.active{display:block;}
-
-    .pin-container{
-      position:absolute;
-      top:50%;
-      left:50%;
-      transform:translate(-50%, -102%);
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-    }
-
+    .pin-container{position:absolute;left:50%;top:50%;transform:translate(-50%, -100%);display:flex;flex-direction:column;align-items:center;}
     .pin-address-bubble{
-      background:#000;
-      color:#fff;
-      padding:8px 14px;
-      border-radius:12px;
-      font-size:13px;
-      font-weight:500;
-      margin-bottom:10px;
-      box-shadow:0 4px 20px rgba(0,0,0,.28);
-      max-width:280px;
-      text-align:center;
-      line-height:1.4;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      background:rgba(0,0,0,0.92);color:#fff;padding:8px 14px;border-radius:12px;font-size:13px;font-weight:800;
+      margin-bottom:10px;box-shadow:0 4px 20px rgba(0,0,0,.28);max-width:min(340px, 88vw);text-align:center;
+      line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     }
-
-    /* Thin pin using SVG */
-    .uber-pin{
-      width:28px;
-      height:40px;
-      filter: drop-shadow(0 10px 18px rgba(0,0,0,.25));
-      transform: translateY(0);
-      animation:pinBounce .6s ease-out;
-    }
+    .uber-pin{width:28px;height:44px;filter: drop-shadow(0 10px 18px rgba(0,0,0,.25));animation:pinBounce .55s ease-out;}
     @keyframes pinBounce{
-      0%{transform:translateY(-16px) scale(.85);opacity:0;}
+      0%{transform:translateY(-14px) scale(.86);opacity:0;}
       70%{transform:translateY(0) scale(1.05);opacity:1;}
       100%{transform:translateY(0) scale(1);opacity:1;}
     }
 
-    /* PICKER GEOLOCATION BUTTON */
     .picker-geo-btn{
-      position:fixed;
-      bottom:calc(var(--tg-bottom-inset) + 100px);
-      right:16px;
-      width:56px;
-      height:56px;
-      background:#fff;
-      border:none;
-      border-radius:50%;
-      box-shadow:var(--shadow-lg);
-      cursor:pointer;
-      z-index:2008;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      transition:all .2s ease;
+      position:fixed;right:12px;bottom:calc(var(--tg-bottom-inset) + var(--picker-confirm-h) + 14px);
+      width:56px;height:56px;background:#fff;border:none;border-radius:50%;box-shadow:var(--shadow-lg);
+      cursor:pointer;z-index:2008;display:flex;align-items:center;justify-content:center;transition:transform .2s ease;
     }
     .picker-geo-btn:active{transform:scale(.94);}
     .picker-geo-btn svg{width:24px;height:24px;fill:var(--dark);}
 
     .confirm-btn{
-      position:fixed;
-      bottom:calc(var(--tg-bottom-inset) + 20px);
-      left:16px;
-      right:16px;
-      z-index:2020;
+      position:fixed;bottom:calc(var(--tg-bottom-inset) + 12px);left:12px;right:12px;z-index:2020;
+      height:var(--picker-confirm-h);padding:0 18px;display:flex;align-items:center;justify-content:center;
     }
 
     .suggestions{
-      position:fixed;
-      top:calc(var(--tg-top-inset) + 80px);
-      left:16px;
-      right:16px;
-      background:#fff;
-      border-radius:var(--radius);
-      box-shadow:var(--shadow-lg);
-      max-height:45vh;
-      overflow-y:auto;
-      z-index:2012;
-      display:none;
+      position:fixed;top:calc(var(--tg-top-inset) + 70px);left:12px;right:12px;background:#fff;border-radius:var(--radius);
+      box-shadow:var(--shadow-lg);max-height:45vh;overflow-y:auto;z-index:2012;display:none;
     }
-    .suggestions.active{display:block;animation:slideDown .25s ease;}
-    .suggestion-item{
-      padding:10px 14px;
-      border-bottom:1px solid var(--grey-light);
-      cursor:pointer;
-      transition:background .15s;
-      font-size:14px;
-    }
+    .suggestions.active{display:block;animation:slideDown .22s ease;}
+    .suggestion-item{padding:10px 14px;border-bottom:1px solid var(--grey-light);cursor:pointer;transition:background .15s;font-size:14px;}
     .suggestion-item:last-child{border-bottom:none;}
     .suggestion-item:active{background:#F9FAFB;}
-    .suggestion-title{font-weight:600;margin-bottom:2px;}
-    .suggestion-sub{font-size:12px;color:var(--grey);}
+    .suggestion-title{font-weight:900;margin-bottom:2px;}
+    .suggestion-sub{font-size:12px;color:var(--grey);font-weight:700;}
 
-    .user-marker{
-      width:16px;
-      height:16px;
-      background:#0B63F6;
-      border:3px solid #fff;
-      border-radius:999px;
-      box-shadow:0 2px 10px rgba(37,99,235,.75);
-      animation:pulse 2s infinite;
-    }
-    @keyframes pulse{
-      0%,100%{box-shadow:0 2px 10px rgba(37,99,235,.7);}
-      50%{box-shadow:0 2px 18px rgba(37,99,235,1);}
-    }
+    .user-marker{width:16px;height:16px;background:#0B63F6;border:3px solid #fff;border-radius:999px;box-shadow:0 2px 10px rgba(37,99,235,.75);animation:pulse 2s infinite;}
+    @keyframes pulse{0%,100%{box-shadow:0 2px 10px rgba(37,99,235,.7);}50%{box-shadow:0 2px 18px rgba(37,99,235,1);}}
 
+    /* Marker fix: do NOT set transform on marker root */
     .custom-marker{
-      width:40px;
-      height:40px;
-      border-radius:999px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:700;
-      color:#fff;
-      font-size:18px;
-      border:3px solid #fff;
-      box-shadow:0 10px 30px rgba(15,23,42,.65);
+      width:40px;height:40px;border-radius:999px;display:flex;align-items:center;justify-content:center;
+      font-weight:900;color:#fff;font-size:18px;line-height:1;border:3px solid #fff;
+      box-shadow:0 10px 30px rgba(15,23,42,.65);-webkit-font-smoothing: antialiased;will-change: transform;
     }
     .custom-marker.pickup{background:linear-gradient(135deg,#020617,#111827);}
     .custom-marker.dropoff{background:linear-gradient(135deg,#EF4444,#F97316);}
 
-    @media (max-height:700px){
-      .bottom-sheet{max-height:85vh;}
-      .truck-grid{grid-template-columns:repeat(3,1fr);gap:8px;}
-      .truck-card{padding:12px 8px;}
-    }
-    @media (max-width:360px){
-      .truck-grid{grid-template-columns:repeat(2,1fr);}
-    }
-
     .leaflet-control-container{display:none;}
 
     .toast-notice{
-      position:fixed;
-      bottom:calc(var(--tg-bottom-inset) + 24px);
-      left:50%;
+      position:fixed;bottom:calc(var(--tg-bottom-inset) + 18px);left:50%;
       transform:translateX(-50%) translateY(12px);
-      background:rgba(15,23,42,0.96);
-      color:#fff;
-      padding:10px 18px;
-      border-radius:999px;
-      font-size:13px;
-      font-weight:500;
-      box-shadow:0 10px 30px rgba(15,23,42,0.55);
-      z-index:4000;
-      opacity:0;
-      pointer-events:none;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      transition:opacity .25s ease, transform .25s ease;
+      background:rgba(15,23,42,0.96);color:#fff;padding:10px 16px;border-radius:999px;
+      font-size:13px;font-weight:800;box-shadow:0 10px 30px rgba(15,23,42,0.55);
+      z-index:4000;opacity:0;pointer-events:none;display:flex;align-items:center;gap:8px;
+      transition:opacity .22s ease, transform .22s ease;max-width:92vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     }
     .toast-notice svg{width:16px;height:16px;flex-shrink:0;}
-    .toast-notice.show{
-      opacity:1;
-      pointer-events:auto;
-      transform:translateX(-50%) translateY(-4px);
+    .toast-notice.show{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(-4px);}
+
+    .submit-overlay{
+      position:fixed;inset:0;z-index:5000;display:none;align-items:center;justify-content:center;padding:24px;
+      background:rgba(0,0,0,.45);backdrop-filter: blur(6px);-webkit-backdrop-filter: blur(6px);
+    }
+    .submit-overlay.active{display:flex;}
+    .submit-card{
+      width:min(420px, 92vw);background:rgba(255,255,255,0.96);border-radius:22px;box-shadow:0 18px 60px rgba(0,0,0,.35);
+      padding:18px 18px 16px;display:flex;align-items:center;gap:14px;
+    }
+    .logo-spinner{
+      width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#111827,#020617);
+      display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;flex-shrink:0;
+    }
+    .logo-spinner::after{
+      content:'';position:absolute;width:86px;height:86px;border:3px solid rgba(255,255,255,.28);
+      border-top-color:#fff;border-radius:999px;animation:spin .9s linear infinite;
+    }
+    .logo-mark{position:relative;z-index:1;width:26px;height:26px;border-radius:10px;border:2px solid rgba(255,255,255,.9);opacity:.95;transform: rotate(12deg);}
+    .submit-texts{min-width:0;}
+    .submit-title{font-weight:900;color:#0f172a;font-size:16px;margin-bottom:4px;}
+    .submit-sub{font-weight:700;color:#475569;font-size:13px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px;}
+
+    @media (max-height:700px){
+      :root{ --sheet-max-height: min(480px, 62vh); }
+      .truck-grid{grid-template-columns:repeat(3,1fr);gap:8px;}
+      .truck-card{padding:12px 8px;}
+    }
+    @media (max-width:360px){ .truck-grid{grid-template-columns:repeat(2,1fr);} }
+
+    @media (min-width: 900px){
+      .bottom-sheet{
+        left:50%;right:auto;width:min(var(--desktop-max), calc(100vw - 2*var(--desktop-gap)));
+        transform: translateX(-50%);border-radius: var(--radius-lg);bottom: var(--desktop-gap);
+        max-height: min(560px, 72vh);padding-bottom:14px;
+      }
+      .sheet-header{padding-top:12px;}
+      .sheet-handle{display:none;}
+      .geo-btn{
+        right: calc(50% - (min(var(--desktop-max), calc(100vw - 2*var(--desktop-gap))) / 2) + 12px);
+        bottom: calc(var(--sheet-real-height) + 10px);
+      }
+      .back-to-main{
+        left: calc(50% - (min(var(--desktop-max), calc(100vw - 2*var(--desktop-gap))) / 2) + 12px);
+      }
+      .picker-header{left:50%;right:auto;transform:translateX(-50%);width:min(760px, calc(100vw - 24px));}
+      .suggestions{left:50%;right:auto;transform:translateX(-50%);width:min(760px, calc(100vw - 24px));}
+      .confirm-btn{left:50%;right:auto;transform:translateX(-50%);width:min(760px, calc(100vw - 24px));}
     }
   </style>
 </head>
@@ -666,31 +353,31 @@
 <body>
   <div id="map"></div>
 
-  <!-- BACK TO MAIN BUTTON -->
-  <button class="back-to-main" onclick="goToMainClient()" aria-label="Артқа">
-    <svg viewBox="0 0 24 24">
-      <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
-    </svg>
+  <button class="back-to-main" type="button" onclick="goToMainClient()" aria-label="Артқа">
+    <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
   </button>
 
-  <!-- GEOLOCATION BUTTON (main map) -->
-  <button class="geo-btn" onclick="centerOnUserLocation()" id="geoBtn" aria-label="Менің орныма фокус">
-    <svg viewBox="0 0 24 24">
-      <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
-    </svg>
+  <button class="geo-btn" type="button" onclick="centerOnUserLocation()" id="geoBtn" aria-label="Менің орныма фокус">
+    <svg viewBox="0 0 24 24"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
   </button>
 
-  <!-- SUCCESS SCREEN -->
   <div class="success-screen" id="successScreen">
     <div class="success-icon">🎉</div>
     <div class="success-title">Тапсырыс жіберілді!</div>
-    <div class="success-message">
-      Қол жетімді жүргізушілерді іздеп жатырмыз...<br/>Бұл бірнеше секундқа созылады
-    </div>
-    <button class="success-btn" onclick="goToDriverList()">Жүргізушілерді көру</button>
+    <div class="success-message">Қол жетімді жүргізушілерді іздеп жатырмыз...<br/>Бұл бірнеше секундқа созылады</div>
+    <button class="success-btn" type="button" onclick="goToDriverList()">Жүргізушілерді көру</button>
   </div>
 
-  <!-- BOTTOM SHEET -->
+  <div class="submit-overlay" id="submitOverlay" aria-hidden="true">
+    <div class="submit-card">
+      <div class="logo-spinner"><div class="logo-mark"></div></div>
+      <div class="submit-texts">
+        <div class="submit-title" id="submitOverlayTitle">Жіберілуде...</div>
+        <div class="submit-sub" id="submitOverlaySub">Өтінеміз, күте тұрыңыз</div>
+      </div>
+    </div>
+  </div>
+
   <div class="bottom-sheet" id="bottomSheet">
     <div class="sheet-header">
       <div class="sheet-handle"></div>
@@ -721,14 +408,12 @@
         </div>
 
         <div class="distance-badge" id="distanceBadge">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-            <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
-          </svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>
           <span id="distanceText"></span>
         </div>
 
         <div class="btn-group">
-          <button class="btn btn-primary" id="nextBtn1" onclick="goToStep(2)" disabled>Келесі</button>
+          <button class="btn btn-primary" id="nextBtn1" type="button" onclick="goToStep(2)" disabled>Келесі</button>
         </div>
       </div>
 
@@ -738,55 +423,33 @@
 
         <div class="form-field">
           <label class="field-label">💰 Баға (теңге)</label>
-          <input type="number" class="field-input" id="price" placeholder="5000" min="2000" oninput="validateStep2()" />
+          <input type="number" class="field-input" id="price" placeholder="5000" min="2000" inputmode="numeric"
+                 oninput="validateStep2(); syncSheetHeightSoon();" />
           <div class="error-message" id="priceError">Минимум 2000 теңге</div>
         </div>
 
         <div class="form-field">
           <label class="field-label">🚚 Көлік түрі</label>
-          <div class="truck-grid">
-            <div class="truck-card" data-truck="intercity" onclick="selectTruck(event,'intercity')">
-              <div class="truck-icon">🚕</div>
-              <div class="truck-name">Қала аралық</div>
-              <div class="truck-desc">такси</div>
-            </div>
-            <div class="truck-card" data-truck="small" onclick="selectTruck(event,'small')">
-              <div class="truck-icon">🚐</div>
-              <div class="truck-name">Кіші</div>
-              <div class="truck-desc">1.5т дейін</div>
-            </div>
-            <div class="truck-card" data-truck="medium" onclick="selectTruck(event,'medium')">
-              <div class="truck-icon">🚚</div>
-              <div class="truck-name">Орташа</div>
-              <div class="truck-desc">5т дейін</div>
-            </div>
-            <div class="truck-card" data-truck="large" onclick="selectTruck(event,'large')">
-              <div class="truck-icon">🚛</div>
-              <div class="truck-name">Үлкен</div>
-              <div class="truck-desc">20т дейін</div>
-            </div>
-            <div class="truck-card" data-truck="tow" onclick="selectTruck(event,'tow')">
-              <div class="truck-icon">🚗</div>
-              <div class="truck-name">Эвакуатор</div>
-              <div class="truck-desc">эвакуация</div>
-            </div>
-            <div class="truck-card" data-truck="any" onclick="selectTruck(event,'any')">
-              <div class="truck-icon">🚙</div>
-              <div class="truck-name">Кез келген</div>
-              <div class="truck-desc">жарайды</div>
-            </div>
+          <div class="truck-grid" id="truckGrid">
+            <div class="truck-card" data-truck="intercity"><div class="truck-icon">🚕</div><div class="truck-name">Қала аралық</div><div class="truck-desc">такси</div></div>
+            <div class="truck-card" data-truck="small"><div class="truck-icon">🚐</div><div class="truck-name">Кіші</div><div class="truck-desc">1.5т дейін</div></div>
+            <div class="truck-card" data-truck="medium"><div class="truck-icon">🚚</div><div class="truck-name">Орташа</div><div class="truck-desc">5т дейін</div></div>
+            <div class="truck-card" data-truck="large"><div class="truck-icon">🚛</div><div class="truck-name">Үлкен</div><div class="truck-desc">20т дейін</div></div>
+            <div class="truck-card" data-truck="tow"><div class="truck-icon">🚗</div><div class="truck-name">Эвакуатор</div><div class="truck-desc">эвакуация</div></div>
+            <div class="truck-card" data-truck="any"><div class="truck-icon">🚙</div><div class="truck-name">Кез келген</div><div class="truck-desc">жарайды</div></div>
           </div>
           <div class="error-message" id="truckError">Көлік түрін таңдаңыз</div>
         </div>
 
         <div class="form-field">
-          <label class="field-label">
-            📸 Жүктің фотосы
-            <span style="font-weight:400;color:var(--grey)">(міндетті емес)</span>
-          </label>
-          <div class="photo-uploader">
+          <label class="field-label">📸 Жүктің фотосы <span style="font-weight:700;color:var(--grey)">(міндетті емес)</span></label>
+          <div class="photo-uploader" id="photoUploader">
             <div class="photo-thumb" id="photoThumb">
               <span style="font-size:22px">🖼️</span>
+              <div class="upload-progress" id="uploadProgress">
+                <div class="upload-spinner"></div>
+                <div class="upload-text">Жүктелуде...</div>
+              </div>
             </div>
             <div style="flex:1">
               <input id="cargoPhoto" type="file" accept="image/*" style="display:none" />
@@ -794,30 +457,28 @@
                 <button class="btn btn-secondary" type="button" onclick="openSystemPicker()">Фотоны жүктеу</button>
                 <button class="btn btn-secondary" type="button" onclick="clearCargoPhoto()">Тазалау</button>
               </div>
-              <div class="uploader-note">
-                20 МБ-тан аспау керек. Бір тап – құрылғының нативті таңдағышы ашылады.
-              </div>
+              <div class="uploader-note">5 МБ-тан аспау керек. Telegram Desktop-та HEIC кейде ашылмайды — JPG/PNG таңдаңыз.</div>
             </div>
           </div>
-          <div class="error-message" id="photoError">Файл тым үлкен (макс. 20 МБ)</div>
+          <div class="error-message" id="photoError">Файл тым үлкен (макс. 5 МБ)</div>
         </div>
 
         <div class="datetime-grid">
           <div class="form-field">
             <label class="field-label">📅 Күні</label>
-            <input type="date" class="field-input" id="date" oninput="validateStep2()" />
+            <input type="date" class="field-input" id="date" oninput="validateStep2(); syncSheetHeightSoon();" />
             <div class="error-message" id="dateError">Күнді таңдаңыз</div>
           </div>
           <div class="form-field">
             <label class="field-label">⏰ Уақыты</label>
-            <input type="time" class="field-input" id="time" oninput="validateStep2()" />
+            <input type="time" class="field-input" id="time" oninput="validateStep2(); syncSheetHeightSoon();" />
             <div class="error-message" id="timeError">Уақытты таңдаңыз</div>
           </div>
         </div>
 
         <div class="btn-group double">
-          <button class="btn btn-secondary" onclick="goToStep(1)">Артқа</button>
-          <button class="btn btn-primary" id="nextBtn2" onclick="goToStep(3)" disabled>Келесі</button>
+          <button class="btn btn-secondary" type="button" onclick="goToStep(1)">Артқа</button>
+          <button class="btn btn-primary" id="nextBtn2" type="button" onclick="goToStep(3)" disabled>Келесі</button>
         </div>
       </div>
 
@@ -827,65 +488,53 @@
 
         <div class="form-field">
           <label class="field-label">📱 Телефон</label>
-          <input type="tel" class="field-input" id="phone" placeholder="+7 (___) ___-__-__" oninput="formatPhone(this); validateStep3()" />
+          <input type="tel" class="field-input" id="phone" placeholder="+7 (___) ___-__-__"
+                 inputmode="tel" oninput="formatPhone(this); validateStep3(); syncSheetHeightSoon();" />
           <div class="error-message" id="phoneError">Толық телефон нөмірін енгізіңіз</div>
         </div>
 
         <div class="form-field">
           <label class="field-label">💬 Түсініктеме</label>
-          <textarea class="field-input" id="comment" placeholder="Қосымша ақпарат..." oninput="validateStep3()"></textarea>
+          <textarea class="field-input" id="comment" placeholder="Қосымша ақпарат..." oninput="validateStep3(); syncSheetHeightSoon();"></textarea>
           <div class="error-message" id="commentError">Түсініктемені енгізіңіз</div>
         </div>
 
         <div class="btn-group double">
-          <button class="btn btn-secondary" onclick="goToStep(2)">Артқа</button>
-          <button class="btn btn-primary" id="submitBtn" onclick="submitOrder()" disabled>Жіберу</button>
+          <button class="btn btn-secondary" type="button" onclick="goToStep(2)">Артқа</button>
+          <button class="btn btn-primary" id="submitBtn" type="button" onclick="submitOrder()" disabled>Жіберу</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- FULLSCREEN PICKER WITH UBER PIN -->
+  <!-- FULLSCREEN PICKER -->
   <div class="picker-modal" id="pickerModal">
     <div id="pickerMap"></div>
 
-    <!-- CENTER PIN OVERLAY -->
     <div class="center-pin-overlay" id="centerPinOverlay">
       <div class="pin-container">
         <div class="pin-address-bubble" id="pinAddressBubble">Картаны жылжытыңыз...</div>
-
-        <!-- Thin Uber-style pin SVG -->
         <svg class="uber-pin" viewBox="0 0 24 32" aria-hidden="true">
-          <path d="M12 31s9-10.2 9-18A9 9 0 1 0 3 13c0 7.8 9 18 9 18z" fill="#000"/>
-          <circle cx="12" cy="13" r="4" fill="#fff"/>
+          <path d="M12 31s9-10.2 9-18A9 9 0 1 0 3 13c0 7.8 9 18 9 18z"
+                fill="none" stroke="#000" stroke-width="1.8" stroke-linejoin="round"/>
+          <circle cx="12" cy="13" r="4.1" fill="#000"/>
+          <circle cx="12" cy="13" r="2.3" fill="#fff"/>
         </svg>
       </div>
     </div>
 
     <div class="picker-header">
-      <button class="picker-back-btn" onclick="closePicker()">←</button>
-      <input
-        type="text"
-        class="search-box"
-        id="searchBox"
-        placeholder="Мекенжай іздеу..."
-        oninput="debouncedSearch(this.value)"
-        onfocus="onSearchFocus()"
-        onblur="hideSuggestionsDelayed()"
-      />
+      <button class="picker-back-btn" type="button" onclick="closePicker()">←</button>
+      <input type="text" class="search-box" id="searchBox" placeholder="Мекенжай іздеу..."
+             oninput="debouncedSearch(this.value)" onfocus="onSearchFocus()" onblur="hideSuggestionsDelayed()" />
     </div>
 
-    <!-- PICKER GEOLOCATION BUTTON -->
-    <button class="picker-geo-btn" onclick="centerPickerOnUser()" aria-label="Менің орным">
-      <svg viewBox="0 0 24 24">
-        <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
-      </svg>
+    <button class="picker-geo-btn" type="button" onclick="centerPickerOnUser()" aria-label="Менің орным">
+      <svg viewBox="0 0 24 24"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
     </button>
 
     <div class="suggestions" id="suggestions"></div>
-    <button class="btn btn-primary confirm-btn" onclick="confirmPicker()">
-      <span>Осы нүктені таңдау</span>
-    </button>
+    <button class="btn btn-primary confirm-btn" type="button" onclick="confirmPicker()"><span>Осы нүктені таңдау</span></button>
   </div>
 
   <div class="toast-notice" id="toastNotice">
@@ -898,929 +547,986 @@
   </div>
 
   <script>
+    /* =========================
+       OPTIMIZED CORE (SAME LOGIC)
+    ========================= */
     const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org';
+    const API_URL = '/api/delivery-request';
 
-    const urlParams = new URLSearchParams(window.location.search);
+    const $ = (id) => document.getElementById(id);
+    const qs = (sel, root=document) => root.querySelector(sel);
+    const qsa = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+    const urlParams = new URLSearchParams(location.search);
     let currentLang = urlParams.get('lang') || localStorage.getItem('lang') || 'kz';
     localStorage.setItem('lang', currentLang);
 
-    function langHeader(){
-      return currentLang === 'ru' ? 'ru-RU' : 'kk-KZ';
+    const t = (ru, kz) => currentLang === 'ru' ? ru : kz;
+    const langHeader = () => currentLang === 'ru' ? 'ru-RU' : 'kk-KZ';
+    const isInKazakhstan = (lat, lng) => lat >= 40 && lat <= 56 && lng >= 46 && lng <= 88;
+
+    // Toast
+    let toastTimer = null;
+    function showToast(msg){
+      $('toastText').textContent = msg;
+      $('toastNotice').classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(()=> $('toastNotice').classList.remove('show'), 2600);
     }
 
-    function isInKazakhstan(lat, lng){
-      return lat >= 40 && lat <= 56 && lng >= 46 && lng <= 88;
-    }
-
-    let toastTimeout = null;
-    function showToast(messageKey){
-      const el = document.getElementById('toastNotice');
-      const textEl = document.getElementById('toastText');
-      const msg = messageKey === 'outside_kz'
-        ? (currentLang === 'ru'
-            ? 'Сервис работает только на территории Казахстана'
-            : 'Сервис тек Қазақстан аумағында жұмыс істейді')
-        : messageKey;
-      textEl.textContent = msg;
-      el.classList.add('show');
-      clearTimeout(toastTimeout);
-      toastTimeout = setTimeout(()=>el.classList.remove('show'), 2600);
-    }
-
-    let state = {
-      userLoc: null,
-      pickup: null,
-      dropoff: null,
-      pickingFor: null,
-      currentStep: 1,
-      selectedTruck: null,
-      orderData: null,
-      isSearching: false
+    // State
+    const state = {
+      userLoc:null,
+      pickup:null,
+      dropoff:null,
+      pickingFor:null,
+      currentStep:1,
+      selectedTruck:null,
+      orderData:null,
+      isSearching:false
     };
 
-    let map, pickerMap, userMarker, pickupMarker, dropoffMarker;
-    let pickerUserMarker = null;
-
-    // tracking
-    let geolocationWatchId = null;
-    let forceTickTimer = null;
-    let lastGeoUpdateAt = 0;
-
+    // Maps / markers
+    let map, pickerMap, userMarker, pickupMarker, dropoffMarker, pickerUserMarker;
+    let geolocationWatchId = null, geoTick = null, lastGeoUpdateAt = 0;
     let currentUserLocation = null, lastUserPosition = null;
-    let suggestionsTimeout = null, searchDebounceTimer = null;
-    let pickerMoveTimeout = null;
 
-    const geocodeCache = new Map();
-    const CACHE_EXPIRY = 30 * 60 * 1000;
+    // UI helpers
+    let sheetSyncTimer = null;
+    const syncSheetHeight = () => {
+      const bs = $('bottomSheet');
+      const h = bs ? Math.max(220, Math.round((bs.getBoundingClientRect().height || 360))) : 360;
+      document.documentElement.style.setProperty('--sheet-real-height', `${h}px`);
+    };
+    function syncSheetHeightSoon(){ clearTimeout(sheetSyncTimer); sheetSyncTimer = setTimeout(syncSheetHeight, 40); }
 
-    function getCachedGeocode(key) {
-      const cached = geocodeCache.get(key);
-      if (cached && Date.now() - cached.timestamp < CACHE_EXPIRY) {
-        return cached.value;
-      }
-      geocodeCache.delete(key);
-      return null;
-    }
-
-    function setCachedGeocode(key, value) {
-      geocodeCache.set(key, { value, timestamp: Date.now() });
-      if (geocodeCache.size > 100) {
-        const firstKey = geocodeCache.keys().next().value;
-        geocodeCache.delete(firstKey);
-      }
-    }
-
-    async function reverseGeocode(lat, lng) {
-      const cacheKey = `${lat.toFixed(6)},${lng.toFixed(6)}`;
-      const cached = getCachedGeocode(cacheKey);
-      if (cached) return cached;
-
-      try {
-        const url = `${NOMINATIM_BASE}/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=${encodeURIComponent(langHeader())}`;
-        const res = await fetch(url, { cache: 'force-cache' });
-        const data = await res.json();
-
-        if (data?.address?.country_code && data.address.country_code.toLowerCase() !== 'kz') {
-          const fallback = formatFallbackAddress(lat, lng);
-          setCachedGeocode(cacheKey, fallback);
-          return fallback;
-        }
-
-        const addr = data.address || {};
-        const city = addr.city || addr.town || addr.village || addr.county || '';
-        const street = addr.road || addr.neighbourhood || '';
-        const number = addr.house_number || '';
-
-        let formatted = '';
-        if (city && street && number) formatted = `${city}, ${street}: ${number}`;
-        else if (city && street) formatted = `${city}, ${street}`;
-        else if (street && number) formatted = `${street}: ${number}`;
-        else if (city) formatted = city;
-        else if (street) formatted = street;
-        else if (data.display_name) {
-          const parts = data.display_name.split(',').map(p => p.trim());
-          formatted = parts.slice(0, 3).join(', ');
-        } else {
-          formatted = formatFallbackAddress(lat, lng);
-        }
-
-        setCachedGeocode(cacheKey, formatted);
-        return formatted;
-
-      } catch (error) {
-        console.error('Reverse geocode error:', error);
-        const fallback = formatFallbackAddress(lat, lng);
-        setCachedGeocode(cacheKey, fallback);
-        return fallback;
-      }
-    }
-
-    function formatFallbackAddress(lat, lng) {
-      return currentLang === 'ru'
-        ? `Координаты: ${lat.toFixed(5)}°, ${lng.toFixed(5)}°`
-        : `Координаттар: ${lat.toFixed(5)}°, ${lng.toFixed(5)}°`;
-    }
-
-    function debouncedSearch(query) {
-      clearTimeout(searchDebounceTimer);
-      searchDebounceTimer = setTimeout(() => searchAddress(query), 280);
-    }
-
-    async function searchAddress(query) {
-      const s = document.getElementById('suggestions');
-
-      if (query.length < 2) {
-        s.classList.remove('active');
-        return;
-      }
-
-      state.isSearching = true;
-      s.innerHTML = `<div class="suggestion-item"><div class="suggestion-title">Іздеу…</div></div>`;
-      s.classList.add('active');
-
-      try {
-        const results = await performKazakhstanSearch(query);
-
-        if (results.length === 0) {
-          s.innerHTML = `<div class="suggestion-item"><div class="suggestion-title">Ештеңе табылмады</div></div>`;
-          return;
-        }
-
-        s.innerHTML = results.map(r => `
-          <div class="suggestion-item"
-               data-lat="${r.lat}"
-               data-lng="${r.lon}"
-               data-label="${escapeHtml(r.title)}"
-               onclick="selectSuggestionFromElement(this)">
-            <div class="suggestion-title">${escapeHtml(r.title)}</div>
-            <div class="suggestion-sub">${escapeHtml(r.subtitle)}</div>
-          </div>
-        `).join('');
-
-        s.classList.add('active');
-
-      } catch (e) {
-        console.error('Search error:', e);
-        s.innerHTML = `<div class="suggestion-item"><div class="suggestion-title">Қате</div></div>`;
-      } finally {
-        state.isSearching = false;
-      }
-    }
-
-    async function performKazakhstanSearch(query) {
-      const center = pickerMap?.getCenter() || { lat: 43.238949, lng: 76.889709 };
-
-      const params = new URLSearchParams({
-        format: 'json',
-        q: query,
-        countrycodes: 'kz',
-        limit: '20',
-        addressdetails: '1',
-        'accept-language': langHeader(),
-        dedupe: '1'
-      });
-
-      const url = `${NOMINATIM_BASE}/search?${params}`;
-      const res = await fetch(url, { cache: 'no-store' });
-      let rawResults = await res.json();
-
-      if (!rawResults || rawResults.length === 0) return [];
-
-      const processed = rawResults.map(r => {
-        const addr = r.address || {};
-
-        let title = '';
-        if (addr.house_number && addr.road) title = `${addr.road}: ${addr.house_number}`;
-        else if (addr.road) title = addr.road;
-        else if (r.name) title = r.name;
-        else title = (r.display_name || '').split(',')[0] || '...';
-
-        const city = addr.city || addr.town || addr.village || '';
-        const st = addr.state || '';
-        let subtitle = '';
-        if (city && st && city !== st) subtitle = `${city}, ${st}`;
-        else if (city) subtitle = city;
-        else if (st) subtitle = st;
-
-        const dist = calculateDistance(center.lat, center.lng, +r.lat, +r.lon);
-        const typeScore = getTypeScore(r.type, r.class);
-        const cityMatch = city && query.toLowerCase().includes(city.toLowerCase()) ? 0.5 : 1;
-        const score = (dist * cityMatch) + (typeScore * 5);
-
-        return { lat:+r.lat, lon:+r.lon, title, subtitle, score, importance:r.importance || 0 };
-      });
-
-      processed.sort((a,b) => {
-        const d = a.score - b.score;
-        if (Math.abs(d) > 0.1) return d;
-        return b.importance - a.importance;
-      });
-
-      return processed.slice(0, 15);
-    }
-
-    function getTypeScore(type, classType) {
-      const priorities = {
-        city: 1, town: 2, village: 3, suburb: 4, neighbourhood: 5,
-        residential: 6, amenity: 7, building: 8, street: 9
-      };
-      return priorities[type] || priorities[classType] || 10;
-    }
-
-    function selectSuggestionFromElement(el) {
-      const lat = parseFloat(el.dataset.lat);
-      const lng = parseFloat(el.dataset.lng);
-
-      if (!isInKazakhstan(lat, lng)) {
-        showToast('outside_kz');
-        return;
-      }
-
-      const label = el.dataset.label;
-
-      if (pickerMap) {
-        pickerMap.setView([lat, lng], 17, { animate: true });
-      }
-
-      document.getElementById('suggestions').classList.remove('active');
-      document.getElementById('searchBox').value = label;
-      state.isSearching = false;
-    }
-
-    function hideSuggestionsDelayed() {
-      clearTimeout(suggestionsTimeout);
-      suggestionsTimeout = setTimeout(() => {
-        document.getElementById('suggestions').classList.remove('active');
-        state.isSearching = false;
-      }, 200);
-    }
-
-    function onSearchFocus() {
-      state.isSearching = true;
-    }
-
-    /* FULLSCREEN + SAFE AREAS (Telegram) */
-    function updateViewportHeight() {
+    function updateViewportHeight(){
       const tg = window.Telegram?.WebApp;
-
-      const vh = tg?.viewportStableHeight || window.innerHeight;
-
+      const vh = tg?.viewportStableHeight || innerHeight;
       const safeTop = tg?.safeAreaInset?.top ?? 0;
       const safeBottom = tg?.safeAreaInset?.bottom ?? 0;
-
       const contentTop = tg?.contentSafeAreaInset?.top ?? 0;
       const contentBottom = tg?.contentSafeAreaInset?.bottom ?? 0;
 
-      document.documentElement.style.setProperty('--tg-viewport-stable-height', `${vh}px`);
-      document.documentElement.style.setProperty('--tg-safe-area-inset-top', `${safeTop}px`);
-      document.documentElement.style.setProperty('--tg-safe-area-inset-bottom', `${safeBottom}px`);
-      document.documentElement.style.setProperty('--tg-content-safe-area-inset-top', `${contentTop}px`);
-      document.documentElement.style.setProperty('--tg-content-safe-area-inset-bottom', `${contentBottom}px`);
-
-      if (state.pickup && state.dropoff) queueFitAB();
+      const root = document.documentElement.style;
+      root.setProperty('--tg-viewport-stable-height', `${vh}px`);
+      root.setProperty('--tg-safe-area-inset-top', `${safeTop}px`);
+      root.setProperty('--tg-safe-area-inset-bottom', `${safeBottom}px`);
+      root.setProperty('--tg-content-safe-area-inset-top', `${contentTop}px`);
+      root.setProperty('--tg-content-safe-area-inset-bottom', `${contentBottom}px`);
+      syncSheetHeightSoon();
     }
 
-    function createDivMarker(html, className, size = [20, 20]) {
-      const el = document.createElement('div');
-      el.className = className;
-      el.style.width = size[0] + 'px';
-      el.style.height = size[1] + 'px';
-      if (html) el.innerHTML = html;
-      return el;
+    function getSafeInsets(){
+      const cs = getComputedStyle(document.documentElement);
+      const safeTop = parseFloat(cs.getPropertyValue('--tg-top-inset')) || 0;
+      const safeBottom = parseFloat(cs.getPropertyValue('--tg-bottom-inset')) || 0;
+      return { safeTop, safeBottom };
     }
 
-    /* MAP OPTIMIZATION: preferCanvas + faster tile behavior */
-    function createLeafletMap(containerId, center, zoom) {
+    function centerMarkerInVisibleArea(lat, lng, animate){
+      if (!map) return;
+      map.setView([lat,lng], Math.max(map.getZoom(), 15), { animate: !!animate });
+      const sheetH = Math.max(220, Math.round(($('bottomSheet')?.getBoundingClientRect().height || 360)));
+      if (sheetH > 0) map.panBy([0, Math.round(sheetH * 0.40)], { animate: !!animate, duration: 0.25 });
+    }
+
+    /* =========================
+       GEOCODE CACHE + REVERSE
+    ========================= */
+    const geocodeCache = new Map();
+    const CACHE_EXPIRY = 30*60*1000;
+    const cacheGet = (k) => {
+      const v = geocodeCache.get(k);
+      if (v && Date.now() - v.ts < CACHE_EXPIRY) return v.val;
+      geocodeCache.delete(k);
+      return null;
+    };
+    const cacheSet = (k, val) => {
+      geocodeCache.set(k, { val, ts: Date.now() });
+      if (geocodeCache.size > 140) geocodeCache.delete(geocodeCache.keys().next().value);
+    };
+
+    let reverseAbort = null, lastReverseKey = '', lastReverseAt = 0;
+    const abortReverse = () => { try{ reverseAbort?.abort(); }catch(e){} reverseAbort=null; };
+
+    const formatFallbackAddress = (lat,lng) =>
+      t(`Координаты: ${lat.toFixed(5)}°, ${lng.toFixed(5)}°`,
+        `Координаттар: ${lat.toFixed(5)}°, ${lng.toFixed(5)}°`);
+
+    async function reverseGeocode(lat,lng){
+      const key = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+      const cached = cacheGet(key);
+      if (cached) return cached;
+
+      const now = Date.now();
+      if (key === lastReverseKey && (now - lastReverseAt) < 800) {
+        const cached2 = cacheGet(key);
+        if (cached2) return cached2;
+      }
+      lastReverseKey = key; lastReverseAt = now;
+
+      abortReverse();
+      reverseAbort = new AbortController();
+
+      try{
+        const url = `${NOMINATIM_BASE}/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=${encodeURIComponent(langHeader())}`;
+        const res = await fetch(url, { cache:'force-cache', signal: reverseAbort.signal, headers:{'Accept':'application/json'} });
+        const data = await res.json();
+
+        if (data?.address?.country_code && String(data.address.country_code).toLowerCase() !== 'kz') {
+          const fb = formatFallbackAddress(lat,lng);
+          cacheSet(key, fb);
+          return fb;
+        }
+
+        const a = data.address || {};
+        const city = a.city || a.town || a.village || a.county || '';
+        const street = a.road || a.neighbourhood || '';
+        const num = a.house_number || '';
+
+        let out = '';
+        if (city && street && num) out = `${city}, ${street}: ${num}`;
+        else if (city && street) out = `${city}, ${street}`;
+        else if (street && num) out = `${street}: ${num}`;
+        else if (city) out = city;
+        else if (street) out = street;
+        else if (data.display_name) out = String(data.display_name).split(',').map(s=>s.trim()).slice(0,3).join(', ');
+        else out = formatFallbackAddress(lat,lng);
+
+        cacheSet(key, out);
+        return out;
+      } catch(e){
+        if (e?.name === 'AbortError') return null;
+        const fb = formatFallbackAddress(lat,lng);
+        cacheSet(key, fb);
+        return fb;
+      } finally {
+        reverseAbort = null;
+      }
+    }
+
+    /* =========================
+       MAPS (FAST + STABLE)
+    ========================= */
+    const TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+    const TILE_OPTS = {
+      subdomains:'abcd', maxZoom:19, detectRetina:true, crossOrigin:true,
+      keepBuffer:4, updateWhenIdle:true, updateWhenZooming:false,
+      bounds: L.latLngBounds(L.latLng(-85,-180), L.latLng(85,180))
+    };
+
+    const iconUser = () => L.divIcon({ className:'', html:'<div class="user-marker"></div>', iconSize:[16,16], iconAnchor:[8,8] });
+    const iconPoint = (type) => {
+      const cls = type === 'pickup' ? 'custom-marker pickup' : 'custom-marker dropoff';
+      const label = type === 'pickup' ? 'A' : 'B';
+      return L.divIcon({ className:'', html:`<div class="${cls}">${label}</div>`, iconSize:[40,40], iconAnchor:[20,20] });
+    };
+
+    function createLeafletMap(containerId, center, zoom){
       const m = L.map(containerId, {
-        center,
-        zoom,
-        zoomControl:false,
-        attributionControl:false,
-        preferCanvas:true,
-        inertia:true,
-        worldCopyJump:true,
-        updateWhenIdle:true,
-        updateWhenZooming:false
+        center, zoom,
+        zoomControl:false, attributionControl:false,
+        preferCanvas:true, inertia:true, worldCopyJump:true,
+        updateWhenIdle:true, updateWhenZooming:false,
+        fadeAnimation:true, zoomAnimation:true,
+        markerZoomAnimation:true,
+        doubleClickZoom:true
       });
-
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19,
-        detectRetina: true,
-        crossOrigin: true,
-        keepBuffer: 4,
-        updateWhenIdle: true,
-        updateWhenZooming: false
-      }).addTo(m);
-
+      L.tileLayer(TILE_URL, TILE_OPTS).addTo(m);
+      setTimeout(() => { try{ m.invalidateSize(false); }catch(e){} }, 60);
       return m;
     }
 
-    function initMap() {
-      const defaultCenter = [43.238949, 76.889709];
-
-      map = createLeafletMap('map', defaultCenter, 15);
-
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            currentUserLocation = [pos.coords.latitude, pos.coords.longitude];
-
-            if (!isInKazakhstan(currentUserLocation[0], currentUserLocation[1])) {
-              addUserLocationMarker(defaultCenter);
-              showToast('outside_kz');
-              return;
-            }
-
-            state.userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy };
-            map.setView(currentUserLocation, 15, { animate:false });
-            addUserLocationMarker(currentUserLocation);
-            setUserLocationAsPickup();
-
-            startRealtimeTracking(); // 1s updates
-          },
-          () => {
-            addUserLocationMarker(defaultCenter);
-          },
-          { enableHighAccuracy:true, timeout:10000, maximumAge:0 }
-        );
-      } else {
-        addUserLocationMarker(defaultCenter);
-      }
+    function updateUserMarker(lat,lng){
+      if (lastUserPosition &&
+          Math.abs(lastUserPosition[0]-lat) < 0.00001 &&
+          Math.abs(lastUserPosition[1]-lng) < 0.00001) return;
+      lastUserPosition = [lat,lng];
+      if (!map) return;
+      if (!userMarker) userMarker = L.marker([lat,lng], { icon: iconUser(), interactive:false, keyboard:false }).addTo(map);
+      else userMarker.setLatLng([lat,lng]);
     }
 
-    async function setUserLocationAsPickup() {
-      if (!currentUserLocation) return;
-      if (!isInKazakhstan(currentUserLocation[0], currentUserLocation[1])) {
-        showToast('outside_kz');
-        return;
-      }
-
-      const addr = await reverseGeocode(currentUserLocation[0], currentUserLocation[1]);
-      state.pickup = { lat: currentUserLocation[0], lng: currentUserLocation[1], address: addr };
-
-      document.getElementById('pickupAddr').textContent = addr;
-      document.querySelectorAll('.address-card')[0].classList.add('filled');
-      await addMarker('pickup', currentUserLocation[0], currentUserLocation[1]);
-      validateStep1();
+    function ensurePickerUserMarker(){
+      if (!pickerMap || pickerUserMarker) return;
+      const start = currentUserLocation || [43.238949, 76.889709];
+      pickerUserMarker = L.marker(start, { icon: iconUser(), interactive:false, keyboard:false }).addTo(pickerMap);
     }
 
-    /* REALTIME GEO: smooth + update every 1s, also updates picker user marker */
-    function startRealtimeTracking() {
+    function updatePickerUserMarker(lat,lng){
+      if (!pickerMap) return;
+      ensurePickerUserMarker();
+      pickerUserMarker?.setLatLng([lat,lng]);
+    }
+
+    function startRealtimeTracking(){
       if (!navigator.geolocation) return;
 
-      // watchPosition is efficient; we still enforce a 1s "tick" to keep UI fresh
       geolocationWatchId = navigator.geolocation.watchPosition(
-        (pos) => {
+        (pos)=>{
           lastGeoUpdateAt = Date.now();
-          const c = [pos.coords.latitude, pos.coords.longitude];
-          if (pos.coords.accuracy <= 800) {
-            currentUserLocation = c;
-            state.userLoc = { lat: c[0], lng: c[1], accuracy: pos.coords.accuracy };
-            updateUserMarker(c[0], c[1]);
-            updatePickerUserMarker(c[0], c[1]);
-          }
+          const { latitude:lat, longitude:lng, accuracy } = pos.coords;
+          if (accuracy > 1500) return;
+          if (!isInKazakhstan(lat,lng)) return;
+
+          currentUserLocation = [lat,lng];
+          state.userLoc = { lat, lng, accuracy };
+
+          updateUserMarker(lat,lng);
+          updatePickerUserMarker(lat,lng);
         },
-        () => {},
-        { enableHighAccuracy:true, timeout:5000, maximumAge:0 }
+        ()=>{},
+        { enableHighAccuracy:true, timeout:5000, maximumAge:1000 }
       );
 
-      // forced 1s tick (if watch is silent, request position)
-      forceTickTimer = setInterval(() => {
-        const silentTooLong = (Date.now() - lastGeoUpdateAt) > 1500;
-        if (!silentTooLong) {
-          // still update picker marker position if we have currentUserLocation
-          if (currentUserLocation) updatePickerUserMarker(currentUserLocation[0], currentUserLocation[1]);
-          return;
-        }
-
+      geoTick = setInterval(()=>{
+        if ((Date.now() - lastGeoUpdateAt) <= 1800) return;
         navigator.geolocation.getCurrentPosition(
-          (pos) => {
+          (pos)=>{
             lastGeoUpdateAt = Date.now();
-            const c = [pos.coords.latitude, pos.coords.longitude];
-            if (pos.coords.accuracy <= 800) {
-              currentUserLocation = c;
-              state.userLoc = { lat: c[0], lng: c[1], accuracy: pos.coords.accuracy };
-              updateUserMarker(c[0], c[1]);
-              updatePickerUserMarker(c[0], c[1]);
-            }
+            const { latitude:lat, longitude:lng, accuracy } = pos.coords;
+            if (accuracy > 1500) return;
+            if (!isInKazakhstan(lat,lng)) return;
+
+            currentUserLocation = [lat,lng];
+            state.userLoc = { lat, lng, accuracy };
+
+            updateUserMarker(lat,lng);
+            updatePickerUserMarker(lat,lng);
           },
-          () => {},
+          ()=>{},
           { enableHighAccuracy:true, timeout:1500, maximumAge:0 }
         );
       }, 1000);
     }
 
-    function addUserLocationMarker(coords) {
-      if (!map) return;
-      const el = createDivMarker('', 'user-marker', [16, 16]);
-      const icon = L.divIcon({ className:'', html: el, iconSize:[16,16] });
-      userMarker = L.marker(coords, { icon, interactive:false }).addTo(map);
-    }
-
-    function updateUserMarker(lat, lng) {
-      if (lastUserPosition &&
-          Math.abs(lastUserPosition[0] - lat) < 0.00001 &&
-          Math.abs(lastUserPosition[1] - lng) < 0.00001) return;
-
-      lastUserPosition = [lat, lng];
-
-      if (!userMarker && map) {
-        addUserLocationMarker([lat, lng]);
-        return;
-      }
-      if (!userMarker || !map) return;
-
-      userMarker.setLatLng([lat, lng]);
-    }
-
-    function ensurePickerUserMarker() {
-      if (!pickerMap) return;
-      if (pickerUserMarker) return;
-
-      const el = createDivMarker('', 'user-marker', [16, 16]);
-      const icon = L.divIcon({ className:'', html: el, iconSize:[16,16] });
-      const start = currentUserLocation || [43.238949, 76.889709];
-      pickerUserMarker = L.marker(start, { icon, interactive:false }).addTo(pickerMap);
-    }
-
-    function updatePickerUserMarker(lat, lng) {
-      if (!pickerMap) return;
-      ensurePickerUserMarker();
-      if (!pickerUserMarker) return;
-      pickerUserMarker.setLatLng([lat, lng]);
-    }
-
-    function centerOnUserLocation() {
-      if (!currentUserLocation || !map) return;
-      map.setView(currentUserLocation, 16, { animate:true });
-    }
-
-    async function addMarker(type, lat, lng) {
-      if (!map) return;
-
-      const className = `custom-marker ${type === 'pickup' ? 'pickup' : 'dropoff'}`;
-      const label = type === 'pickup' ? 'A' : 'B';
-      const el = createDivMarker(label, className, [40, 40]);
-      const icon = L.divIcon({ className:'', html: el, iconSize:[40,40], iconAnchor:[20,20] });
-
-      const marker = L.marker([lat, lng], { icon, draggable:true }).addTo(map);
-
-      marker.on('dragend', async (e) => {
-        const ll = e.target.getLatLng();
-
-        if (!isInKazakhstan(ll.lat, ll.lng)) {
-          showToast('outside_kz');
-          if (type === 'pickup' && state.pickup) marker.setLatLng([state.pickup.lat, state.pickup.lng]);
-          else if (type === 'dropoff' && state.dropoff) marker.setLatLng([state.dropoff.lat, state.dropoff.lng]);
-          return;
-        }
-
-        const addr = await reverseGeocode(ll.lat, ll.lng);
-
-        if (type === 'pickup') {
-          state.pickup = { lat: ll.lat, lng: ll.lng, address: addr };
-          document.getElementById('pickupAddr').textContent = addr;
-        } else {
-          state.dropoff = { lat: ll.lat, lng: ll.lng, address: addr };
-          document.getElementById('dropoffAddr').textContent = addr;
-        }
-
-        validateStep1();
-        queueFitAB();
-      });
-
-      if (type === 'pickup') {
-        if (pickupMarker) map.removeLayer(pickupMarker);
-        pickupMarker = marker;
-      } else {
-        if (dropoffMarker) map.removeLayer(dropoffMarker);
-        dropoffMarker = marker;
-      }
-
-      if (pickupMarker && dropoffMarker) setTimeout(() => autoZoomToBothPoints(true), 220);
-    }
-
-    function showDistance() {
-      if (!state.pickup || !state.dropoff) return;
-      const d = calculateDistance(state.pickup.lat, state.pickup.lng, state.dropoff.lat, state.dropoff.lng);
-      document.getElementById('distanceText').textContent = `${d.toFixed(1)} км`;
-      document.getElementById('distanceBadge').classList.add('active');
-    }
-
-    function calculateDistance(lat1, lng1, lat2, lng2) {
-      const R = 6371;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLng = (lng2 - lng1) * Math.PI / 180;
-      const a = Math.sin(dLat / 2) ** 2 +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLng / 2) ** 2;
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    }
-
-    async function openPicker(type) {
-      state.pickingFor = type;
-      state.isSearching = false;
-
-      document.getElementById('pickerModal').classList.add('active');
-      document.getElementById('centerPinOverlay').classList.add('active');
-
-      let center;
-      if (type === 'pickup' && state.pickup) center = [state.pickup.lat, state.pickup.lng];
-      else if (type === 'dropoff' && state.dropoff) center = [state.dropoff.lat, state.dropoff.lng];
-      else if (currentUserLocation) center = currentUserLocation;
-      else center = [43.238949, 76.889709];
-
-      await new Promise(r => setTimeout(r, 80));
-      await buildPickerMap(center);
-
-      // show live user marker on picker map immediately
-      if (currentUserLocation) updatePickerUserMarker(currentUserLocation[0], currentUserLocation[1]);
-    }
-
-    function closePicker() {
-      document.getElementById('pickerModal').classList.remove('active');
-      document.getElementById('centerPinOverlay').classList.remove('active');
-      document.getElementById('suggestions').classList.remove('active');
-      document.getElementById('searchBox').value = '';
-
-      if (pickerMap) {
-        pickerMap.off('moveend');
-        pickerMap.remove();
-      }
-
-      pickerMap = null;
-      pickerUserMarker = null;
-      state.pickingFor = null;
-      state.isSearching = false;
-      clearTimeout(pickerMoveTimeout);
-    }
-
-    async function buildPickerMap(center) {
-      const el = document.getElementById('pickerMap');
-      if (!el) return;
-      el.innerHTML = '';
-
-      pickerMap = createLeafletMap('pickerMap', center, 16);
-
-      // update address on move (debounced)
-      pickerMap.on('moveend', () => {
-        clearTimeout(pickerMoveTimeout);
-        pickerMoveTimeout = setTimeout(async () => {
-          const c = pickerMap.getCenter();
-          const addr = await reverseGeocode(c.lat, c.lng);
-          document.getElementById('pinAddressBubble').textContent = addr;
-        }, 260);
-      });
-
-      // initial address
-      setTimeout(async () => {
-        const c = pickerMap.getCenter();
-        const addr = await reverseGeocode(c.lat, c.lng);
-        document.getElementById('pinAddressBubble').textContent = addr;
-      }, 350);
-
-      // show user marker on picker
-      ensurePickerUserMarker();
-    }
-
-    function centerPickerOnUser() {
-      if (!currentUserLocation || !pickerMap) return;
-      pickerMap.setView(currentUserLocation, 16, { animate:true });
-    }
-
-    async function confirmPicker() {
-      if (!state.pickingFor || !pickerMap) return;
-
-      const c = pickerMap.getCenter();
-      const lat = c.lat;
-      const lng = c.lng;
-
-      if (!isInKazakhstan(lat, lng)) {
-        showToast('outside_kz');
-        return;
-      }
-
-      try {
-        const addr = await reverseGeocode(lat, lng);
-
-        if (state.pickingFor === 'pickup') {
-          state.pickup = { lat, lng, address: addr };
-          document.getElementById('pickupAddr').textContent = addr;
-          document.querySelectorAll('.address-card')[0].classList.add('filled');
-          await addMarker('pickup', lat, lng);
-        } else {
-          state.dropoff = { lat, lng, address: addr };
-          document.getElementById('dropoffAddr').textContent = addr;
-          document.querySelectorAll('.address-card')[1].classList.add('filled');
-          await addMarker('dropoff', lat, lng);
-        }
-
-        closePicker();
-        validateStep1();
-      } catch (e) {
-        console.error('Confirm picker failed:', e);
-      }
-    }
-
-    function goToStep(step) {
-      document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
-      document.querySelectorAll('.step-bar').forEach(s => s.classList.remove('active'));
-      document.getElementById(`step${step}`).classList.add('active');
-
-      for (let i = 1; i <= step; i++) document.getElementById(`stepBar${i}`).classList.add('active');
-
-      state.currentStep = step;
-      if (step === 1) validateStep1();
-      else if (step === 2) validateStep2();
-      else validateStep3();
-
-      if (state.pickup && state.dropoff) queueFitAB();
-    }
-
-    function validateStep1() {
-      const valid = state.pickup && state.dropoff;
-      document.getElementById('nextBtn1').disabled = !valid;
-      if (valid) queueFitAB();
-    }
-
-    function validateStep2() {
-      const price = Number(document.getElementById('price').value);
-      const date = document.getElementById('date').value;
-      const time = document.getElementById('time').value;
-      const truckValid = !!state.selectedTruck;
-
-      const priceValid = price >= 2000;
-      const dateValid = !!date;
-      const timeValid = !!time;
-
-      document.getElementById('priceError').classList.toggle('show', !priceValid && price > 0);
-      document.getElementById('dateError').classList.toggle('show', !dateValid);
-      document.getElementById('timeError').classList.toggle('show', !timeValid);
-      document.getElementById('truckError').classList.toggle('show', !truckValid);
-
-      document.getElementById('price').classList.toggle('error', !priceValid && price > 0);
-      document.getElementById('date').classList.toggle('error', !dateValid);
-      document.getElementById('time').classList.toggle('error', !timeValid);
-
-      const tooBig = currentPhotoFile && currentPhotoFile.size > 20 * 1024 * 1024;
-      document.getElementById('photoError').classList.toggle('show', !!tooBig);
-
-      const valid = priceValid && dateValid && timeValid && truckValid && !tooBig;
-      document.getElementById('nextBtn2').disabled = !valid;
-    }
-
-    function validateStep3() {
-      const phone = document.getElementById('phone').value;
-      const comment = document.getElementById('comment').value;
-
-      const phoneValid = phone.length >= 18;
-      const commentValid = comment.trim().length >= 5;
-
-      document.getElementById('phoneError').classList.toggle('show', !phoneValid && phone.length > 0);
-      document.getElementById('commentError').classList.toggle('show', !commentValid && comment.length > 0);
-
-      document.getElementById('phone').classList.toggle('error', !phoneValid && phone.length > 0);
-      document.getElementById('comment').classList.toggle('error', !commentValid && comment.length > 0);
-
-      document.getElementById('submitBtn').disabled = !(phoneValid && commentValid);
-    }
-
-    function selectTruck(evt, type) {
-      evt.preventDefault();
-      document.querySelectorAll('.truck-card').forEach(c => c.classList.remove('selected'));
-      document.querySelector(`[data-truck="${type}"]`).classList.add('selected');
-      state.selectedTruck = type;
-      validateStep2();
-    }
-
-    function formatPhone(input) {
-      let val = input.value.replace(/\D/g, '');
-      if (!val) { input.value = ''; return; }
-      if (val[0] !== '7') val = '7' + val;
-
-      let fmt = '+7';
-      if (val.length > 1) fmt += ` (${val.slice(1, 4)}`;
-      if (val.length >= 4) fmt += ')';
-      if (val.length > 4) fmt += ` ${val.slice(4, 7)}`;
-      if (val.length > 7) fmt += `-${val.slice(7, 9)}`;
-      if (val.length > 9) fmt += `-${val.slice(9, 11)}`;
-      input.value = fmt;
-    }
-
-    const cargoPhotoInput = document.getElementById('cargoPhoto');
-    const photoThumb = document.getElementById('photoThumb');
-    let currentPhotoFile = null;
-
-    function openSystemPicker() {
-      cargoPhotoInput.click();
-    }
-
-    cargoPhotoInput.addEventListener('change', (e) => {
-      const file = e.target.files && e.target.files[0];
-      handleChosenFile(file);
-    });
-
-    function handleChosenFile(file) {
-      currentPhotoFile = file || null;
-
-      if (!file) {
-        photoThumb.innerHTML = '<span style="font-size:22px">🖼️</span>';
-        document.getElementById('photoError').classList.remove('show');
-        validateStep2();
-        return;
-      }
-
-      if (file.size > 20 * 1024 * 1024) {
-        document.getElementById('photoError').classList.add('show');
-      } else {
-        document.getElementById('photoError').classList.remove('show');
-      }
-
-      const reader = new FileReader();
-      reader.onload = () => {
-        photoThumb.innerHTML = `<img alt="preview" src="${reader.result}">`;
-      };
-      reader.readAsDataURL(file);
-      validateStep2();
-    }
-
-    function clearCargoPhoto() {
-      cargoPhotoInput.value = '';
-      currentPhotoFile = null;
-      photoThumb.innerHTML = '<span style="font-size:22px">🖼️</span>';
-      document.getElementById('photoError').classList.remove('show');
-      validateStep2();
-    }
-
-    async function submitOrder() {
-      const btn = document.getElementById('submitBtn');
-      btn.disabled = true;
-      btn.textContent = '...';
-
-      try {
-        const formData = new FormData();
-
-        formData.append('from_address', state.pickup.address);
-        formData.append('from_lat', state.pickup.lat);
-        formData.append('from_lon', state.pickup.lng);
-        formData.append('to_address', state.dropoff.address);
-        formData.append('to_lat', state.dropoff.lat);
-        formData.append('to_lon', state.dropoff.lng);
-        formData.append('price', document.getElementById('price').value);
-        formData.append('truck_type', state.selectedTruck);
-        formData.append('date', document.getElementById('date').value);
-        formData.append('time', document.getElementById('time').value);
-        formData.append('contact', document.getElementById('phone').value);
-        formData.append('comment', document.getElementById('comment').value);
-
-        const tg = window.Telegram?.WebApp;
-        if (tg?.initDataUnsafe?.user) {
-          formData.append('telegram_id', tg.initDataUnsafe.user.id);
-          formData.append('telegram_username', tg.initDataUnsafe.user.username || '');
-          formData.append('telegram_first_name', tg.initDataUnsafe.user.first_name || '');
-          formData.append('telegram_last_name', tg.initDataUnsafe.user.last_name || '');
-        }
-
-        formData.append('distance', calculateDistance(state.pickup.lat, state.pickup.lng, state.dropoff.lat, state.dropoff.lng));
-
-        if (currentPhotoFile) formData.append('cargo_photo', currentPhotoFile);
-
-        const res = await fetch('/api/delivery-request', { method:'POST', body: formData });
-        const json = await res.json().catch(() => ({ success:false }));
-
-        if (json?.success) {
-          state.orderData = {
-            pickup: state.pickup,
-            dropoff: state.dropoff,
-            price: document.getElementById('price').value,
-            truck_type: state.selectedTruck,
-            contact: document.getElementById('phone').value,
-            comment: document.getElementById('comment').value,
-            request_id: json.data?.request_id
-          };
-          showSuccess();
-          stopTracking();
-        } else {
-          throw new Error(json?.message || 'Қате орын алды');
-        }
-      } catch (e) {
-        alert(`Қате: ${e.message}`);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Жіберу';
-      }
-    }
-
-    function showSuccess() {
-      document.getElementById('successScreen').classList.add('active');
-      setTimeout(() => goToDriverList(), 3000);
-    }
-
-    function goToDriverList() {
-      const data = encodeURIComponent(JSON.stringify(state.orderData));
-      window.location.href = `/driver-list?order=${data}&lang=${currentLang}`;
-    }
-
-    function goToMainClient() {
-      window.location.href = '/main-client';
-    }
-
-    function stopTracking() {
+    function stopTracking(){
       if (geolocationWatchId) navigator.geolocation.clearWatch(geolocationWatchId);
       geolocationWatchId = null;
-      if (forceTickTimer) clearInterval(forceTickTimer);
-      forceTickTimer = null;
+      if (geoTick) clearInterval(geoTick);
+      geoTick = null;
+    }
+
+    /* =========================
+       DISTANCE + FIT
+    ========================= */
+    function calculateDistance(lat1,lng1,lat2,lng2){
+      const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
+      const a = Math.sin(dLat/2)**2 +
+        Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+      return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    function showDistance(){
+      if (!state.pickup || !state.dropoff) return;
+      const d = calculateDistance(state.pickup.lat, state.pickup.lng, state.dropoff.lat, state.dropoff.lng);
+      $('distanceText').textContent = `${d.toFixed(1)} км`;
+      $('distanceBadge').classList.add('active');
+      syncSheetHeightSoon();
     }
 
     let fitABScheduled = false;
-    function queueFitAB() {
+    function queueFitAB(){
       if (fitABScheduled) return;
       fitABScheduled = true;
-      requestAnimationFrame(() => {
-        autoZoomToBothPoints(true);
-        fitABScheduled = false;
-      });
+      requestAnimationFrame(()=>{ autoZoomToBothPoints(true); fitABScheduled=false; });
     }
 
-    function getSafeInsets() {
-      const safeTop = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tg-top-inset')) || 0;
-      const safeBottom = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tg-bottom-inset')) || 0;
-      return { safeTop, safeBottom };
-    }
-
-    function getBottomSheetHeight() {
-      const sheet = document.getElementById('bottomSheet');
-      return sheet ? sheet.offsetHeight : 0;
-    }
-
-    function autoZoomToBothPoints(withUIOffset = false) {
+    function autoZoomToBothPoints(withUIOffset=false){
       if (!map || !state.pickup || !state.dropoff) return;
 
-      const bounds = L.latLngBounds(
-        [state.pickup.lat, state.pickup.lng],
-        [state.dropoff.lat, state.dropoff.lng]
-      );
+      const bounds = L.latLngBounds([state.pickup.lat, state.pickup.lng],[state.dropoff.lat, state.dropoff.lng]);
 
-      if (!withUIOffset) {
+      if (!withUIOffset){
         map.fitBounds(bounds, { padding:[40,40] });
         showDistance();
         return;
       }
 
       const { safeTop, safeBottom } = getSafeInsets();
-      const sheetH = getBottomSheetHeight();
-
-      const topPad = 40 + safeTop;
-      const bottomPad = 40 + sheetH + safeBottom;
+      const sheetH = Math.max(220, Math.round(($('bottomSheet')?.getBoundingClientRect().height || 360)));
 
       map.fitBounds(bounds, {
-        paddingTopLeft: [40, topPad],
-        paddingBottomRight: [40, bottomPad],
-        animate: true
+        paddingTopLeft:[32, 36 + safeTop],
+        paddingBottomRight:[32, 28 + sheetH + safeBottom],
+        animate:true
+      });
+      setTimeout(showDistance, 220);
+    }
+
+    /* =========================
+       A/B MARKERS (DRAG REVERSE)
+    ========================= */
+    async function upsertPointMarker(type, lat, lng, draggable){
+      if (!map) return;
+
+      const icon = iconPoint(type);
+      const opts = { icon, draggable:!!draggable, keyboard:false, autoPan:true, autoPanPadding:[40,40] };
+      let ref = type === 'pickup' ? pickupMarker : dropoffMarker;
+
+      if (!ref) ref = L.marker([lat,lng], opts).addTo(map);
+      else {
+        ref.setIcon(icon);
+        ref.setLatLng([lat,lng]);
+        ref.dragging?.enable();
+        if (!draggable) ref.dragging?.disable();
+      }
+
+      ref.off('dragend');
+      ref.on('dragend', async (e)=>{
+        const ll = e.target.getLatLng();
+        if (!isInKazakhstan(ll.lat, ll.lng)){
+          showToast(t('Сервис работает только на территории Казахстана','Сервис тек Қазақстан аумағында жұмыс істейді'));
+          const prev = type === 'pickup' ? state.pickup : state.dropoff;
+          if (prev) ref.setLatLng([prev.lat, prev.lng]);
+          return;
+        }
+
+        const addr = await reverseGeocode(ll.lat, ll.lng);
+        if (!addr) return;
+
+        if (type === 'pickup'){
+          state.pickup = { lat: ll.lat, lng: ll.lng, address: addr };
+          $('pickupAddr').textContent = addr;
+          if (!state.dropoff) centerMarkerInVisibleArea(ll.lat, ll.lng, true);
+        } else {
+          state.dropoff = { lat: ll.lat, lng: ll.lng, address: addr };
+          $('dropoffAddr').textContent = addr;
+        }
+
+        validateStep1();
+        queueFitAB();
+        syncSheetHeightSoon();
       });
 
-      setTimeout(showDistance, 320);
+      if (type === 'pickup') pickupMarker = ref; else dropoffMarker = ref;
+      if (pickupMarker && dropoffMarker) setTimeout(()=> autoZoomToBothPoints(true), 200);
     }
 
-    function escapeHtml(s) {
-      return String(s).replace(/[&<>"']/g, m => ({
-        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-      }[m]));
+    function centerOnUserLocation(){ if (currentUserLocation && map) map.setView(currentUserLocation, 16, { animate:true }); }
+    function centerPickerOnUser(){ if (currentUserLocation && pickerMap) pickerMap.setView(currentUserLocation, 16, { animate:true }); }
+
+    /* =========================
+       SEARCH (NOMINATIM)
+    ========================= */
+    const escapeHtml = (s) => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    let searchDebounceTimer = null, suggestionsTimeout = null;
+
+    function debouncedSearch(query){
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(()=> searchAddress(query), 280);
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      // Telegram first (fullscreen + safe areas)
-      if (window.Telegram?.WebApp) {
+    async function performKazakhstanSearch(query){
+      const center = pickerMap?.getCenter() || { lat:43.238949, lng:76.889709 };
+
+      const params = new URLSearchParams({
+        format:'json', q:query, countrycodes:'kz', limit:'20',
+        addressdetails:'1', 'accept-language': langHeader(),
+        dedupe:'1'
+      });
+
+      const res = await fetch(`${NOMINATIM_BASE}/search?${params}`, { cache:'no-store', headers:{'Accept':'application/json'} });
+      const raw = await res.json();
+      if (!raw?.length) return [];
+
+      const processed = raw.map(r=>{
+        const a = r.address || {};
+        let title = (a.house_number && a.road) ? `${a.road}: ${a.house_number}` :
+                    (a.road ? a.road : (r.name ? r.name : ((r.display_name||'').split(',')[0] || '...')));
+        const city = a.city || a.town || a.village || '';
+        const st = a.state || '';
+        const subtitle = (city && st && city !== st) ? `${city}, ${st}` : (city || st || '');
+
+        const dist = calculateDistance(center.lat, center.lng, +r.lat, +r.lon);
+        const typeScore = ({ city:1, town:2, village:3, suburb:4, neighbourhood:5, residential:6, amenity:7, building:8, street:9 }[r.type] || 10);
+        const score = dist + (typeScore * 5);
+
+        return { lat:+r.lat, lon:+r.lon, title, subtitle, score, importance:r.importance || 0 };
+      });
+
+      processed.sort((a,b)=>{
+        const d=a.score-b.score;
+        if (Math.abs(d) > 0.1) return d;
+        return b.importance-a.importance;
+      });
+
+      return processed.slice(0,15);
+    }
+
+    async function searchAddress(query){
+      const s = $('suggestions');
+      if (!query || query.length < 2) { s.classList.remove('active'); return; }
+
+      state.isSearching = true;
+      s.innerHTML = `<div class="suggestion-item"><div class="suggestion-title">${t('Поиск…','Іздеу…')}</div></div>`;
+      s.classList.add('active');
+
+      try{
+        const results = await performKazakhstanSearch(query);
+        if (!results.length){
+          s.innerHTML = `<div class="suggestion-item"><div class="suggestion-title">${t('Ничего не найдено','Ештеңе табылмады')}</div></div>`;
+          return;
+        }
+
+        s.innerHTML = results.map(r=>`
+          <div class="suggestion-item" data-lat="${r.lat}" data-lng="${r.lon}" data-label="${escapeHtml(r.title)}"
+               onclick="selectSuggestionFromElement(this)">
+            <div class="suggestion-title">${escapeHtml(r.title)}</div>
+            <div class="suggestion-sub">${escapeHtml(r.subtitle)}</div>
+          </div>
+        `).join('');
+        s.classList.add('active');
+      } catch(e){
+        s.innerHTML = `<div class="suggestion-item"><div class="suggestion-title">${t('Ошибка','Қате')}</div></div>`;
+      } finally {
+        state.isSearching = false;
+      }
+    }
+
+    function selectSuggestionFromElement(el){
+      const lat = parseFloat(el.dataset.lat), lng = parseFloat(el.dataset.lng);
+      if (!isInKazakhstan(lat,lng)){
+        showToast(t('Сервис работает только на территории Казахстана','Сервис тек Қазақстан аумағында жұмыс істейді'));
+        return;
+      }
+      const label = el.dataset.label || '';
+      pickerMap?.setView([lat,lng], 17, { animate:true });
+      $('suggestions').classList.remove('active');
+      $('searchBox').value = label;
+      state.isSearching = false;
+    }
+
+    function hideSuggestionsDelayed(){
+      clearTimeout(suggestionsTimeout);
+      suggestionsTimeout = setTimeout(()=>{ $('suggestions').classList.remove('active'); state.isSearching=false; }, 200);
+    }
+    function onSearchFocus(){ state.isSearching=true; }
+
+    /* =========================
+       PICKER (CENTER PIN)
+    ========================= */
+    let pickerMoveTimer = null, pickerIsMoving = false, lastBubbleText = '', lastPickerCenterKey = '';
+    const setBubble = (txt) => { if (txt !== lastBubbleText){ lastBubbleText=txt; $('pinAddressBubble').textContent=txt; } };
+
+    function schedulePickerReverse(){
+      if (!pickerMap) return;
+      clearTimeout(pickerMoveTimer);
+      if (state.isSearching) return;
+
+      pickerMoveTimer = setTimeout(async ()=>{
+        if (!pickerMap || pickerIsMoving) return;
+        const c = pickerMap.getCenter();
+        const key = `${c.lat.toFixed(6)},${c.lng.toFixed(6)}`;
+        if (key === lastPickerCenterKey) return;
+        lastPickerCenterKey = key;
+
+        const addr = await reverseGeocode(c.lat, c.lng);
+        if (addr) setBubble(addr);
+      }, 320);
+    }
+
+    async function buildPickerMap(center){
+      const el = $('pickerMap');
+      if (!el) return;
+      el.innerHTML = '';
+
+      pickerMap = createLeafletMap('pickerMap', center, 16);
+
+      pickerMap.on('movestart', ()=>{
+        pickerIsMoving = true;
+        abortReverse();
+        clearTimeout(pickerMoveTimer);
+        setBubble(t('Двигайте карту…','Картаны жылжытыңыз…'));
+      });
+
+      pickerMap.on('moveend', ()=>{
+        pickerIsMoving = false;
+        schedulePickerReverse();
+      });
+
+      setBubble(t('Определяем адрес…','Мекенжай анықталуда…'));
+      setTimeout(()=>{ if (!pickerMap) return; pickerIsMoving=false; schedulePickerReverse(); }, 220);
+
+      ensurePickerUserMarker();
+    }
+
+    async function openPicker(type){
+      state.pickingFor = type;
+      state.isSearching = false;
+
+      $('pickerModal').classList.add('active');
+      $('centerPinOverlay').classList.add('active');
+
+      let center;
+      if (type === 'pickup' && state.pickup) center = [state.pickup.lat, state.pickup.lng];
+      else if (type === 'dropoff' && state.dropoff) center = [state.dropoff.lat, state.dropoff.lng];
+      else center = currentUserLocation || [43.238949, 76.889709];
+
+      await new Promise(r=>setTimeout(r, 60));
+      await buildPickerMap(center);
+      if (currentUserLocation) updatePickerUserMarker(currentUserLocation[0], currentUserLocation[1]);
+    }
+
+    function closePicker(){
+      $('pickerModal').classList.remove('active');
+      $('centerPinOverlay').classList.remove('active');
+      $('suggestions').classList.remove('active');
+      $('searchBox').value = '';
+
+      abortReverse();
+      clearTimeout(pickerMoveTimer);
+
+      if (pickerMap){ pickerMap.off(); pickerMap.remove(); }
+      pickerMap = null; pickerUserMarker = null;
+      state.pickingFor = null; state.isSearching=false;
+      pickerIsMoving=false; lastPickerCenterKey=''; lastBubbleText='';
+    }
+
+    async function confirmPicker(){
+      if (!state.pickingFor || !pickerMap) return;
+      const c = pickerMap.getCenter();
+      const lat = c.lat, lng = c.lng;
+
+      if (!isInKazakhstan(lat,lng)){
+        showToast(t('Сервис работает только на территории Казахстана','Сервис тек Қазақстан аумағында жұмыс істейді'));
+        return;
+      }
+
+      const addr = await reverseGeocode(lat,lng);
+      if (!addr){ showToast(t('Не удалось определить адрес','Мекенжай анықталмады')); return; }
+
+      if (state.pickingFor === 'pickup'){
+        state.pickup = { lat,lng,address:addr };
+        $('pickupAddr').textContent = addr;
+        qsa('.address-card')[0].classList.add('filled');
+        await upsertPointMarker('pickup', lat, lng, true);
+      } else {
+        state.dropoff = { lat,lng,address:addr };
+        $('dropoffAddr').textContent = addr;
+        qsa('.address-card')[1].classList.add('filled');
+        await upsertPointMarker('dropoff', lat, lng, true);
+      }
+
+      closePicker();
+      validateStep1();
+
+      if (state.pickup && !state.dropoff) centerMarkerInVisibleArea(state.pickup.lat, state.pickup.lng, true);
+      if (state.pickup && state.dropoff) queueFitAB();
+
+      syncSheetHeightSoon();
+    }
+
+    /* =========================
+       STEPS / VALIDATION
+    ========================= */
+    function goToStep(step){
+      qsa('.form-step').forEach(s=>s.classList.remove('active'));
+      qsa('.step-bar').forEach(s=>s.classList.remove('active'));
+
+      $(`step${step}`).classList.add('active');
+      for (let i=1;i<=step;i++) $(`stepBar${i}`).classList.add('active');
+
+      state.currentStep = step;
+
+      if (step===1) validateStep1();
+      else if (step===2) validateStep2();
+      else validateStep3();
+
+      if (state.pickup && state.dropoff) queueFitAB();
+      if (state.pickup && !state.dropoff) centerMarkerInVisibleArea(state.pickup.lat, state.pickup.lng, false);
+
+      syncSheetHeightSoon();
+    }
+
+    function validateStep1(){
+      const ok = !!(state.pickup && state.dropoff);
+      $('nextBtn1').disabled = !ok;
+      if (ok) queueFitAB();
+      syncSheetHeightSoon();
+    }
+
+    function validateStep2(){
+      const price = Number($('price').value);
+      const date = $('date').value;
+      const time = $('time').value;
+      const truckOk = !!state.selectedTruck;
+
+      const priceOk = price >= 2000;
+      const dateOk = !!date;
+      const timeOk = !!time;
+
+      $('priceError').classList.toggle('show', !priceOk && price > 0);
+      $('dateError').classList.toggle('show', !dateOk);
+      $('timeError').classList.toggle('show', !timeOk);
+      $('truckError').classList.toggle('show', !truckOk);
+
+      $('price').classList.toggle('error', !priceOk && price > 0);
+      $('date').classList.toggle('error', !dateOk);
+      $('time').classList.toggle('error', !timeOk);
+
+      const tooBig = currentPhotoFile && currentPhotoFile.size > 5*1024*1024;
+      $('photoError').classList.toggle('show', !!tooBig);
+
+      $('nextBtn2').disabled = !(priceOk && dateOk && timeOk && truckOk && !tooBig);
+      syncSheetHeightSoon();
+    }
+
+    function validateStep3(){
+      const phone = $('phone').value;
+      const comment = $('comment').value;
+
+      const digits = phone.replace(/\D/g,'');
+      const phoneOk = digits.length >= 11;
+      const commentOk = comment.trim().length >= 3;
+
+      $('phoneError').classList.toggle('show', !phoneOk && phone.length > 0);
+      $('commentError').classList.toggle('show', !commentOk && comment.length > 0);
+
+      $('phone').classList.toggle('error', !phoneOk && phone.length > 0);
+      $('comment').classList.toggle('error', !commentOk && comment.length > 0);
+
+      $('submitBtn').disabled = !(phoneOk && commentOk);
+      syncSheetHeightSoon();
+    }
+
+    function formatPhone(input){
+      let val = input.value.replace(/\D/g,'');
+      if (!val){ input.value=''; return; }
+      if (val[0] !== '7') val = '7' + val;
+
+      let fmt = '+7';
+      if (val.length > 1) fmt += ` (${val.slice(1,4)}`;
+      if (val.length >= 4) fmt += ')';
+      if (val.length > 4) fmt += ` ${val.slice(4,7)}`;
+      if (val.length > 7) fmt += `-${val.slice(7,9)}`;
+      if (val.length > 9) fmt += `-${val.slice(9,11)}`;
+      input.value = fmt;
+    }
+
+    // Truck: event delegation (less code, same UX)
+    $('truckGrid').addEventListener('click', (e)=>{
+      const card = e.target.closest('.truck-card');
+      if (!card) return;
+      qsa('.truck-card').forEach(c=>c.classList.remove('selected'));
+      card.classList.add('selected');
+      state.selectedTruck = card.dataset.truck;
+      validateStep2();
+      syncSheetHeightSoon();
+    });
+
+    /* =========================
+       PHOTO (DESKTOP FIX)
+    ========================= */
+    const cargoPhotoInput = $('cargoPhoto');
+    const photoThumb = $('photoThumb');
+    const uploadProgress = $('uploadProgress');
+    const photoUploader = $('photoUploader');
+    let currentPhotoFile = null;
+
+    function openSystemPicker(){ cargoPhotoInput.click(); }
+    const isHeicLike = (f) => {
+      const n = (f?.name||'').toLowerCase();
+      const tp = (f?.type||'').toLowerCase();
+      return tp.includes('heic') || tp.includes('heif') || n.endsWith('.heic') || n.endsWith('.heif');
+    };
+
+    function compressImageToJpeg(file){
+      return new Promise((resolve,reject)=>{
+        const reader = new FileReader();
+        reader.onerror = ()=>reject(new Error('File read error'));
+        reader.onload = (e)=>{
+          const img = new Image();
+          img.onerror = ()=>reject(new Error('Image decode error'));
+          img.onload = ()=>{
+            const canvas = document.createElement('canvas');
+            let w = img.width, h = img.height;
+            const MAX = 1920;
+            if (w > h && w > MAX){ h = (h*MAX)/w; w = MAX; }
+            else if (h > MAX){ w = (w*MAX)/h; h = MAX; }
+
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d', { alpha:false });
+            ctx.drawImage(img, 0, 0, w, h);
+
+            canvas.toBlob((blob)=>{
+              if (!blob) return reject(new Error('toBlob failed'));
+              const base = (file.name || 'photo').replace(/\.(png|jpg|jpeg|webp|heic|heif)$/i,'');
+              resolve(new File([blob], `${base}.jpg`, { type:'image/jpeg', lastModified: Date.now() }));
+            }, 'image/jpeg', 0.85);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleChosenFile(file){
+      const pe = $('photoError');
+
+      const reset = () => {
+        currentPhotoFile=null;
+        cargoPhotoInput.value='';
+        photoThumb.innerHTML = '<span style="font-size:22px">🖼️</span>';
+      };
+
+      if (!file){ reset(); pe.classList.remove('show'); validateStep2(); return; }
+      if (!file.type || !file.type.startsWith('image/')){
+        reset();
+        pe.classList.add('show');
+        pe.textContent = t('Можно загрузить только фото','Тек фото жүктеуге болады');
+        showToast(pe.textContent);
+        validateStep2();
+        return;
+      }
+      if (isHeicLike(file)){
+        reset();
+        pe.classList.add('show');
+        pe.textContent = t('HEIC/HEIF не поддерживается в Telegram Desktop. Выберите JPG/PNG.',
+                           'HEIC/HEIF Telegram Desktop-та қолдамайды. JPG/PNG таңдаңыз.');
+        showToast(pe.textContent);
+        validateStep2();
+        return;
+      }
+
+      photoUploader.classList.add('uploading');
+      uploadProgress.classList.add('active');
+
+      try{
+        let processed = file;
+        if (file.size > 1*1024*1024 || (file.type && file.type !== 'image/jpeg')) processed = await compressImageToJpeg(file);
+
+        if (processed.size > 5*1024*1024){
+          pe.classList.add('show');
+          pe.textContent = t('Файл слишком большой (макс. 5 МБ)','Файл тым үлкен (макс. 5 МБ)');
+          throw new Error('File too large');
+        }
+
+        currentPhotoFile = processed;
+        pe.classList.remove('show');
+
+        const r = new FileReader();
+        r.onload = ()=>{ photoThumb.innerHTML = `<img alt="preview" src="${r.result}">`; };
+        r.readAsDataURL(processed);
+
+        validateStep2();
+      } catch(e){
+        currentPhotoFile=null;
+        cargoPhotoInput.value='';
+        photoThumb.innerHTML = '<span style="font-size:22px">🖼️</span>';
+        showToast(t('Ошибка обработки фото','Фото өңдеу қатесі'));
+      } finally {
+        photoUploader.classList.remove('uploading');
+        uploadProgress.classList.remove('active');
+      }
+    }
+
+    cargoPhotoInput.addEventListener('change', async (e)=>{
+      const file = e.target.files && e.target.files[0];
+      await handleChosenFile(file);
+      syncSheetHeightSoon();
+    });
+
+    function clearCargoPhoto(){
+      cargoPhotoInput.value='';
+      currentPhotoFile=null;
+      photoThumb.innerHTML = '<span style="font-size:22px">🖼️</span>';
+      $('photoError').classList.remove('show');
+      validateStep2();
+      syncSheetHeightSoon();
+    }
+
+    /* =========================
+       SUBMIT OVERLAY + SUBMIT
+    ========================= */
+    function showSubmitOverlay(hasPhoto){
+      $('submitOverlayTitle').textContent = t('Отправляем...','Жіберілуде...');
+      $('submitOverlaySub').textContent = hasPhoto
+        ? t('Фото загружается и заказ отправляется','Фото жүктеліп, тапсырыс жіберілуде')
+        : t('Пожалуйста, подождите немного','Өтінеміз, күте тұрыңыз');
+      $('submitOverlay').classList.add('active');
+    }
+    const hideSubmitOverlay = () => $('submitOverlay').classList.remove('active');
+
+    async function submitOrder(){
+      const btn = $('submitBtn');
+      btn.disabled = true;
+      const oldText = btn.textContent;
+      btn.textContent = '...';
+
+      const hasPhoto = !!currentPhotoFile;
+      showSubmitOverlay(hasPhoto);
+
+      try{
+        if (!state.pickup || !state.dropoff) throw new Error(t('Выберите точки A и B','A және B нүктелерін таңдаңыз'));
+        if (!state.selectedTruck) throw new Error(t('Выберите тип транспорта','Көлік түрін таңдаңыз'));
+
+        if (currentPhotoFile){
+          if (!currentPhotoFile.type || !currentPhotoFile.type.startsWith('image/'))
+            throw new Error(t('Можно загрузить только фото','Тек фото жүктеуге болады'));
+          if (currentPhotoFile.size > 5*1024*1024)
+            throw new Error(t('Фото слишком большое (макс. 5 МБ)','Фото тым үлкен (макс. 5 МБ)'));
+        }
+
+        const fd = new FormData();
+        fd.append('from_address', state.pickup.address || '');
+        fd.append('from_lat', String(state.pickup.lat));
+        fd.append('from_lon', String(state.pickup.lng));
+        fd.append('to_address', state.dropoff.address || '');
+        fd.append('to_lat', String(state.dropoff.lat));
+        fd.append('to_lon', String(state.dropoff.lng));
+        fd.append('price', String($('price').value || ''));
+        fd.append('truck_type', String(state.selectedTruck || ''));
+        fd.append('date', String($('date').value || ''));
+        fd.append('time', String($('time').value || ''));
+        fd.append('contact', String($('phone').value || ''));
+        fd.append('comment', String($('comment').value || ''));
+        fd.append('distance', String(calculateDistance(state.pickup.lat, state.pickup.lng, state.dropoff.lat, state.dropoff.lng)));
+
+        const tg = window.Telegram?.WebApp;
+        if (tg?.initDataUnsafe?.user){
+          const u = tg.initDataUnsafe.user;
+          fd.append('telegram_id', String(u.id));
+          fd.append('telegram_username', u.username || '');
+          fd.append('telegram_first_name', u.first_name || '');
+          fd.append('telegram_last_name', u.last_name || '');
+        }
+
+        if (currentPhotoFile) fd.append('cargo_photo', currentPhotoFile, currentPhotoFile.name || 'cargo.jpg');
+
+        const controller = new AbortController();
+        const timeout = setTimeout(()=>controller.abort(), 45000);
+
+        const res = await fetch(API_URL, { method:'POST', body: fd, signal: controller.signal });
+        clearTimeout(timeout);
+
+        let json = null;
+        try { json = await res.json(); } catch(e){}
+
+        if (!res.ok){
+          const msg = json?.message || t(`Ошибка сервера (${res.status})`, `Сервер қатесі (${res.status})`);
+          throw new Error(msg);
+        }
+
+        if (json?.success){
+          state.orderData = {
+            pickup: state.pickup,
+            dropoff: state.dropoff,
+            price: $('price').value,
+            truck_type: state.selectedTruck,
+            contact: $('phone').value,
+            comment: $('comment').value,
+            request_id: json.data?.request_id
+          };
+          showSuccess();
+          stopTracking();
+        } else {
+          throw new Error(json?.message || t('Заказ не отправлен','Тапсырыс жіберілмеді'));
+        }
+
+      } catch(e){
+        const msg = (e?.name === 'AbortError')
+          ? t('Таймаут. Проверьте интернет и повторите.','Уақыт аяқталды. Интернетті тексеріп, қайталаңыз.')
+          : (e?.message || t('Ошибка','Қате'));
+
+        showToast(`${t('Ошибка','Қате')}: ${msg}`);
+        try { alert(`${t('Ошибка','Қате')}: ${msg}`); } catch(_) {}
+      } finally {
+        hideSubmitOverlay();
+        btn.disabled = false;
+        btn.textContent = oldText;
+      }
+    }
+
+    function showSuccess(){
+      $('successScreen').classList.add('active');
+      setTimeout(()=>goToDriverList(), 1200);
+    }
+
+    function goToDriverList(){
+      const data = encodeURIComponent(JSON.stringify(state.orderData || {}));
+      location.href = `/driver-list?order=${data}&lang=${currentLang}`;
+    }
+    function goToMainClient(){ location.href = '/main-client'; }
+
+    /* =========================
+       INIT
+    ========================= */
+    async function initMap(){
+      const defaultCenter = [43.238949, 76.889709];
+      map = createLeafletMap('map', defaultCenter, 15);
+      userMarker = L.marker(defaultCenter, { icon: iconUser(), interactive:false, keyboard:false }).addTo(map);
+
+      if (!navigator.geolocation) return;
+
+      navigator.geolocation.getCurrentPosition(
+        async (pos)=>{
+          const lat = pos.coords.latitude, lng = pos.coords.longitude;
+          if (!isInKazakhstan(lat,lng)){
+            showToast(t('Сервис работает только на территории Казахстана','Сервис тек Қазақстан аумағында жұмыс істейді'));
+            return;
+          }
+
+          currentUserLocation = [lat,lng];
+          state.userLoc = { lat, lng, accuracy: pos.coords.accuracy };
+
+          map.setView(currentUserLocation, 15, { animate:false });
+          updateUserMarker(lat,lng);
+
+          // Set pickup once here (then stable)
+          const addr = await reverseGeocode(lat,lng);
+          if (addr){
+            state.pickup = { lat,lng,address:addr };
+            $('pickupAddr').textContent = addr;
+            qsa('.address-card')[0].classList.add('filled');
+            await upsertPointMarker('pickup', lat, lng, true);
+            centerMarkerInVisibleArea(lat,lng,false);
+            validateStep1();
+          }
+
+          startRealtimeTracking();
+          syncSheetHeightSoon();
+        },
+        ()=>{},
+        { enableHighAccuracy:true, timeout:10000, maximumAge:0 }
+      );
+    }
+
+    document.addEventListener('DOMContentLoaded', ()=>{
+      if (window.Telegram?.WebApp){
         const tg = Telegram.WebApp;
-        tg.ready();
-        tg.expand();
-        tg.disableVerticalSwipes();
-        tg.setHeaderColor('#000000');
+        tg.ready(); tg.expand();
+        try{ tg.disableVerticalSwipes(); }catch(e){}
+        try{ tg.setHeaderColor('#000000'); }catch(e){}
         tg.onEvent('viewportChanged', updateViewportHeight);
       }
 
       updateViewportHeight();
 
-      // Defer map init slightly to speed first paint
-      const start = () => initMap();
-      if ('requestIdleCallback' in window) requestIdleCallback(start, { timeout: 600 });
-      else setTimeout(start, 80);
+      const boot = () => initMap();
+      if ('requestIdleCallback' in window) requestIdleCallback(boot, { timeout:500 });
+      else setTimeout(boot, 40);
 
       const now = new Date();
-      document.getElementById('date').valueAsDate = now;
-      document.getElementById('time').value = now.toTimeString().slice(0, 5);
+      $('date').valueAsDate = now;
+      $('time').value = now.toTimeString().slice(0,5);
+
+      setTimeout(syncSheetHeight, 80);
     });
 
-    window.addEventListener('resize', updateViewportHeight);
-    window.addEventListener('beforeunload', stopTracking);
+    addEventListener('resize', ()=>{ updateViewportHeight(); syncSheetHeightSoon(); });
+    addEventListener('beforeunload', stopTracking);
 
+    /* =========================
+       EXPOSE (same API)
+    ========================= */
     window.openPicker = openPicker;
     window.closePicker = closePicker;
     window.confirmPicker = confirmPicker;
     window.debouncedSearch = debouncedSearch;
     window.selectSuggestionFromElement = selectSuggestionFromElement;
     window.goToStep = goToStep;
-    window.selectTruck = selectTruck;
     window.formatPhone = formatPhone;
     window.submitOrder = submitOrder;
     window.goToDriverList = goToDriverList;
@@ -1831,7 +1537,7 @@
     window.centerPickerOnUser = centerPickerOnUser;
     window.clearCargoPhoto = clearCargoPhoto;
     window.openSystemPicker = openSystemPicker;
+    window.syncSheetHeightSoon = syncSheetHeightSoon;
   </script>
 </body>
 </html>
-
